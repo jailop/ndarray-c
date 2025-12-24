@@ -2,10 +2,15 @@
 
 A numpy-like ndarray library for C.
 
-[API Documentation](https://jailop.github.io/ndarray-c/)
+- [API Documentation](https://jailop.github.io/ndarray-c/)
+- [Source Code](https://github.com/jailop/ndarray-c)
 
-**Disclaimer**: This is a project for learning. The API can change at any
-moment. It is not intended for production use. Feedback is welcome.
+**Disclaimers**:
+
+- This is a project for learning.
+- The API can change at any moment.
+- It is not intended for production use.
+- Feedback is welcome
 
 ## Design Considerations
 
