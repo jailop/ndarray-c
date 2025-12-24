@@ -447,29 +447,3 @@ gcc -fopenmp -o myprogram myprogram.c -I/usr/local/include -L/usr/local/lib -lnd
 # Or link directly with source files
 gcc -fopenmp -o myprogram myprogram.c -Isrc src/ndarray_*.c -lopenblas -lm
 ```
-
-## Project Structure
-
-```
-ndarray-c/
-├── src/                    # C and Zig source files
-│   ├── ndarray.h          # C header
-│   ├── ndarray_internal.h # Internal C header
-│   ├── ndarray_*.c        # C implementation files
-│   └── ndarray.zig        # Zig bindings
-├── tests/                  # Test files
-│   └── test_ndarray.c     # C tests
-├── benchmarks/             # Benchmark files
-│   └── benchmark.c        # Performance benchmarks
-├── examples/               # Example files
-│   ├── example.c          # C example
-│   ├── basic.zig          # Zig basic example
-│   └── extended.zig       # Zig extended example
-├── docs/                   # Generated documentation
-├── Makefile               # C build system
-├── build.zig              # Zig build system
-├── README.md              # Main documentation (C)
-└── README-zig.md          # Zig documentation
-```
-
-
