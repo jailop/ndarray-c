@@ -2,3 +2,4 @@
 
 - Load/Save functions
 - Literal initialization
+- zig bindings

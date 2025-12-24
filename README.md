@@ -1,9 +1,10 @@
-# ndarray for C
+# ndarray for C and Zig
 
-A numpy-like ndarray library for C.
+A numpy-like ndarray library for C, with Zig bindings.
 
 - [API Documentation](https://jailop.github.io/ndarray-c/)
 - [Source Code](https://github.com/jailop/ndarray-c)
+- [Zig](README-zig.md)
 
 **Disclaimers**:
 
@@ -172,10 +173,7 @@ Binary File Format:
 - Dimension sizes: array of `uint64_t`
 - Data: array of `double` (row-major order)
 
-This format is portable and can be used to exchange data between
-different systems.
-
-**Getting and Setting Values:((
+**Getting and Setting Values:**
 
 ```c
 NDArray arr = ndarray_new_zeros(NDA_DIMS(3, 4));
@@ -332,8 +330,6 @@ Array 'Loaded Result' [2, 2]:
 
 Requirements:
 
-The library requires the following dependencies:
-
 - OpenMP: For parallel operations (required)
 - OpenBLAS: For optimized BLAS operations (required)
 - CUnit: For running tests (optional, only needed for `make test`)
@@ -369,6 +365,8 @@ Run tests:
 cd src
 make test
 ```
+
+## Documentation
 
 Generate API documentation:
 
@@ -464,3 +462,5 @@ gcc -fopenmp -o myprogram myprogram.c -lndarray -lopenblas -lm
 # Or link directly with object file
 gcc -fopenmp -o myprogram myprogram.c ndarray.c -lopenblas -lm
 ```
+
+
