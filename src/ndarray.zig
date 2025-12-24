@@ -1,16 +1,16 @@
 const std = @import("std");
 
-// C library bindings
+
 pub const c = @cImport({
     @cInclude("stddef.h");
     @cInclude("ndarray.h");
 });
 
-/// NDArray wrapper for Zig
+
 pub const NDArray = struct {
     ptr: c.NDArray,
 
-    /// Create a new ndarray with specified dimensions
+    /// a new ndarray with specified dimensions
     pub fn init(dims: []const usize) !NDArray {
         var c_dims = try std.heap.c_allocator.alloc(usize, dims.len + 1);
         defer std.heap.c_allocator.free(c_dims);
@@ -29,7 +29,7 @@ pub const NDArray = struct {
         c.ndarray_free(self.ptr);
     }
 
-    /// Create array filled with zeros
+    /// array filled with zeros
     pub fn zeros(dims: []const usize) !NDArray {
         var c_dims = try std.heap.c_allocator.alloc(usize, dims.len + 1);
         defer std.heap.c_allocator.free(c_dims);
@@ -43,7 +43,7 @@ pub const NDArray = struct {
         return NDArray{ .ptr = ptr };
     }
 
-    /// Create array filled with ones
+    /// array filled with ones
     pub fn ones(dims: []const usize) !NDArray {
         var c_dims = try std.heap.c_allocator.alloc(usize, dims.len + 1);
         defer std.heap.c_allocator.free(c_dims);
@@ -57,7 +57,7 @@ pub const NDArray = struct {
         return NDArray{ .ptr = ptr };
     }
 
-    /// Create array filled with a specific value
+    /// array filled with a specific value
     pub fn full(dims: []const usize, value: f64) !NDArray {
         var c_dims = try std.heap.c_allocator.alloc(usize, dims.len + 1);
         defer std.heap.c_allocator.free(c_dims);
@@ -71,7 +71,7 @@ pub const NDArray = struct {
         return NDArray{ .ptr = ptr };
     }
 
-    /// Create array from existing data
+    /// array from existing data
     pub fn fromData(dims: []const usize, data: []const f64) !NDArray {
         var c_dims = try std.heap.c_allocator.alloc(usize, dims.len + 1);
         defer std.heap.c_allocator.free(c_dims);
@@ -85,7 +85,7 @@ pub const NDArray = struct {
         return NDArray{ .ptr = ptr };
     }
 
-    /// Create array with random uniform values
+    /// array with random uniform values
     pub fn randomUniform(dims: []const usize, low: f64, high: f64) !NDArray {
         var c_dims = try std.heap.c_allocator.alloc(usize, dims.len + 1);
         defer std.heap.c_allocator.free(c_dims);
@@ -99,7 +99,7 @@ pub const NDArray = struct {
         return NDArray{ .ptr = ptr };
     }
 
-    /// Create array with random normal values
+    /// array with random normal values
     pub fn randomNormal(dims: []const usize, mean: f64, stddev: f64) !NDArray {
         var c_dims = try std.heap.c_allocator.alloc(usize, dims.len + 1);
         defer std.heap.c_allocator.free(c_dims);
@@ -113,7 +113,7 @@ pub const NDArray = struct {
         return NDArray{ .ptr = ptr };
     }
 
-    /// Create array with evenly spaced values
+    /// array with evenly spaced values
     pub fn arange(dims: []const usize, start: f64, stop: f64, step: f64) !NDArray {
         var c_dims = try std.heap.c_allocator.alloc(usize, dims.len + 1);
         defer std.heap.c_allocator.free(c_dims);
@@ -127,7 +127,7 @@ pub const NDArray = struct {
         return NDArray{ .ptr = ptr };
     }
 
-    /// Create array with linearly spaced values
+    /// array with linearly spaced values
     pub fn linspace(dims: []const usize, start: f64, stop: f64, num: usize) !NDArray {
         var c_dims = try std.heap.c_allocator.alloc(usize, dims.len + 1);
         defer std.heap.c_allocator.free(c_dims);
@@ -141,7 +141,7 @@ pub const NDArray = struct {
         return NDArray{ .ptr = ptr };
     }
 
-    /// Create a copy of the array
+    /// a copy of the array
     pub fn copy(self: NDArray) !NDArray {
         const ptr = c.ndarray_new_copy(self.ptr);
         if (ptr == null) return error.AllocationFailed;
