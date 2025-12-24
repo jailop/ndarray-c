@@ -147,6 +147,30 @@ NDArray ndarray_new_copy(NDArray t);
 NDArray ndarray_new_zeros(size_t *dims);
 
 /**
+ * Creates a new ndarray from existing data.
+ * The data is copied into the new ndarray.
+ * Supports any number of dimensions (ndim >= 2).
+ * The size is automatically calculated from the dimensions.
+ * @param dims Array of dimensions, ending with 0.
+ * @param data Pointer to the data array to copy.
+ * @return A handle to the newly created ndarray.
+ * 
+ * Example usage:
+ *   // 2D array: 2x3
+ *   double data2d[2][3] = {{1, 2, 3}, {4, 5, 6}};
+ *   NDArray a = ndarray_new_from_data(NDA_DIMS(2, 3), (double*)data2d);
+ * 
+ *   // 3D array: 2x3x4
+ *   double data3d[2][3][4] = {...};
+ *   NDArray b = ndarray_new_from_data(NDA_DIMS(2, 3, 4), (double*)data3d);
+ * 
+ *   // 4D array: 2x2x3x2
+ *   double data4d[2][2][3][2] = {...};
+ *   NDArray c = ndarray_new_from_data(NDA_DIMS(2, 2, 3, 2), (double*)data4d);
+ */
+NDArray ndarray_new_from_data(size_t *dims, double *data);
+
+/**
  * Creates a new ndarray filled with ones.
  * @param dims An array of size_t representing the dimensions of the ndarray.
  * @return A handle to the newly created ndarray filled with ones.
@@ -378,4 +402,39 @@ enum {
  */
 NDArray ndarray_new_axis_aggr(NDArray A, int axis, int aggr_type);
 
+/**
+ * Saves an ndarray to a binary file.
+ * File format:
+ *   - Magic number (uint32_t): 0x4E444152 ("NDAR" in ASCII)
+ *   - Version (uint32_t): 1
+ *   - Number of dimensions (uint64_t)
+ *   - Dimension sizes (uint64_t array)
+ *   - Data (double array, row-major order)
+ *
+ * @param arr The ndarray to save
+ * @param filename Path to the output file (use .bin extension)
+ * @return 0 on success, -1 on error
+ *
+ * Example:
+ *   ndarray_save(arr, "mydata.bin");
+ */
+int ndarray_save(NDArray arr, const char *filename);
+
+/**
+ * Loads an ndarray from a binary file.
+ * Reads the file format created by ndarray_save().
+ *
+ * @param filename Path to the input file (.bin extension)
+ * @return A newly allocated ndarray, or NULL on error
+ *
+ * Example:
+ *   NDArray arr = ndarray_load("mydata.bin");
+ *   if (arr == NULL) {
+ *       fprintf(stderr, "Failed to load array\n");
+ *       return 1;
+ *   }
+ */
+NDArray ndarray_load(const char *filename);
+
 #endif // _NDARRAY_H
+

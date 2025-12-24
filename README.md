@@ -30,11 +30,12 @@ A numpy-like ndarray library for C.
 - Uses C99 standard; requires C99-compatible compiler
 - Uses `double` as the default data type for array elements
 - Uses row-major order for array storage
-- Supports OpenMP for parallel operations (optional)
+- Integrated with OpenMP for parallel operations (required)
+- Uses CBLAS (OpenBLAS) for optimized linear algebra operations (required)
 
 ## Usage
 
-Helper Macros:
+**Helper Macros:**
 
 The library uses macros that simplify array operations and make the code
 more readable. These macros use C99's compound literal feature to create
@@ -84,16 +85,11 @@ ndarray_free_all(NDA_LIST(A, B, C));
 // Aggregate over all axes
 NDArray total = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_SUM);
 NDArray max_val = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_MAX);
-
-// More readable than using -1 directly
-NDArray mean = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_MEAN);
 ```
 
-Basic Array Creation:
+**Basic Creation:**
 
 ```c
-#include "ndarray.h"
-
 // Create a 3x4 array
 NDArray arr = ndarray_new(NDA_DIMS(3, 4));
 
@@ -115,7 +111,71 @@ ndarray_free(arr);
 ndarray_free_all(NDA_LIST(zeros, ones, filled, range, linsp, norm, unif));
 ```
 
-Getting and Setting Values:
+**Creating Arrays from Literals:**
+
+```c
+// 2D array (matrix)
+double data_2d[3][4] = {
+    {1.0, 2.0, 3.0, 4.0},
+    {5.0, 6.0, 7.0, 8.0},
+    {9.0, 10.0, 11.0, 12.0}
+};
+NDArray arr_2d = ndarray_new_from_data(NDA_DIMS(3, 4), (double*)data_2d);
+
+// 3D array (tensor)
+double data_3d[2][3][4] = {
+    {
+        {1.0, 2.0, 3.0, 4.0},
+        {5.0, 6.0, 7.0, 8.0},
+        {9.0, 10.0, 11.0, 12.0}
+    },
+    {
+        {13.0, 14.0, 15.0, 16.0},
+        {17.0, 18.0, 19.0, 20.0},
+        {21.0, 22.0, 23.0, 24.0}
+    }
+};
+NDArray arr_3d = ndarray_new_from_data(NDA_DIMS(2, 3, 4), (double*)data_3d);
+
+// 4D and higher dimensions are also supported
+double data_4d[2][2][3][2] = { /* ... */ };
+NDArray arr_4d = ndarray_new_from_data(NDA_DIMS(2, 2, 3, 2), (double*)data_4d);
+
+ndarray_free_all(NDA_LIST(arr_2d, arr_3d, arr_4d));
+```
+
+**Saving and Loading Arrays:**
+
+```c
+// Save an array to file
+NDArray arr = ndarray_new_randunif(NDA_DIMS(3, 4), 0.0, 1.0);
+if (ndarray_save(arr, "mydata.bin") != 0) {
+    fprintf(stderr, "Failed to save array\n");
+}
+
+// Load an array from file
+NDArray loaded = ndarray_load("mydata.bin");
+if (loaded == NULL) {
+    fprintf(stderr, "Failed to load array\n");
+    return 1;
+}
+
+ndarray_print(loaded, "Loaded Array", 4);
+ndarray_free_all(NDA_LIST(arr, loaded));
+```
+
+Binary File Format:
+
+- Magic number: `0x4E444152` ("NDAR" in ASCII)
+- Version: `uint32_t` (currently 1)
+- Number of dimensions: `uint64_t`
+- Dimension sizes: array of `uint64_t`
+- Data: array of `double` (row-major order)
+
+This format is portable and can be used to exchange data between
+different systems.
+
+**Getting and Setting Values:((
 
 ```c
 NDArray arr = ndarray_new_zeros(NDA_DIMS(3, 4));
@@ -132,7 +192,7 @@ ndarray_print(arr, "My Array", 4);  // precision = 4 decimal places
 ndarray_free(arr);
 ```
 
-Element-wise Operations:
+**Element-wise Operations:**
 
 ```c
 NDArray A = ndarray_new_ones(NDA_DIMS(3, 3));
@@ -155,7 +215,7 @@ ndarray_mapfnc(A, square);
 ndarray_free_all(NDA_LIST(A, B));
 ```
 
-Matrix Operations:
+**Matrix Operations:**
 
 ```c
 // Matrix multiplication
@@ -175,7 +235,7 @@ NDArray Z = ndarray_new_tensordot(X, Y, NDA_AXES(2), NDA_AXES(0));
 ndarray_free_all(NDA_LIST(A, B, C, At, X, Y, Z));
 ```
 
-Array Manipulation:
+**Array Manipulation:**
 
 ```c
 // Stack arrays along a new axis
@@ -192,7 +252,7 @@ NDArray sub = ndarray_new_take(A, 1, 0, 2);  // Take columns 0 and 1
 ndarray_free_all(NDA_LIST(A, B, stacked, concat, sub));
 ```
 
-Aggregations:
+**Aggregations:**
 
 ```c
 NDArray A = ndarray_new_randunif(NDA_DIMS(3, 4), 0.0, 10.0);
@@ -209,7 +269,7 @@ NDArray min_all = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_MIN);
 ndarray_free_all(NDA_LIST(A, sum_axis0, mean_axis1, std_axis0, max_all, min_all));
 ```
 
-Complete Example:
+**Example:**
 
 ```c
 #include <stdio.h>
@@ -217,26 +277,66 @@ Complete Example:
 #include "ndarray.h"
 
 int main() {
-    // Create a 3x3 matrix
-    NDArray A = ndarray_new_arange(NDA_DIMS(3, 3), 1.0, 10.0, 1.0);
-    ndarray_print(A, "Matrix A", 2);
+    // Create matrices from literals
+    double m1_data[2][3] = {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}};
+    double m2_data[3][2] = {{7.0, 8.0}, {9.0, 10.0}, {11.0, 12.0}};
     
-    // Create another matrix
-    NDArray B = ndarray_new_arange(NDA_DIMS(3, 3), 6.0, 15.0, 1.0);
-    ndarray_print(B, "Matrix B", 2);
+    NDArray A = ndarray_new_from_data(NDA_DIMS(2, 3), (double*)m1_data);
+    NDArray B = ndarray_new_from_data(NDA_DIMS(3, 2), (double*)m2_data);
+    
+    ndarray_print(A, "Matrix A", 1);
+    ndarray_print(B, "Matrix B", 1);
     
     // Matrix multiplication
     NDArray C = ndarray_new_matmul(A, B);
-    ndarray_print(C, "Matrix Product", 2);
+    ndarray_print(C, "A @ B", 1);
     
-    // Cleanup
+    // Save result
+    if (ndarray_save(C, "result.bin") == 0) {
+        printf("Result saved to result.bin\n");
+    }
+    
+    // Load and verify
+    NDArray loaded = ndarray_load("result.bin");
+    if (loaded != NULL) {
+        ndarray_print(loaded, "Loaded Result", 1);
+        ndarray_free(loaded);
+    }
+    
+    // Clean up
     ndarray_free_all(NDA_LIST(A, B, C));
-    
     return 0;
 }
 ```
 
+Output:
+
+```
+Array 'Matrix A' [2, 3]:
+[[    1.0     2.0     3.0]
+ [    4.0     5.0     6.0]]
+Array 'Matrix B' [3, 2]:
+[[    7.0     8.0]
+ [    9.0    10.0]
+ [   11.0    12.0]]
+Array 'A @ B' [2, 2]:
+[[   58.0    64.0]
+ [  139.0   154.0]]
+Result saved to result.bin
+Array 'Loaded Result' [2, 2]:
+[[   58.0    64.0]
+ [  139.0   154.0]]
+```
+
 ## Building
+
+Requirements:
+
+The library requires the following dependencies:
+
+- OpenMP: For parallel operations (required)
+- OpenBLAS: For optimized BLAS operations (required)
+- CUnit: For running tests (optional, only needed for `make test`)
 
 Build the example program:
 
@@ -356,11 +456,11 @@ Compile your program with the ndarray library:
 
 ```bash
 # Using static library
-gcc -static -o myprogram myprogram.c -lndarray -lm
+gcc -fopenmp -o myprogram myprogram.c -lndarray -lopenblas -lm
 
 # Using shared library
-gcc -o myprogram myprogram.c -lndarray -lm
+gcc -fopenmp -o myprogram myprogram.c -lndarray -lopenblas -lm
 
 # Or link directly with object file
-gcc -o myprogram myprogram.c ndarray.c -lm
+gcc -fopenmp -o myprogram myprogram.c ndarray.c -lopenblas -lm
 ```

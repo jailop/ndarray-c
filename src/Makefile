@@ -12,25 +12,27 @@ INCLUDEDIR = $(PREFIX)/include
 LIBDIR = $(PREFIX)/lib
 
 # Compiler flags
-ifdef USE_OPENMP
-    OMP_FLAGS = -fopenmp -DUSE_OPENMP
-else
-    OMP_FLAGS =
-endif
-CFLAGS = -O3 -Wall -g -std=c99 -pedantic -march=native $(OMP_FLAGS)
+CFLAGS = -O3 -Wall -g -std=c99 -pedantic -march=native -fopenmp
 CFLAGS_SHARED = $(CFLAGS) -fPIC
-LDFLAGS = -lm $(OMP_FLAGS)
-TEST_LDFLAGS = -lm $(OMP_FLAGS) -lcunit
+LDFLAGS = -lm -fopenmp -lopenblas
+TEST_LDFLAGS = -lm -fopenmp -lopenblas -lcunit
 
 # Targets
 BIN = example
 TEST_BIN = ndarray_test
 BENCH_SEQ = benchmark_seq
 BENCH_OMP = benchmark_omp
-OBJ = ndarray.o
-OBJ_SHARED = ndarray_shared.o
-TEST_OBJ = ndarray.o
-BENCH_OBJ = ndarray.o
+
+# Source files
+SRCS = ndarray_core.c ndarray_creation.c ndarray_arithmetic.c \
+       ndarray_linalg.c ndarray_manipulation.c ndarray_aggregation.c \
+       ndarray_print.c ndarray_io.c
+
+# Object files
+OBJ = $(SRCS:.c=.o)
+OBJ_SHARED = $(SRCS:.c=_shared.o)
+TEST_OBJ = $(OBJ)
+BENCH_OBJ = $(OBJ)
 
 .PHONY: all clean test benchmark install uninstall lib static shared docs
 
@@ -85,12 +87,13 @@ $(LIB_STATIC): $(OBJ)
 $(LIB_SHARED): $(OBJ_SHARED)
 	$(CC) -shared -Wl,-soname,$(LIB_SHARED_MAJOR) -o $@ $^ $(LDFLAGS)
 
-# Object files
-ndarray.o: ndarray.c ndarray.h
-	$(CC) $(CFLAGS) -c ndarray.c -o $@
+# Object files - static
+%.o: %.c ndarray.h ndarray_internal.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
-ndarray_shared.o: ndarray.c ndarray.h
-	$(CC) $(CFLAGS_SHARED) -c ndarray.c -o $@
+# Object files - shared
+%_shared.o: %.c ndarray.h ndarray_internal.h
+	$(CC) $(CFLAGS_SHARED) -c $< -o $@
 
 $(BIN): $(OBJ) example.c
 	$(CC) $(CFLAGS) -o $@ example.c $(OBJ) $(LDFLAGS)
