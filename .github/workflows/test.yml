@@ -1,0 +1,73 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        openmp: [false, true]
+        
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libcunit1-dev
+        
+    - name: Build library
+      working-directory: src
+      run: |
+        if [ "${{ matrix.openmp }}" = "true" ]; then
+          make lib USE_OPENMP=1
+        else
+          make lib
+        fi
+        
+    - name: Run tests
+      working-directory: src
+      run: |
+        if [ "${{ matrix.openmp }}" = "true" ]; then
+          make test USE_OPENMP=1
+        else
+          make test
+        fi
+        
+    - name: Build example
+      working-directory: src
+      run: |
+        if [ "${{ matrix.openmp }}" = "true" ]; then
+          make USE_OPENMP=1
+        else
+          make
+        fi
+
+  test-sanitizers:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libcunit1-dev
+        
+    - name: Build and test with AddressSanitizer
+      working-directory: src
+      run: |
+        make clean
+        CFLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" make test

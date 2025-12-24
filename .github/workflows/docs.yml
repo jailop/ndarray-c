@@ -1,0 +1,64 @@
+name: Generate and Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'src/ndarray.h'
+      - 'src/ndarray.c'
+      - 'README.md'
+      - 'Doxyfile'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install Doxygen
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen graphviz
+        
+    - name: Verify Doxygen installation
+      run: doxygen --version
+      
+    - name: Generate documentation
+      run: |
+        doxygen Doxyfile
+        echo "Documentation generated successfully"
+        ls -la docs/html/
+        
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: docs/html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+      
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

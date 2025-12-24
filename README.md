@@ -2,6 +2,8 @@
 
 A numpy-like ndarray library for C.
 
+[API Documentation](https://jailop.github.io/ndarray-c/)
+
 **Disclaimer**: This is a project for learning. The API can change at any
 moment. It is not intended for production use. Feedback is welcome.
 
@@ -275,13 +277,7 @@ make docs
 # Open ../docs/html/index.html in a browser
 ```
 
-The project uses Doxygen to generate HTML documentation from source code comments. The documentation includes:
-- API reference for all functions
-- Struct and type definitions
-- Macro documentation
-- Usage examples from the README
-
-**Note:** Requires Doxygen to be installed (`apt install doxygen` on Debian/Ubuntu).
+Requires Doxygen to be installed for local generation.
 
 OpenMP Support:
 
