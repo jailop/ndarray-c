@@ -23,10 +23,16 @@ TEST_BIN = ndarray_test
 BENCH_SEQ = benchmark_seq
 BENCH_OMP = benchmark_omp
 
+# Source directories
+SRCDIR = src
+TESTDIR = tests
+BENCHDIR = benchmarks
+EXAMPLEDIR = examples
+
 # Source files
-SRCS = ndarray_core.c ndarray_creation.c ndarray_arithmetic.c \
-       ndarray_linalg.c ndarray_manipulation.c ndarray_aggregation.c \
-       ndarray_print.c ndarray_io.c
+SRCS = $(SRCDIR)/ndarray_core.c $(SRCDIR)/ndarray_creation.c $(SRCDIR)/ndarray_arithmetic.c \
+       $(SRCDIR)/ndarray_linalg.c $(SRCDIR)/ndarray_manipulation.c $(SRCDIR)/ndarray_aggregation.c \
+       $(SRCDIR)/ndarray_print.c $(SRCDIR)/ndarray_io.c
 
 # Object files
 OBJ = $(SRCS:.c=.o)
@@ -53,9 +59,9 @@ benchmark:
 
 docs:
 	@echo "Generating Doxygen documentation..."
-	@cd .. && doxygen Doxyfile
-	@echo "Documentation generated in ../docs/html/"
-	@echo "Open ../docs/html/index.html in a browser to view"
+	@doxygen Doxyfile
+	@echo "Documentation generated in docs/html/"
+	@echo "Open docs/html/index.html in a browser to view"
 
 install: lib
 	install -d $(DESTDIR)$(LIBDIR)
@@ -64,7 +70,7 @@ install: lib
 	install -m 755 $(LIB_SHARED) $(DESTDIR)$(LIBDIR)/
 	ln -sf $(LIB_SHARED) $(DESTDIR)$(LIBDIR)/$(LIB_SHARED_MAJOR)
 	ln -sf $(LIB_SHARED_MAJOR) $(DESTDIR)$(LIBDIR)/$(LIB_SHARED_BASE)
-	install -m 644 ndarray.h $(DESTDIR)$(INCLUDEDIR)/
+	install -m 644 $(SRCDIR)/ndarray.h $(DESTDIR)$(INCLUDEDIR)/
 	ldconfig -n $(DESTDIR)$(LIBDIR) 2>/dev/null || true
 
 uninstall:
@@ -75,10 +81,10 @@ uninstall:
 	rm -f $(DESTDIR)$(INCLUDEDIR)/ndarray.h
 
 clean:
-	rm -f $(BIN) $(TEST_BIN) $(OBJ) $(OBJ_SHARED) ndarray_test.o
+	rm -f $(BIN) $(TEST_BIN) $(OBJ) $(OBJ_SHARED) $(TESTDIR)/test_ndarray.o
 	rm -f $(LIB_STATIC) $(LIB_SHARED) $(LIB_SHARED_MAJOR) $(LIB_SHARED_BASE)
 	rm -f $(BENCH_SEQ) $(BENCH_OMP) benchmark_seq.txt benchmark_omp.txt
-	rm -rf ../docs
+	rm -rf docs
 
 # Library builds
 $(LIB_STATIC): $(OBJ)
@@ -88,19 +94,19 @@ $(LIB_SHARED): $(OBJ_SHARED)
 	$(CC) -shared -Wl,-soname,$(LIB_SHARED_MAJOR) -o $@ $^ $(LDFLAGS)
 
 # Object files - static
-%.o: %.c ndarray.h ndarray_internal.h
+$(SRCDIR)/%.o: $(SRCDIR)/%.c $(SRCDIR)/ndarray.h $(SRCDIR)/ndarray_internal.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Object files - shared
-%_shared.o: %.c ndarray.h ndarray_internal.h
+$(SRCDIR)/%_shared.o: $(SRCDIR)/%.c $(SRCDIR)/ndarray.h $(SRCDIR)/ndarray_internal.h
 	$(CC) $(CFLAGS_SHARED) -c $< -o $@
 
-$(BIN): $(OBJ) example.c
-	$(CC) $(CFLAGS) -o $@ example.c $(OBJ) $(LDFLAGS)
+$(BIN): $(OBJ) $(EXAMPLEDIR)/example.c
+	$(CC) $(CFLAGS) -o $@ $(EXAMPLEDIR)/example.c $(OBJ) $(LDFLAGS)
 
-$(TEST_BIN): ndarray_test.o $(TEST_OBJ)
+$(TEST_BIN): $(TESTDIR)/test_ndarray.o $(TEST_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(TEST_LDFLAGS)
 
-ndarray_test.o: ndarray_test.c ndarray.h
-	$(CC) $(CFLAGS) -c ndarray_test.c
+$(TESTDIR)/test_ndarray.o: $(TESTDIR)/test_ndarray.c $(SRCDIR)/ndarray.h
+	$(CC) $(CFLAGS) -c $(TESTDIR)/test_ndarray.c -o $@ -I$(SRCDIR)
 

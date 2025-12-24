@@ -337,14 +337,12 @@ Requirements:
 Build the example program:
 
 ```bash
-cd src
 make
 ```
 
 Build the library:
 
 ```bash
-cd src
 make lib                    # Build both static and shared libraries
 make static                 # Build static library only
 make shared                 # Build shared library only
@@ -353,7 +351,6 @@ make shared                 # Build shared library only
 Install the library:
 
 ```bash
-cd src
 sudo make install          # Installs to /usr/local by default
 # Or specify custom prefix:
 sudo make install PREFIX=/usr
@@ -362,7 +359,6 @@ sudo make install PREFIX=/usr
 Run tests:
 
 ```bash
-cd src
 make test
 ```
 
@@ -371,28 +367,25 @@ make test
 Generate API documentation:
 
 ```bash
-cd src
 make docs
-# Open ../docs/html/index.html in a browser
+# Open docs/html/index.html in a browser
 ```
 
 Requires Doxygen to be installed for local generation.
 
 OpenMP Support:
 
-Enable OpenMP for parallel operations in aggregations, transpose, and
-some element-wise operations:
+OpenMP is required by default. All builds include OpenMP support:
 
 ```bash
-cd src
-# Build with OpenMP support
-make USE_OPENMP=1
+# Build with OpenMP support (default)
+make
 
-# Build library with OpenMP
-make lib USE_OPENMP=1
+# Build library with OpenMP (default)
+make lib
 
-# Build tests with OpenMP
-make test USE_OPENMP=1
+# Build tests with OpenMP (default)
+make test
 ```
 
 When compiled with OpenMP:
@@ -409,15 +402,11 @@ Debug vs Release Builds:
 The library uses assertions for runtime checks. Control them with `NDEBUG`.
 
 ```bash
-cd src
 # Debug build (default - assertions enabled)
 make
 
 # Release build (assertions disabled for performance)
-make CFLAGS="-O3 -DNDEBUG -std=c99 -march=native"
-
-# Release build with OpenMP
-make USE_OPENMP=1 CFLAGS="-O3 -DNDEBUG -fopenmp -DUSE_OPENMP -std=c99 -march=native"
+make CFLAGS="-O3 -DNDEBUG -std=c99 -march=native -fopenmp"
 ```
 
 Debug builds (without `-DNDEBUG`):
@@ -437,15 +426,14 @@ Custom Compiler Flags:
 You can override the default flags:
 
 ```bash
-cd src
 # Custom optimization level
-make CFLAGS="-O2 -Wall -std=c99"
+make CFLAGS="-O2 -Wall -std=c99 -fopenmp"
 
 # Enable sanitizers for debugging
-make CFLAGS="-O0 -g -fsanitize=address -std=c99"
+make CFLAGS="-O0 -g -fsanitize=address -std=c99 -fopenmp"
 
 # Profile-guided optimization
-make CFLAGS="-O3 -fprofile-generate -std=c99"
+make CFLAGS="-O3 -fprofile-generate -std=c99 -fopenmp"
 ```
 
 ## Building Your Program
@@ -453,14 +441,35 @@ make CFLAGS="-O3 -fprofile-generate -std=c99"
 Compile your program with the ndarray library:
 
 ```bash
-# Using static library
-gcc -fopenmp -o myprogram myprogram.c -lndarray -lopenblas -lm
+# Using installed library
+gcc -fopenmp -o myprogram myprogram.c -I/usr/local/include -L/usr/local/lib -lndarray -lopenblas -lm
 
-# Using shared library
-gcc -fopenmp -o myprogram myprogram.c -lndarray -lopenblas -lm
+# Or link directly with source files
+gcc -fopenmp -o myprogram myprogram.c -Isrc src/ndarray_*.c -lopenblas -lm
+```
 
-# Or link directly with object file
-gcc -fopenmp -o myprogram myprogram.c ndarray.c -lopenblas -lm
+## Project Structure
+
+```
+ndarray-c/
+├── src/                    # C and Zig source files
+│   ├── ndarray.h          # C header
+│   ├── ndarray_internal.h # Internal C header
+│   ├── ndarray_*.c        # C implementation files
+│   └── ndarray.zig        # Zig bindings
+├── tests/                  # Test files
+│   └── test_ndarray.c     # C tests
+├── benchmarks/             # Benchmark files
+│   └── benchmark.c        # Performance benchmarks
+├── examples/               # Example files
+│   ├── example.c          # C example
+│   ├── basic.zig          # Zig basic example
+│   └── extended.zig       # Zig extended example
+├── docs/                   # Generated documentation
+├── Makefile               # C build system
+├── build.zig              # Zig build system
+├── README.md              # Main documentation (C)
+└── README-zig.md          # Zig documentation
 ```
 
 

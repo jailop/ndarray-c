@@ -218,7 +218,6 @@ Requirements:
 Build and run examples:
 
 ```bash
-cd zig-bindings
 zig build run              # Run basic example
 zig build run-extended     # Run advanced example
 zig build test             # Run tests
@@ -234,7 +233,7 @@ In your project's `build.zig.zon`:
     .version = "0.1.0",
     .dependencies = .{
         .ndarray = .{
-            .path = "../path/to/ndarray-c/zig-bindings",
+            .path = "../path/to/ndarray-c",
         },
     },
 }
@@ -285,7 +284,7 @@ In your `build.zig.zon`:
 }
 ```
 
-Copy `zig-bindings/src/ndarray.zig` to your project and compile the C sources directly:
+Copy `src/ndarray.zig` to your project and compile the C sources directly:
 
 ```zig
 // In your build.zig
@@ -312,4 +311,28 @@ exe.addCSourceFiles(.{
 exe.linkLibC();
 exe.linkSystemLibrary("omp");
 exe.linkSystemLibrary("openblas");
+```
+
+## Project Structure
+
+```
+ndarray-c/
+├── src/                    # C and Zig source files
+│   ├── ndarray.h          # C header
+│   ├── ndarray_internal.h # Internal C header
+│   ├── ndarray_*.c        # C implementation files
+│   └── ndarray.zig        # Zig bindings
+├── tests/                  # Test files
+│   └── test_ndarray.c     # C tests
+├── benchmarks/             # Benchmark files
+│   └── benchmark.c        # Performance benchmarks
+├── examples/               # Example files
+│   ├── example.c          # C example
+│   ├── basic.zig          # Zig basic example
+│   └── extended.zig       # Zig extended example
+├── docs/                   # Generated documentation
+├── Makefile               # C build system
+├── build.zig              # Zig build system
+├── README.md              # Main documentation (C)
+└── README-zig.md          # This file (Zig documentation)
 ```

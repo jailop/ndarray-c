@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // Path to C library sources
-    const ndarray_src_path = "../src";
+    const ndarray_src_path = "src";
 
     // Create the module for export
     _ = b.addModule("ndarray", .{
