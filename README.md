@@ -221,13 +221,9 @@ int main() {
     NDArray A = ndarray_new_arange(NDA_DIMS(3, 3), 1.0, 10.0, 1.0);
     ndarray_print(A, "Matrix A", 2);
     
-    // Create identity-like matrix
-    NDArray B = ndarray_new_ones(NDA_DIMS(3, 3));
-    
-    // Multiply and add
-    ndarray_mul(A, B);
-    ndarray_add_scalar(A, 5.0);
-    ndarray_print(A, "Result", 2);
+    // Create another matrix
+    NDArray B = ndarray_new_arange(NDA_DIMS(3, 3), 6.0, 15.0, 1.0);
+    ndarray_print(B, "Matrix B", 2);
     
     // Matrix multiplication
     NDArray C = ndarray_new_matmul(A, B);
