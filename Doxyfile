@@ -1,0 +1,80 @@
+# Doxyfile configuration for ndarray library
+
+# Project information
+PROJECT_NAME           = "ndarray"
+PROJECT_NUMBER         = "1.0.0"
+PROJECT_BRIEF          = "A NumPy-like ndarray library for C"
+OUTPUT_DIRECTORY       = docs
+
+# Input settings
+INPUT                  = src/ndarray.h src/ndarray.c README.md
+FILE_PATTERNS          = *.h *.c *.md
+RECURSIVE              = NO
+USE_MDFILE_AS_MAINPAGE = README.md
+
+# Extraction settings
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+
+# C-specific settings
+OPTIMIZE_OUTPUT_FOR_C  = YES
+TYPEDEF_HIDES_STRUCT   = YES
+
+# Documentation settings
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = YES
+MULTILINE_CPP_IS_BRIEF = NO
+INHERIT_DOCS           = YES
+INLINE_INHERITED_MEMB  = NO
+
+# Build settings
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = YES
+
+# Output formats
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+GENERATE_MAN           = NO
+GENERATE_RTF           = NO
+GENERATE_XML           = NO
+
+# HTML output settings
+HTML_COLORSTYLE_HUE    = 220
+HTML_COLORSTYLE_SAT    = 100
+HTML_COLORSTYLE_GAMMA  = 80
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+
+# Preprocessing
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+PREDEFINED             = USE_OPENMP
+
+# Diagrams
+HAVE_DOT               = NO
+HIDE_UNDOC_RELATIONS   = YES
+UML_LOOK               = NO
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+
+# Source browsing
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+REFERENCES_LINK_SOURCE = YES
+
+# Alphabetical index
+ALPHABETICAL_INDEX     = YES
+
+# Layout
+LAYOUT_FILE            =

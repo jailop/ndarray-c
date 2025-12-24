@@ -28,7 +28,7 @@ NDArray generate_serie2(size_t size) {
             s_2);
     NDArray b_3 = ndarray_new_linspace(NDA_DIMS(1, s_3), 3.0 * M_PI, 4.0 * M_PI,
             s_3);
-    NDArray B = ndarray_concat(1, NDA_LIST(b_1, b_2, b_3));
+    NDArray B = ndarray_new_concat(1, NDA_LIST(b_1, b_2, b_3));
     NDArray noise = ndarray_new_randnorm(NDA_DIMS(1, size), 0.0, 0.1);
     ndarray_add(B, noise);
     ndarray_mapfnc(B, sine_func);

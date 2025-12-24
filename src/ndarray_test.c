@@ -175,7 +175,7 @@ void test_ndarray_get_set_4d(void) {
 void test_ndarray_copy_2d(void) {
     size_t dims[] = {2, 3, 0};
     NDArray arr = ndarray_new_full(dims, 5.5);
-    NDArray copy = ndarray_copy(arr);
+    NDArray copy = ndarray_new_copy(arr);
     
     CU_ASSERT_PTR_NOT_NULL(copy);
     CU_ASSERT_EQUAL(copy->ndim, arr->ndim);
@@ -190,7 +190,7 @@ void test_ndarray_copy_2d(void) {
 void test_ndarray_copy_3d(void) {
     size_t dims[] = {2, 3, 4, 0};
     NDArray arr = ndarray_new_arange(dims, 0.0, 24.0, 1.0);
-    NDArray copy = ndarray_copy(arr);
+    NDArray copy = ndarray_new_copy(arr);
     
     CU_ASSERT_PTR_NOT_NULL(copy);
     CU_ASSERT_EQUAL(copy->ndim, arr->ndim);
@@ -564,7 +564,7 @@ void test_ndarray_stack_axis0_2d(void) {
         B->data[i] = (i + 1.0) * 10.0;
     }
     
-    NDArray C = ndarray_stack(0, NDA_LIST(A, B));
+    NDArray C = ndarray_new_stack(0, NDA_LIST(A, B));
     
     CU_ASSERT_PTR_NOT_NULL(C);
     CU_ASSERT_EQUAL(C->ndim, 3);
@@ -591,7 +591,7 @@ void test_ndarray_stack_axis1_2d(void) {
     NDArray A = ndarray_new_ones(dims);
     NDArray B = ndarray_new_full(dims, 2.0);
     
-    NDArray C = ndarray_stack(1, NDA_LIST(A, B));
+    NDArray C = ndarray_new_stack(1, NDA_LIST(A, B));
     
     CU_ASSERT_PTR_NOT_NULL(C);
     CU_ASSERT_EQUAL(C->ndim, 3);
@@ -617,7 +617,7 @@ void test_ndarray_stack_axis2_2d(void) {
     NDArray B = ndarray_new_full(dims, 2.0);
     NDArray C_in = ndarray_new_full(dims, 3.0);
     
-    NDArray C = ndarray_stack(2, NDA_LIST(A, B, C_in));
+    NDArray C = ndarray_new_stack(2, NDA_LIST(A, B, C_in));
     
     CU_ASSERT_PTR_NOT_NULL(C);
     CU_ASSERT_EQUAL(C->ndim, 3);
@@ -645,7 +645,7 @@ void test_ndarray_stack_3d(void) {
     NDArray A = ndarray_new_ones(dims);
     NDArray B = ndarray_new_full(dims, 5.0);
     
-    NDArray C = ndarray_stack(1, NDA_LIST(A, B));
+    NDArray C = ndarray_new_stack(1, NDA_LIST(A, B));
     
     CU_ASSERT_PTR_NOT_NULL(C);
     CU_ASSERT_EQUAL(C->ndim, 4);
@@ -666,7 +666,7 @@ void test_ndarray_concat_axis0_2d(void) {
     NDArray A = ndarray_new_ones(NDA_DIMS(2, 3));
     NDArray B = ndarray_new_full(NDA_DIMS(3, 3), 2.0);
     
-    NDArray C = ndarray_concat(0, NDA_LIST(A, B));
+    NDArray C = ndarray_new_concat(0, NDA_LIST(A, B));
     
     CU_ASSERT_PTR_NOT_NULL(C);
     CU_ASSERT_EQUAL(C->ndim, 2);
@@ -687,7 +687,7 @@ void test_ndarray_concat_axis1_2d(void) {
     NDArray A = ndarray_new_ones(NDA_DIMS(2, 3));
     NDArray B = ndarray_new_full(NDA_DIMS(2, 5), 2.0);
     
-    NDArray C = ndarray_concat(1, NDA_LIST(A, B));
+    NDArray C = ndarray_new_concat(1, NDA_LIST(A, B));
     
     CU_ASSERT_PTR_NOT_NULL(C);
     CU_ASSERT_EQUAL(C->ndim, 2);
@@ -710,7 +710,7 @@ void test_ndarray_concat_3d_middle(void) {
     NDArray A = ndarray_new_ones(NDA_DIMS(2, 3, 4));
     NDArray B = ndarray_new_full(NDA_DIMS(2, 5, 4), 3.0);
     
-    NDArray C = ndarray_concat(1, NDA_LIST(A, B));
+    NDArray C = ndarray_new_concat(1, NDA_LIST(A, B));
     
     CU_ASSERT_PTR_NOT_NULL(C);
     CU_ASSERT_EQUAL(C->ndim, 3);
@@ -735,7 +735,7 @@ void test_ndarray_concat_multiple(void) {
     NDArray B = ndarray_new_full(NDA_DIMS(1, 20), 2.0);
     NDArray D = ndarray_new_full(NDA_DIMS(1, 30), 3.0);
     
-    NDArray C = ndarray_concat(1, NDA_LIST(A, B, D));
+    NDArray C = ndarray_new_concat(1, NDA_LIST(A, B, D));
     
     CU_ASSERT_PTR_NOT_NULL(C);
     CU_ASSERT_EQUAL(C->ndim, 2);
@@ -760,7 +760,7 @@ void test_ndarray_take_axis0_2d(void) {
     NDArray A = ndarray_new_arange(dims, 0.0, 20.0, 1.0);
     
     // Take rows 1:3
-    NDArray B = ndarray_take(A, 0, 1, 3);
+    NDArray B = ndarray_new_take(A, 0, 1, 3);
     
     CU_ASSERT_PTR_NOT_NULL(B);
     CU_ASSERT_EQUAL(B->ndim, 2);
@@ -781,7 +781,7 @@ void test_ndarray_take_axis1_2d(void) {
     NDArray A = ndarray_new_arange(dims, 0.0, 20.0, 1.0);
     
     // Take columns 1:4
-    NDArray B = ndarray_take(A, 1, 1, 4);
+    NDArray B = ndarray_new_take(A, 1, 1, 4);
     
     CU_ASSERT_PTR_NOT_NULL(B);
     CU_ASSERT_EQUAL(B->ndim, 2);
@@ -802,7 +802,7 @@ void test_ndarray_take_3d(void) {
     NDArray A = ndarray_new_arange(dims, 0.0, 24.0, 1.0);
     
     // Take axis 1, indices 1:3
-    NDArray B = ndarray_take(A, 1, 1, 3);
+    NDArray B = ndarray_new_take(A, 1, 1, 3);
     
     CU_ASSERT_PTR_NOT_NULL(B);
     CU_ASSERT_EQUAL(B->ndim, 3);
@@ -824,7 +824,7 @@ void test_ndarray_take_single_element(void) {
     NDArray A = ndarray_new_arange(dims, 0.0, 20.0, 1.0);
     
     // Take single column at index 2
-    NDArray B = ndarray_take(A, 1, 2, 3);
+    NDArray B = ndarray_new_take(A, 1, 2, 3);
     
     CU_ASSERT_PTR_NOT_NULL(B);
     CU_ASSERT_EQUAL(B->ndim, 2);
@@ -924,7 +924,7 @@ void test_ndarray_transpose_4d(void) {
 void test_ndarray_aggr_sum_all_2d(void) {
     size_t dims[] = {2, 3, 0};
     NDArray A = ndarray_new_arange(dims, 1.0, 7.0, 1.0);
-    NDArray result = ndarray_new_axis_aggr(A, -1, NDARRAY_AGGR_SUM);
+    NDArray result = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_SUM);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_DOUBLE_EQUAL(result->data[0], 21.0, EPSILON);
@@ -936,7 +936,7 @@ void test_ndarray_aggr_sum_all_2d(void) {
 void test_ndarray_aggr_mean_all_3d(void) {
     size_t dims[] = {2, 2, 2, 0};
     NDArray A = ndarray_new_full(dims, 4.0);
-    NDArray result = ndarray_new_axis_aggr(A, -1, NDARRAY_AGGR_MEAN);
+    NDArray result = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_MEAN);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_DOUBLE_EQUAL(result->data[0], 4.0, EPSILON);
@@ -948,7 +948,7 @@ void test_ndarray_aggr_mean_all_3d(void) {
 void test_ndarray_aggr_max_all_4d(void) {
     size_t dims[] = {2, 2, 2, 2, 0};
     NDArray A = ndarray_new_arange(dims, 0.0, 16.0, 1.0);
-    NDArray result = ndarray_new_axis_aggr(A, -1, NDARRAY_AGGR_MAX);
+    NDArray result = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_MAX);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_DOUBLE_EQUAL(result->data[0], 15.0, EPSILON);
@@ -960,7 +960,7 @@ void test_ndarray_aggr_max_all_4d(void) {
 void test_ndarray_aggr_min_all_2d(void) {
     size_t dims[] = {3, 3, 0};
     NDArray A = ndarray_new_arange(dims, 5.0, 14.0, 1.0);
-    NDArray result = ndarray_new_axis_aggr(A, -1, NDARRAY_AGGR_MIN);
+    NDArray result = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_MIN);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_DOUBLE_EQUAL(result->data[0], 5.0, EPSILON);

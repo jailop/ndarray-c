@@ -1,22 +1,46 @@
+# Library information
+LIB_NAME = ndarray
+VERSION = 1.0.0
+LIB_STATIC = lib$(LIB_NAME).a
+LIB_SHARED = lib$(LIB_NAME).so.$(VERSION)
+LIB_SHARED_MAJOR = lib$(LIB_NAME).so.1
+LIB_SHARED_BASE = lib$(LIB_NAME).so
+
+# Installation directories
+PREFIX ?= /usr/local
+INCLUDEDIR = $(PREFIX)/include
+LIBDIR = $(PREFIX)/lib
+
+# Compiler flags
 ifdef USE_OPENMP
     OMP_FLAGS = -fopenmp -DUSE_OPENMP
 else
     OMP_FLAGS =
 endif
 CFLAGS = -O3 -Wall -g -std=c99 -pedantic -march=native $(OMP_FLAGS)
+CFLAGS_SHARED = $(CFLAGS) -fPIC
 LDFLAGS = -lm $(OMP_FLAGS)
 TEST_LDFLAGS = -lm $(OMP_FLAGS) -lcunit
+
+# Targets
 BIN = example
 TEST_BIN = ndarray_test
 BENCH_SEQ = benchmark_seq
 BENCH_OMP = benchmark_omp
 OBJ = ndarray.o
+OBJ_SHARED = ndarray_shared.o
 TEST_OBJ = ndarray.o
 BENCH_OBJ = ndarray.o
 
-.PHONY: all clean test benchmark
+.PHONY: all clean test benchmark install uninstall lib static shared docs
 
 all: $(BIN)
+
+lib: static shared
+
+static: $(LIB_STATIC)
+
+shared: $(LIB_SHARED)
 
 test: $(TEST_BIN)
 	./$(TEST_BIN)
@@ -25,11 +49,51 @@ benchmark:
 	@echo "Running benchmark comparison..."
 	@./run_benchmark.sh
 
-clean:
-	rm -f $(BIN) $(TEST_BIN) $(OBJ) ndarray_test.o
-	rm -f $(BENCH_SEQ) $(BENCH_OMP) benchmark_seq.txt benchmark_omp.txt
+docs:
+	@echo "Generating Doxygen documentation..."
+	@cd .. && doxygen Doxyfile
+	@echo "Documentation generated in ../docs/html/"
+	@echo "Open ../docs/html/index.html in a browser to view"
 
-$(BIN): $(OBJ)
+install: lib
+	install -d $(DESTDIR)$(LIBDIR)
+	install -d $(DESTDIR)$(INCLUDEDIR)
+	install -m 644 $(LIB_STATIC) $(DESTDIR)$(LIBDIR)/
+	install -m 755 $(LIB_SHARED) $(DESTDIR)$(LIBDIR)/
+	ln -sf $(LIB_SHARED) $(DESTDIR)$(LIBDIR)/$(LIB_SHARED_MAJOR)
+	ln -sf $(LIB_SHARED_MAJOR) $(DESTDIR)$(LIBDIR)/$(LIB_SHARED_BASE)
+	install -m 644 ndarray.h $(DESTDIR)$(INCLUDEDIR)/
+	ldconfig -n $(DESTDIR)$(LIBDIR) 2>/dev/null || true
+
+uninstall:
+	rm -f $(DESTDIR)$(LIBDIR)/$(LIB_STATIC)
+	rm -f $(DESTDIR)$(LIBDIR)/$(LIB_SHARED)
+	rm -f $(DESTDIR)$(LIBDIR)/$(LIB_SHARED_MAJOR)
+	rm -f $(DESTDIR)$(LIBDIR)/$(LIB_SHARED_BASE)
+	rm -f $(DESTDIR)$(INCLUDEDIR)/ndarray.h
+
+clean:
+	rm -f $(BIN) $(TEST_BIN) $(OBJ) $(OBJ_SHARED) ndarray_test.o
+	rm -f $(LIB_STATIC) $(LIB_SHARED) $(LIB_SHARED_MAJOR) $(LIB_SHARED_BASE)
+	rm -f $(BENCH_SEQ) $(BENCH_OMP) benchmark_seq.txt benchmark_omp.txt
+	rm -rf ../docs
+
+# Library builds
+$(LIB_STATIC): $(OBJ)
+	ar rcs $@ $^
+
+$(LIB_SHARED): $(OBJ_SHARED)
+	$(CC) -shared -Wl,-soname,$(LIB_SHARED_MAJOR) -o $@ $^ $(LDFLAGS)
+
+# Object files
+ndarray.o: ndarray.c ndarray.h
+	$(CC) $(CFLAGS) -c ndarray.c -o $@
+
+ndarray_shared.o: ndarray.c ndarray.h
+	$(CC) $(CFLAGS_SHARED) -c ndarray.c -o $@
+
+$(BIN): $(OBJ) example.c
+	$(CC) $(CFLAGS) -o $@ example.c $(OBJ) $(LDFLAGS)
 
 $(TEST_BIN): ndarray_test.o $(TEST_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(TEST_LDFLAGS)

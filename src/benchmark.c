@@ -140,7 +140,7 @@ BenchmarkResult bench_concat(size_t rows, size_t cols, int iterations) {
     
     double start = get_time();
     for (int i = 0; i < iterations; ++i) {
-        NDArray C = ndarray_concat(0, NDA_LIST(A, B));
+        NDArray C = ndarray_new_concat(0, NDA_LIST(A, B));
         ndarray_free(C);
     }
     result.time_sec = get_time() - start;

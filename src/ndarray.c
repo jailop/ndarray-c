@@ -256,7 +256,7 @@ void ndarray_print(NDArray arr, const char *name, int precision) {
     }
 }
 
-NDArray ndarray_copy(NDArray t) {
+NDArray ndarray_new_copy(NDArray t) {
     assert(t != NULL && "ndarray cannot be NULL");
     assert(t->ndim >= 2 && "ndarray must have at least 2 dimensions");
     NDArray copy = (NDArray) malloc(sizeof(_NDArray));
@@ -667,7 +667,7 @@ NDArray ndarray_new_matmul(NDArray A, NDArray B) {
     return C;
 }
 
-NDArray ndarray_stack(int axis, NDArray* arr_list) {
+NDArray ndarray_new_stack(int axis, NDArray* arr_list) {
     assert(arr_list != NULL && arr_list[0] != NULL 
            && "first ndarray cannot be NULL");
     size_t count = 0;
@@ -729,7 +729,7 @@ NDArray ndarray_stack(int axis, NDArray* arr_list) {
     return result;
 }
 
-NDArray ndarray_concat(int axis, NDArray* arr_list) {
+NDArray ndarray_new_concat(int axis, NDArray* arr_list) {
     assert(arr_list != NULL && arr_list[0] != NULL 
            && "first ndarray cannot be NULL");
     assert(arr_list[0]->ndim >= 2 && "ndarray must have at least 2 dimensions");
@@ -821,7 +821,7 @@ NDArray ndarray_concat(int axis, NDArray* arr_list) {
     return result;
 }
 
-NDArray ndarray_take(NDArray arr, int axis, size_t start, size_t end) {
+NDArray ndarray_new_take(NDArray arr, int axis, size_t start, size_t end) {
     assert(arr != NULL && "ndarray cannot be NULL");
     assert(arr->ndim >= 2 && "ndarray must have at least 2 dimensions");
     assert(axis >= 0 && axis < (int)arr->ndim && "axis out of range");
@@ -1079,7 +1079,7 @@ NDArray ndarray_new_axis_aggr(NDArray A, int axis, int aggr_type) {
     assert(A != NULL && "ndarray cannot be NULL");
     assert(A->ndim >= 2 && "ndarray must have at least 2 dimensions");
     assert((axis == -1 || (axis >= 0 && axis < (int)A->ndim)) 
-            && "axis out of bounds");
+            && "axis must be in range [0, ndim-1] or -1 (NDA_AXES_ALL) for all axes");
     if (axis == -1) {
         size_t dims[] = {1, 1, 0};
         NDArray result = ndarray_new(dims);

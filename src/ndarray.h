@@ -24,6 +24,12 @@ typedef struct {
  */
 typedef _NDArray* NDArray;
 
+/**
+ * Macro to create a dimensions array for ndarray creation.
+ * Usage: NDA_DIMS(3, 4, 5) creates an array {3, 4, 5, 0}.
+ * The last element (0) is used as a sentinel to indicate
+ * the end of the dimensions.
+ */
 #define NDA_DIMS(...) ((size_t[]){__VA_ARGS__, 0})
 
 /**
@@ -38,9 +44,26 @@ typedef _NDArray* NDArray;
  * For no contraction (outer product), use NDA_NOAXES.
  */
 #define NDA_AXES(...) ((int[]){__VA_ARGS__, -1})
+
+/**
+ * Macro to indicate no axes for tensor operations.
+ * Used for outer products in tensor contractions.
+ */
 #define NDA_NOAXES ((int[]){-1})
 
+/**
+ * Macro to create a list of ndarrays for functions
+ * that accept multiple arrays.
+ * Usage: NDA_LIST(A, B, C) creates an array {A, B, C, NULL}.
+ */
 #define NDA_LIST(...) ((NDArray[]){__VA_ARGS__, NULL})
+
+/**
+ * Constant to indicate operations on all axes.
+ * Used with functions like ndarray_new_axis_aggr.
+ * Example: ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_SUM)
+ */
+#define NDA_AXES_ALL (-1)
 
 /**
  * Creates a new ndarray with the specified dimensions.
@@ -114,7 +137,7 @@ void ndarray_print(NDArray arr, const char *name, int precision);
  * @param t The ndarray to copy.
  * @return A handle to the newly created copy of the ndarray.
  */
-NDArray ndarray_copy(NDArray t);
+NDArray ndarray_new_copy(NDArray t);
 
 /**
  * Creates a new ndarray filled with zeros.
@@ -276,15 +299,14 @@ NDArray ndarray_new_matmul(NDArray A, NDArray B);
  * Creates a new dimension at the specified position.
  * 
  * @param axis Position for the new dimension (0 to ndim)
- * @param first The first ndarray
- * @param ... Additional ndarrays (same shape as first), terminated by NULL
+ * @param arr_list NULL-terminated array of ndarrays (same shape required)
  * @return New ndarray with ndim+1 dimensions
  * 
  * Example:
  *   A=[2,3], B=[2,3], C=[2,3] -> stack(axis=0) -> [3, 2, 3]
  *   A=[2,3], B=[2,3] -> stack(axis=2) -> [2, 3, 2]
  */
-NDArray ndarray_stack(int axis, NDArray* arr_list);
+NDArray ndarray_new_stack(int axis, NDArray* arr_list);
 
 /**
  * Concatenates ndarrays along an existing axis.
@@ -298,7 +320,7 @@ NDArray ndarray_stack(int axis, NDArray* arr_list);
  *   A=[2,3,4], B=[2,5,4] -> concat(axis=1) -> [2, 8, 4]
  *   A=[3,3,4], B=[5,3,4] -> concat(axis=0) -> [8, 3, 4]
  */
-NDArray ndarray_concat(int axis, NDArray* arr_list);
+NDArray ndarray_new_concat(int axis, NDArray* arr_list);
 
 /**
  * Extract a subregion from an ndarray.
@@ -315,7 +337,7 @@ NDArray ndarray_concat(int axis, NDArray* arr_list);
  *   A=[4,5], axis=0, start=1, end=3 -> [2,5] (rows 1 and 2)
  *   A=[3,6], axis=1, start=2, end=5 -> [3,3] (columns 2,3,4)
  */
-NDArray ndarray_take(NDArray arr, int axis, size_t start, size_t end);
+NDArray ndarray_new_take(NDArray arr, int axis, size_t start, size_t end);
 
 /**
  * Creates a new ndarray that is the transpose of the given ndarray.
@@ -342,13 +364,17 @@ enum {
  * Creates a new ndarray by aggregating over a specified axis.
  *
  * Result maintains ndim >= 2 constraint:
- * - axis == -1: returns shape [1, 1] with scalar result
+ * - axis == NDA_AXES_ALL: returns shape [1, 1] with scalar result
  * - axis in [0, ndim-1]: if result would be 1D, adds dimension of 1
  *
  * @param A The input ndarray
- * @param axis The axis to aggregate over. -1 indicates all axes.
+ * @param axis The axis to aggregate over (0 to ndim-1), or NDA_AXES_ALL for all axes
  * @param aggr_type The type of aggregation to perform.
  * @return A handle to the result ndarray (ndim >= 2)
+ * 
+ * Example:
+ *   ndarray_new_axis_aggr(A, 0, NDARRAY_AGGR_SUM)         // Sum along axis 0
+ *   ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_MEAN)  // Mean of all elements
  */
 NDArray ndarray_new_axis_aggr(NDArray A, int axis, int aggr_type);
 

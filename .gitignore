@@ -1,2 +1,9 @@
 src/example
 src/*.o
+src/*.a
+src/*.so*
+src/ndarray_test
+src/benchmark_seq
+src/benchmark_omp
+src/*.txt
+docs/
