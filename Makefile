@@ -1,4 +1,3 @@
-# Library information
 LIB_NAME = ndarray
 VERSION = 1.0.0
 LIB_STATIC = lib$(LIB_NAME).a
@@ -6,35 +5,35 @@ LIB_SHARED = lib$(LIB_NAME).so.$(VERSION)
 LIB_SHARED_MAJOR = lib$(LIB_NAME).so.1
 LIB_SHARED_BASE = lib$(LIB_NAME).so
 
-# Installation directories
+
 PREFIX ?= /usr/local
 INCLUDEDIR = $(PREFIX)/include
 LIBDIR = $(PREFIX)/lib
 
-# Compiler flags
+
 CFLAGS = -O3 -Wall -g -std=c99 -pedantic -march=native -fopenmp
 CFLAGS_SHARED = $(CFLAGS) -fPIC
 LDFLAGS = -lm -fopenmp -lopenblas
 TEST_LDFLAGS = -lm -fopenmp -lopenblas -lcunit
 
-# Targets
+
 BIN = example
 TEST_BIN = ndarray_test
 BENCH_SEQ = benchmark_seq
 BENCH_OMP = benchmark_omp
 
-# Source directories
+
 SRCDIR = src
 TESTDIR = tests
 BENCHDIR = benchmarks
 EXAMPLEDIR = examples
 
-# Source files
+
 SRCS = $(SRCDIR)/ndarray_core.c $(SRCDIR)/ndarray_creation.c $(SRCDIR)/ndarray_arithmetic.c \
        $(SRCDIR)/ndarray_linalg.c $(SRCDIR)/ndarray_manipulation.c $(SRCDIR)/ndarray_aggregation.c \
        $(SRCDIR)/ndarray_print.c $(SRCDIR)/ndarray_io.c
 
-# Object files
+
 OBJ = $(SRCS:.c=.o)
 OBJ_SHARED = $(SRCS:.c=_shared.o)
 TEST_OBJ = $(OBJ)
@@ -54,14 +53,10 @@ test: $(TEST_BIN)
 	./$(TEST_BIN)
 
 benchmark:
-	@echo "Running benchmark comparison..."
 	@./run_benchmark.sh
 
 docs:
-	@echo "Generating Doxygen documentation..."
 	@doxygen Doxyfile
-	@echo "Documentation generated in docs/html/"
-	@echo "Open docs/html/index.html in a browser to view"
 
 install: lib
 	install -d $(DESTDIR)$(LIBDIR)
@@ -86,18 +81,18 @@ clean:
 	rm -f $(BENCH_SEQ) $(BENCH_OMP) benchmark_seq.txt benchmark_omp.txt
 	rm -rf docs
 
-# Library builds
+
 $(LIB_STATIC): $(OBJ)
 	ar rcs $@ $^
 
 $(LIB_SHARED): $(OBJ_SHARED)
 	$(CC) -shared -Wl,-soname,$(LIB_SHARED_MAJOR) -o $@ $^ $(LDFLAGS)
 
-# Object files - static
+
 $(SRCDIR)/%.o: $(SRCDIR)/%.c $(SRCDIR)/ndarray.h $(SRCDIR)/ndarray_internal.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Object files - shared
+
 $(SRCDIR)/%_shared.o: $(SRCDIR)/%.c $(SRCDIR)/ndarray.h $(SRCDIR)/ndarray_internal.h
 	$(CC) $(CFLAGS_SHARED) -c $< -o $@
 
