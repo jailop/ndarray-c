@@ -78,3 +78,6 @@ ALPHABETICAL_INDEX     = YES
 
 # Layout
 LAYOUT_FILE            =
+
+# GitHub Pages configuration
+HTML_EXTRA_FILES         = .nojekyll
