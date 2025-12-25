@@ -41,7 +41,7 @@ typedef _NDArray* NDArray;
 /**
  * Macro to create an axis array for tensor operations.
  * Usage: NDA_AXES(1, 2) creates an array {1, 2, -1}.
- * For no contraction (outer product), use NDA_NOAXES.
+ * For no contraction (outer product), use NDA_NO_AXES.
  */
 #define NDA_AXES(...) ((int[]){__VA_ARGS__, -1})
 
@@ -49,7 +49,7 @@ typedef _NDArray* NDArray;
  * Macro to indicate no axes for tensor operations.
  * Used for outer products in tensor contractions.
  */
-#define NDA_NOAXES ((int[]){-1})
+#define NDA_NO_AXES ((int[]){-1})
 
 /**
  * Macro to create a list of ndarrays for functions
@@ -61,9 +61,9 @@ typedef _NDArray* NDArray;
 /**
  * Constant to indicate operations on all axes.
  * Used with functions like ndarray_new_axis_aggr.
- * Example: ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_SUM)
+ * Example: ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_SUM)
  */
-#define NDA_AXES_ALL (-1)
+#define NDA_ALL_AXES (-1)
 
 /**
  * Creates a new ndarray with the specified dimensions.
@@ -297,7 +297,7 @@ NDArray ndarray_mapfnc(NDArray A, double (*func)(double));
  * Examples:
  *   Single axis:  ndarray_new_tensordot(A, B, NDA_AXES(1), NDA_AXES(0))
  *   Multi-axis:   ndarray_new_tensordot(A, B, NDA_AXES(2, 3), NDA_AXES(0, 1))
- *   Outer product: ndarray_new_tensordot(A, B, NDA_NOAXES, NDA_NOAXES)
+ *   Outer product: ndarray_new_tensordot(A, B, NDA_NO_AXES, NDA_NO_AXES)
  */
 NDArray ndarray_new_tensordot(NDArray A, NDArray B, 
                                int *axes_a, int *axes_b);
@@ -388,17 +388,17 @@ enum {
  * Creates a new ndarray by aggregating over a specified axis.
  *
  * Result maintains ndim >= 2 constraint:
- * - axis == NDA_AXES_ALL: returns shape [1, 1] with scalar result
+ * - axis == NDA_ALL_AXES: returns shape [1, 1] with scalar result
  * - axis in [0, ndim-1]: if result would be 1D, adds dimension of 1
  *
  * @param A The input ndarray
- * @param axis The axis to aggregate over (0 to ndim-1), or NDA_AXES_ALL for all axes
+ * @param axis The axis to aggregate over (0 to ndim-1), or NDA_ALL_AXES for all axes
  * @param aggr_type The type of aggregation to perform.
  * @return A handle to the result ndarray (ndim >= 2)
  * 
  * Example:
  *   ndarray_new_axis_aggr(A, 0, NDARRAY_AGGR_SUM)         // Sum along axis 0
- *   ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_MEAN)  // Mean of all elements
+ *   ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_MEAN)  // Mean of all elements
  */
 NDArray ndarray_new_axis_aggr(NDArray A, int axis, int aggr_type);
 

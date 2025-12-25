@@ -151,7 +151,7 @@ NDArray ndarray_new_axis_aggr(NDArray A, int axis, int aggr_type) {
     assert(A != NULL && "ndarray cannot be NULL");
     assert(A->ndim >= 2 && "ndarray must have at least 2 dimensions");
     assert((axis == -1 || (axis >= 0 && axis < (int)A->ndim)) 
-            && "axis must be in range [0, ndim-1] or -1 (NDA_AXES_ALL) for all axes");
+            && "axis must be in range [0, ndim-1] or -1 (NDA_ALL_AXES) for all axes");
     if (axis == -1) {
         size_t dims[] = {1, 1, 0};
         NDArray result = ndarray_new(dims);

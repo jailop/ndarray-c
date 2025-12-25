@@ -53,7 +53,7 @@ test: $(TEST_BIN)
 	./$(TEST_BIN)
 
 benchmark:
-	@./run_benchmark.sh
+	@$(BENCHDIR)/run_benchmark.sh
 
 docs:
 	@doxygen Doxyfile

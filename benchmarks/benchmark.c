@@ -159,7 +159,7 @@ BenchmarkResult bench_outer_product(size_t size_a, size_t size_b, int iterations
     
     double start = get_time();
     for (int i = 0; i < iterations; ++i) {
-        NDArray C = ndarray_new_tensordot(A, B, NDA_NOAXES, NDA_NOAXES);
+        NDArray C = ndarray_new_tensordot(A, B, NDA_NO_AXES, NDA_NO_AXES);
         ndarray_free(C);
     }
     result.time_sec = get_time() - start;

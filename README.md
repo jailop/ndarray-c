@@ -49,7 +49,7 @@ temporary arrays.
 NDArray arr = ndarray_new(NDA_DIMS(3, 4));
 ```
 
-`NDA_POS(...)`: A position list for accessing array elements.
+`NDA_POS(...)`: A position index for accessing array elements.
 
 ```c
 // Set value at position (1, 2)
@@ -66,11 +66,19 @@ NDArray result = ndarray_new_tensordot(A, B, NDA_AXES(2), NDA_AXES(0));
 NDArray result = ndarray_new_tensordot(A, B, NDA_AXES(1, 2), NDA_AXES(0, 1));
 ```
 
-`NDA_NOAXES`: Special constant for tensor operations with no axis contraction.
+`NDA_NO_AXES`: Special constant for tensor operations with no axis contraction.
 
 ```c
 // Compute outer product
-NDArray result = ndarray_new_tensordot(A, B, NDA_NOAXES, NDA_NOAXES);
+NDArray result = ndarray_new_tensordot(A, B, NDA_NO_AXES, NDA_NO_AXES);
+```
+
+`NDA_ALL_AXES`: Constant for operations on all axes (value: -1).
+
+```c
+// Aggregate over all axes
+NDArray total = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_SUM);
+NDArray max_val = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_MAX);
 ```
 
 `NDA_LIST(...)`: Creates list of NDArray pointers.
@@ -78,14 +86,6 @@ NDArray result = ndarray_new_tensordot(A, B, NDA_NOAXES, NDA_NOAXES);
 ```c
 // Free multiple arrays at once
 ndarray_free_all(NDA_LIST(A, B, C));
-```
-
-`NDA_AXES_ALL`: Constant for operations on all axes (value: -1).
-
-```c
-// Aggregate over all axes
-NDArray total = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_SUM);
-NDArray max_val = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_MAX);
 ```
 
 **Basic Creation:**
@@ -260,9 +260,9 @@ NDArray sum_axis0 = ndarray_new_axis_aggr(A, 0, NDARRAY_AGGR_SUM);
 NDArray mean_axis1 = ndarray_new_axis_aggr(A, 1, NDARRAY_AGGR_MEAN);
 NDArray std_axis0 = ndarray_new_axis_aggr(A, 0, NDARRAY_AGGR_STD);
 
-// Aggregate over all axes using NDA_AXES_ALL constant
-NDArray max_all = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_MAX);
-NDArray min_all = ndarray_new_axis_aggr(A, NDA_AXES_ALL, NDARRAY_AGGR_MIN);
+// Aggregate over all axes using NDA_ALL_AXES constant
+NDArray max_all = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_MAX);
+NDArray min_all = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_MIN);
 
 ndarray_free_all(NDA_LIST(A, sum_axis0, mean_axis1, std_axis0, max_all, min_all));
 ```

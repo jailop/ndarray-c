@@ -3,3 +3,8 @@
 - Load/Save functions
 - Literal initialization
 - zig bindings
+
+0.1.1 - 2025-12-25
+
+- NDA_NOAXES renamed to NDA_NO_AXES
+- NDA_AXES_ALL renamed to NDA_ALL_AXES
