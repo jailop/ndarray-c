@@ -34,12 +34,31 @@ SRCS = $(SRCDIR)/ndarray_core.c $(SRCDIR)/ndarray_creation.c $(SRCDIR)/ndarray_a
        $(SRCDIR)/ndarray_print.c $(SRCDIR)/ndarray_io.c $(SRCDIR)/ndarray_comparison.c
 
 
+TEST_SOURCES = $(TESTDIR)/test_common.c \
+               $(TESTDIR)/test_creation.c \
+               $(TESTDIR)/test_operations.c \
+               $(TESTDIR)/test_arithmetic.c \
+               $(TESTDIR)/test_matmul.c \
+               $(TESTDIR)/test_tensordot.c \
+               $(TESTDIR)/test_stack.c \
+               $(TESTDIR)/test_concat.c \
+               $(TESTDIR)/test_take.c \
+               $(TESTDIR)/test_transpose.c \
+               $(TESTDIR)/test_reshape.c \
+               $(TESTDIR)/test_aggregation.c \
+               $(TESTDIR)/test_conditional.c \
+               $(TESTDIR)/test_slice.c \
+               $(TESTDIR)/test_comparison.c \
+               $(TESTDIR)/test_main.c
+
+TEST_OBJECTS = $(TEST_SOURCES:.c=.o)
+
 OBJ = $(SRCS:.c=.o)
 OBJ_SHARED = $(SRCS:.c=_shared.o)
 TEST_OBJ = $(OBJ)
 BENCH_OBJ = $(OBJ)
 
-.PHONY: all clean test benchmark install uninstall lib static shared docs
+.PHONY: all clean test benchmark install uninstall lib static shared docs test-modular
 
 all: $(BIN)
 
@@ -49,8 +68,13 @@ static: $(LIB_STATIC)
 
 shared: $(LIB_SHARED)
 
+# Old monolithic test (for backward compatibility)
 test: $(TEST_BIN)
 	./$(TEST_BIN)
+
+# New modular test suite
+test-modular: ndarray_test_modular
+	./ndarray_test_modular
 
 benchmark:
 	@$(BENCHDIR)/run_benchmark.sh
@@ -76,7 +100,8 @@ uninstall:
 	rm -f $(DESTDIR)$(INCLUDEDIR)/ndarray.h
 
 clean:
-	rm -f $(BIN) $(TEST_BIN) $(OBJ) $(OBJ_SHARED) $(TESTDIR)/test_ndarray.o
+	rm -f $(BIN) $(TEST_BIN) ndarray_test_modular $(OBJ) $(OBJ_SHARED)
+	rm -f $(TESTDIR)/*.o
 	rm -f $(LIB_STATIC) $(LIB_SHARED) $(LIB_SHARED_MAJOR) $(LIB_SHARED_BASE)
 	rm -f $(BENCH_SEQ) $(BENCH_OMP) benchmark_seq.txt benchmark_omp.txt
 	rm -rf docs
@@ -104,4 +129,11 @@ $(TEST_BIN): $(TESTDIR)/test_ndarray.o $(TEST_OBJ)
 
 $(TESTDIR)/test_ndarray.o: $(TESTDIR)/test_ndarray.c $(SRCDIR)/ndarray.h
 	$(CC) $(CFLAGS) -c $(TESTDIR)/test_ndarray.c -o $@ -I$(SRCDIR)
+
+# Modular test suite
+ndarray_test_modular: $(TEST_OBJECTS) $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ $(TEST_LDFLAGS)
+
+$(TESTDIR)/%.o: $(TESTDIR)/%.c $(SRCDIR)/ndarray.h $(TESTDIR)/test_common.h
+	$(CC) $(CFLAGS) -c $< -o $@ -I$(SRCDIR)
 
