@@ -1,6 +1,8 @@
 #ifndef _NDARRAY_H
 #define _NDARRAY_H
 
+#include <stddef.h>
+
 /**
  * All ndarrays in this library must have ndim >= 2.
  * 1D arrays are not supported - use 2D arrays with one dimension set to 1.
