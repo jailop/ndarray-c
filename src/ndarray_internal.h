@@ -15,14 +15,19 @@
 #include <assert.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <openblas/cblas.h>
+
+#ifdef __APPLE__
+    #include <cblas.h>
+#else
+    #include <openblas/cblas.h>
+#endif
+
 #include <omp.h>
 #include "ndarray.h"
 
 #define BLOCK_SIZE 64
 #define OMP_PRAGMA(x) _Pragma(#x)
 
-/* Internal helper functions */
 size_t ndarray_size(NDArray t);
 size_t ndarray_offset(NDArray t, size_t *pos);
 size_t compute_stride(NDArray A, int axis);

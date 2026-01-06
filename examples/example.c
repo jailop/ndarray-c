@@ -8,7 +8,9 @@
 #include <time.h>
 #include "ndarray.h"
 
+#ifndef M_PI
 #define M_PI 3.14159265358979323846
+#endif
 
 double sine_func(double x) {
     return sin(x) + 0.5 * sin(2 * x);

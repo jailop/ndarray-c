@@ -8,3 +8,7 @@
 
 - NDA_NOAXES renamed to NDA_NO_AXES
 - NDA_AXES_ALL renamed to NDA_ALL_AXES
+
+0.1.2 - 2026-01-05
+
+- build system improved - MacOS support added

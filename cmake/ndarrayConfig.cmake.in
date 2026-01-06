@@ -1,0 +1,14 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# Find required dependencies
+find_dependency(BLAS)
+
+# Optional dependencies
+find_package(OpenMP QUIET)
+
+# Include the targets file
+include("${CMAKE_CURRENT_LIST_DIR}/ndarrayTargets.cmake")
+
+check_required_components(ndarray)

@@ -7,3 +7,6 @@ src/benchmark_seq
 src/benchmark_omp
 src/*.txt
 docs/
+build/
+.zig-cache/
+zig-out/

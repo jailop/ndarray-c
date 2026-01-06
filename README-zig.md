@@ -10,20 +10,21 @@ Zig bindings for the ndarray-c library.
 
 ```zig
 const ndarray = @import("ndarray");
+const NDArray = ndarray.NDArray;
 
 // Create arrays with different initializations
-const zeros = try ndarray.NDArray.zeros(&[_]usize{3, 4});
+const zeros = try NDArray.zeros(&[_]usize{3, 4});
 defer zeros.deinit();
 
-const ones = try ndarray.NDArray.ones(&[_]usize{3, 4});
+const ones = try NDArray.ones(&[_]usize{3, 4});
 defer ones.deinit();
 
-const filled = try ndarray.NDArray.full(&[_]usize{3, 4}, 42.0);
+const filled = try NDArray.full(&[_]usize{3, 4}, 42.0);
 defer filled.deinit();
 
 // Create from existing data
 const data = [_]f64{ 1, 2, 3, 4, 5, 6 };
-const arr = try ndarray.NDArray.fromData(&[_]usize{2, 3}, &data);
+const arr = try NDArray.fromData(&[_]usize{2, 3}, &data);
 defer arr.deinit();
 ```
 
@@ -31,11 +32,11 @@ defer arr.deinit();
 
 ```zig
 // Create array with evenly spaced values
-const range = try ndarray.NDArray.arange(&[_]usize{1, 10}, 0, 10, 1);
+const range = try NDArray.arange(&[_]usize{1, 10}, 0, 10, 1);
 defer range.deinit();
 
 // Create array with linearly spaced values
-const linear = try ndarray.NDArray.linspace(&[_]usize{1, 100}, 0, 1, 100);
+const linear = try NDArray.linspace(&[_]usize{1, 100}, 0, 1, 100);
 defer linear.deinit();
 ```
 
@@ -43,18 +44,18 @@ defer linear.deinit();
 
 ```zig
 // Uniform distribution [0, 1)
-const rand_unif = try ndarray.NDArray.randomUniform(&[_]usize{3, 4}, 0.0, 1.0);
+const rand_unif = try NDArray.randomUniform(&[_]usize{3, 4}, 0.0, 1.0);
 defer rand_unif.deinit();
 
 // Normal distribution (mean=0, std=1)
-const rand_norm = try ndarray.NDArray.randomNormal(&[_]usize{3, 4}, 0.0, 1.0);
+const rand_norm = try NDArray.randomNormal(&[_]usize{3, 4}, 0.0, 1.0);
 defer rand_norm.deinit();
 ```
 
 **Getting and Setting Values:**
 
 ```zig
-const arr = try ndarray.NDArray.zeros(&[_]usize{3, 4});
+const arr = try NDArray.zeros(&[_]usize{3, 4});
 defer arr.deinit();
 
 // Set value at position (1, 2)
@@ -70,10 +71,10 @@ arr.print("My Array", 4); // precision = 4 decimal places
 **Element-wise Operations:**
 
 ```zig
-const a = try ndarray.NDArray.ones(&[_]usize{3, 3});
+const a = try NDArray.ones(&[_]usize{3, 3});
 defer a.deinit();
 
-const b = try ndarray.NDArray.full(&[_]usize{3, 3}, 2.0);
+const b = try NDArray.full(&[_]usize{3, 3}, 2.0);
 defer b.deinit();
 
 // Element-wise addition (modifies a in place)
@@ -90,10 +91,10 @@ a.mulScalar(2.0);
 **Matrix Operations:**
 
 ```zig
-const a = try ndarray.NDArray.ones(&[_]usize{3, 4});
+const a = try NDArray.ones(&[_]usize{3, 4});
 defer a.deinit();
 
-const b = try ndarray.NDArray.ones(&[_]usize{4, 2});
+const b = try NDArray.ones(&[_]usize{4, 2});
 defer b.deinit();
 
 // Matrix multiplication (creates new array)
@@ -107,10 +108,10 @@ c.print("Result", 2);
 
 ```zig
 // Create 3D tensors
-const t1 = try ndarray.NDArray.ones(&[_]usize{2, 3, 4});
+const t1 = try NDArray.ones(&[_]usize{2, 3, 4});
 defer t1.deinit();
 
-const t2 = try ndarray.NDArray.full(&[_]usize{4, 5}, 2.0);
+const t2 = try NDArray.full(&[_]usize{4, 5}, 2.0);
 defer t2.deinit();
 
 // Tensor contraction (dot product along specified axes)
@@ -121,7 +122,7 @@ defer result.deinit();
 **Array Manipulation:**
 
 ```zig
-const mat = try ndarray.NDArray.arange(&[_]usize{3, 4}, 0, 12, 1);
+const mat = try NDArray.arange(&[_]usize{3, 4}, 0, 12, 1);
 defer mat.deinit();
 
 // Transpose
@@ -140,17 +141,17 @@ defer copied.deinit();
 **Stacking and Concatenating:**
 
 ```zig
-const a = try ndarray.NDArray.ones(&[_]usize{2, 3});
+const a = try NDArray.ones(&[_]usize{2, 3});
 defer a.deinit();
 
-const b = try ndarray.NDArray.full(&[_]usize{2, 3}, 2.0);
+const b = try NDArray.full(&[_]usize{2, 3}, 2.0);
 defer b.deinit();
 
-const c = try ndarray.NDArray.full(&[_]usize{2, 3}, 3.0);
+const c = try NDArray.full(&[_]usize{2, 3}, 3.0);
 defer c.deinit();
 
 // Stack arrays along axis 0 (creates new dimension)
-const arrays = [_]ndarray.NDArray{a, b, c};
+const arrays = [_]NDArray{a, b, c};
 const stacked = try ndarray.stack(0, &arrays);
 defer stacked.deinit();
 
@@ -162,7 +163,7 @@ defer concatenated.deinit();
 **Aggregations:**
 
 ```zig
-const arr = try ndarray.NDArray.arange(&[_]usize{3, 4}, 1, 13, 1);
+const arr = try NDArray.arange(&[_]usize{3, 4}, 1, 13, 1);
 defer arr.deinit();
 
 // Sum all elements
@@ -184,13 +185,13 @@ defer row_maxs.deinit();
 
 ```zig
 // Save array to file
-const arr = try ndarray.NDArray.randomUniform(&[_]usize{3, 4}, 0.0, 1.0);
+const arr = try NDArray.randomUniform(&[_]usize{3, 4}, 0.0, 1.0);
 defer arr.deinit();
 
 try arr.save("mydata.bin");
 
 // Load array from file
-const loaded = try ndarray.NDArray.load("mydata.bin");
+const loaded = try NDArray.load("mydata.bin");
 defer loaded.deinit();
 
 loaded.print("Loaded Array", 4);
@@ -199,7 +200,7 @@ loaded.print("Loaded Array", 4);
 **Array Metadata:**
 
 ```zig
-const arr = try ndarray.NDArray.ones(&[_]usize{3, 4, 5});
+const arr = try NDArray.ones(&[_]usize{3, 4, 5});
 defer arr.deinit();
 
 const dims = arr.ndim();        // Returns: 3
