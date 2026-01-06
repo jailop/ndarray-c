@@ -181,7 +181,6 @@ NDArray ndarray_new_take(NDArray arr, int axis, size_t start, size_t end) {
     for (size_t i = axis + 1; i < arr->ndim; ++i) {
         after_axis_size *= arr->dims[i];
     }
-    
     // Copy data
     if (axis == 0) {
         // Simple case: copy contiguous block from start
@@ -269,5 +268,50 @@ NDArray ndarray_new_transpose(NDArray A) {
         }
     }
     return B;
+}
+
+void ndarray_reshape(NDArray arr, size_t* new_dims) {
+    assert(arr != NULL && "ndarray cannot be NULL");
+    assert(new_dims != NULL && "new_dims cannot be NULL");
+    // Count new dimensions and calculate total size
+    size_t new_ndim = 0;
+    size_t new_size = 1;
+    int auto_dim_idx = -1;
+    while (new_dims[new_ndim] != 0) {
+        if ((int)new_dims[new_ndim] == -1) {
+            assert(auto_dim_idx == -1 && "only one dimension can be -1");
+            auto_dim_idx = new_ndim;
+        } else {
+            new_size *= new_dims[new_ndim];
+        }
+        new_ndim++;
+    }
+    assert(new_ndim >= 2 && "result ndarray must have at least 2 dimensions");
+    // Calculate original size
+    size_t orig_size = ndarray_size(arr);
+    // If -1 is used, calculate the inferred dimension
+    size_t inferred_dim = 0;
+    if (auto_dim_idx != -1) {
+        assert(orig_size % new_size == 0 && 
+               "cannot reshape: total size mismatch with inferred dimension");
+        inferred_dim = orig_size / new_size;
+        new_size *= inferred_dim;
+    }
+    assert(orig_size == new_size && 
+           "cannot reshape: total size must remain the same");
+    // Reallocate dims array if ndim changed
+    if (new_ndim != arr->ndim) {
+        free(arr->dims);
+        arr->dims = (size_t*)malloc(sizeof(size_t) * new_ndim);
+        arr->ndim = new_ndim;
+    }
+    // Update dimensions
+    for (size_t i = 0; i < new_ndim; ++i) {
+        if (auto_dim_idx != -1 && i == (size_t)auto_dim_idx) {
+            arr->dims[i] = inferred_dim;
+        } else {
+            arr->dims[i] = new_dims[i];
+        }
+    }
 }
 

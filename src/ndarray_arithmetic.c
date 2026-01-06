@@ -70,3 +70,27 @@ NDArray ndarray_mapfnc(NDArray A, double (*func)(double)) {
     }
     return A;
 }
+
+NDArray ndarray_axpby(NDArray A, double alpha, NDArray B, double beta) {
+    assert(A != NULL && B != NULL && "ndarrays cannot be NULL");
+    assert(A->ndim >= 2 && B->ndim >= 2
+            && "ndarrays must have at least 2 dimensions");
+    assert(A->ndim == B->ndim
+            && "ndarrays must have same number of dimensions");
+    for (size_t i = 0; i < A->ndim; ++i) {
+        assert(A->dims[i] == B->dims[i]
+                && "ndarrays must have matching dimensions");
+    }
+    
+    size_t size = ndarray_size(A);
+    
+    // Compute A = alpha*A + beta*B using BLAS routines
+    // First: A = alpha*A (scale A in place)
+    cblas_dscal(size, alpha, A->data, 1);
+    
+    // Second: A = 1.0*beta*B + A (add scaled B to A)
+    cblas_daxpy(size, beta, B->data, 1, A->data, 1);
+    
+    return A;
+}
+

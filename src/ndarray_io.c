@@ -107,7 +107,7 @@ NDArray ndarray_load(const char *filename) {
         return NULL;
     }
     if (ndim < 2) {
-        fprintf(stderr, "Error: Invalid ndim (must be >= 2): %llu\n", ndim);
+        fprintf(stderr, "Error: Invalid ndim (must be >= 2): %lu\n", ndim);
         fclose(fp);
         return NULL;
     }

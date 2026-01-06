@@ -164,6 +164,20 @@ pub const NDArray = struct {
         c.ndarray_set(self.ptr, c_pos.ptr, value);
     }
 
+    /// Set values along a slice at a specific index on an axis
+    /// For 2D: axis=0 sets a row, axis=1 sets a column
+    /// For higher dimensions: sets the hyperplane perpendicular to the axis
+    pub fn setSlice(self: NDArray, axis: i32, index: usize, values: []const f64) void {
+        c.ndarray_set_slice(self.ptr, axis, index, values.ptr);
+    }
+
+    /// Fill a slice with a scalar value at a specific index on an axis
+    /// For 2D: axis=0 fills a row, axis=1 fills a column
+    /// For higher dimensions: fills the hyperplane perpendicular to the axis
+    pub fn fillSlice(self: NDArray, axis: i32, index: usize, value: f64) void {
+        c.ndarray_fill_slice(self.ptr, axis, index, value);
+    }
+
     /// Print the array
     pub fn print(self: NDArray, name: ?[:0]const u8, precision: i32) void {
         const c_name = if (name) |n| n.ptr else null;
@@ -188,6 +202,12 @@ pub const NDArray = struct {
     /// Multiply by scalar (modifies self in place)
     pub fn mulScalar(self: NDArray, scalar: f64) void {
         _ = c.ndarray_mul_scalar(self.ptr, scalar);
+    }
+
+    /// Linear combination: self = alpha*self + beta*other
+    /// Computes self = alpha*self + beta*other and stores result in self
+    pub fn axpby(self: NDArray, alpha: f64, other: NDArray, beta: f64) void {
+        _ = c.ndarray_axpby(self.ptr, alpha, other.ptr, beta);
     }
 
     /// Matrix multiplication
@@ -221,6 +241,22 @@ pub const NDArray = struct {
         const ptr = c.ndarray_new_transpose(self.ptr);
         if (ptr == null) return error.TransposeFailed;
         return NDArray{ .ptr = ptr };
+    }
+
+    /// Reshape the ndarray in-place to new dimensions
+    /// Use -1 for one dimension to automatically infer its size
+    pub fn reshape(self: NDArray, new_dims: []const isize) !void {
+        var c_dims = try std.heap.c_allocator.alloc(usize, new_dims.len + 1);
+        defer std.heap.c_allocator.free(c_dims);
+        for (new_dims, 0..) |dim, i| {
+            if (dim == -1) {
+                c_dims[i] = @as(usize, @bitCast(@as(isize, -1)));
+            } else {
+                c_dims[i] = @intCast(dim);
+            }
+        }
+        c_dims[new_dims.len] = 0; // Sentinel
+        c.ndarray_reshape(self.ptr, c_dims.ptr);
     }
 
     /// Take a slice along an axis

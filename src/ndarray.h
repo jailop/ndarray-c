@@ -117,6 +117,30 @@ void ndarray_set(NDArray t, size_t* pos, double value);
 double ndarray_get(NDArray t, size_t* pos);
 
 /**
+ * Sets values along a slice of the array at a specific index on an axis.
+ * For a 2D array: axis=0 sets a row, axis=1 sets a column.
+ * For higher dimensions, sets the hyperplane perpendicular to the axis.
+ * 
+ * @param arr The ndarray to modify
+ * @param axis The axis along which to set the slice (0 to ndim-1)
+ * @param index The index along the axis where to set values
+ * @param values Array of values to set (size must match the slice size)
+ */
+void ndarray_set_slice(NDArray arr, int axis, size_t index, double* values);
+
+/**
+ * Fills a slice of the array with a scalar value at a specific index on an axis.
+ * For a 2D array: axis=0 fills a row, axis=1 fills a column.
+ * For higher dimensions, fills the hyperplane perpendicular to the axis.
+ * 
+ * @param arr The ndarray to modify
+ * @param axis The axis along which to fill the slice (0 to ndim-1)
+ * @param index The index along the axis where to fill
+ * @param value The scalar value to fill with
+ */
+void ndarray_fill_slice(NDArray arr, int axis, size_t index, double value);
+
+/**
  * Pretty-prints an ndarray to stdout.
  * Automatically formats output based on dimensionality:
  * - 2D: matrix format with aligned columns
@@ -283,6 +307,24 @@ NDArray ndarray_mul_scalar(NDArray A, double scalar);
 NDArray ndarray_mapfnc(NDArray A, double (*func)(double));
 
 /**
+ * Linear combination: A = alpha*A + beta*B
+ * Computes a scaled linear combination of two arrays and stores the result in A.
+ * Uses optimized BLAS routines (dscal and daxpy) for efficiency.
+ * 
+ * @param A The first ndarray (will be modified to store the result)
+ * @param alpha Scalar coefficient for A
+ * @param B The second ndarray
+ * @param beta Scalar coefficient for B
+ * @return A handle to the modified ndarray A
+ * 
+ * Examples:
+ *   ndarray_axpby(A, 2.0, B, 3.0)  // A = 2*A + 3*B
+ *   ndarray_axpby(A, 1.0, B, -1.0) // A = A - B
+ *   ndarray_axpby(A, 0.5, B, 0.5)  // A = (A + B) / 2 (average)
+ */
+NDArray ndarray_axpby(NDArray A, double alpha, NDArray B, double beta);
+
+/**
  * Tensor contraction (generalized tensor product).
  * Contracts specified axes between two tensors using Einstein summation convention.
  * Example: A[i,j,k] ⊗ B[k,l,m] contracts on k → C[i,j,l,m]
@@ -374,6 +416,17 @@ NDArray ndarray_new_take(NDArray arr, int axis, size_t start, size_t end);
  * @return A handle to the newly created transposed ndarray.
  */
 NDArray ndarray_new_transpose(NDArray A);
+
+/**
+ * Reshapes an ndarray in-place to new dimensions.
+ * The total number of elements must remain the same.
+ * Data remains in row-major (C-order) layout.
+ * 
+ * @param arr The ndarray to reshape
+ * @param new_dims New dimensions (terminated by 0). Use -1 for one dimension
+ *                 to be automatically inferred from the total size.
+ */
+void ndarray_reshape(NDArray arr, size_t* new_dims);
 
 /**
  * Aggregation types for ndarray_new_axis_aggr function.

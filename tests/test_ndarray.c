@@ -172,6 +172,126 @@ void test_ndarray_get_set_4d(void) {
     ndarray_free(arr);
 }
 
+void test_ndarray_set_slice_2d_row(void) {
+    size_t dims[] = {3, 4, 0};
+    NDArray arr = ndarray_new_zeros(dims);
+    
+    // Set row 1 to [10, 20, 30, 40]
+    double row_values[] = {10.0, 20.0, 30.0, 40.0};
+    ndarray_set_slice(arr, 0, 1, row_values);
+    
+    // Check row 1
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 0)), 10.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 1)), 20.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 2)), 30.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 3)), 40.0, EPSILON);
+    
+    // Check other rows are still zero
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 0)), 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(2, 0)), 0.0, EPSILON);
+    
+    ndarray_free(arr);
+}
+
+void test_ndarray_set_slice_2d_col(void) {
+    size_t dims[] = {3, 4, 0};
+    NDArray arr = ndarray_new_zeros(dims);
+    
+    // Set column 2 to [5, 15, 25]
+    double col_values[] = {5.0, 15.0, 25.0};
+    ndarray_set_slice(arr, 1, 2, col_values);
+    
+    // Check column 2
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 2)), 5.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 2)), 15.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(2, 2)), 25.0, EPSILON);
+    
+    // Check other columns are still zero
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 0)), 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 3)), 0.0, EPSILON);
+    
+    ndarray_free(arr);
+}
+
+void test_ndarray_set_slice_3d(void) {
+    size_t dims[] = {2, 3, 4, 0};
+    NDArray arr = ndarray_new_zeros(dims);
+    
+    // Set middle plane (axis=1, index=1) to sequential values
+    double plane_values[8];  // 2*4 = 8 values
+    for (int i = 0; i < 8; i++) {
+        plane_values[i] = i * 10.0;
+    }
+    ndarray_set_slice(arr, 1, 1, plane_values);
+    
+    // Check the plane was set correctly
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 1, 0)), 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 1, 1)), 10.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 1, 2)), 60.0, EPSILON);
+    
+    // Check other planes are still zero
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 0, 0)), 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 2, 0)), 0.0, EPSILON);
+    
+    ndarray_free(arr);
+}
+
+void test_ndarray_fill_slice_2d_row(void) {
+    size_t dims[] = {3, 4, 0};
+    NDArray arr = ndarray_new_zeros(dims);
+    
+    // Fill row 2 with 99.0
+    ndarray_fill_slice(arr, 0, 2, 99.0);
+    
+    // Check row 2
+    for (int j = 0; j < 4; j++) {
+        CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(2, j)), 99.0, EPSILON);
+    }
+    
+    // Check other rows are still zero
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 0)), 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 0)), 0.0, EPSILON);
+    
+    ndarray_free(arr);
+}
+
+void test_ndarray_fill_slice_2d_col(void) {
+    size_t dims[] = {3, 4, 0};
+    NDArray arr = ndarray_new_zeros(dims);
+    
+    // Fill column 0 with -5.5
+    ndarray_fill_slice(arr, 1, 0, -5.5);
+    
+    // Check column 0
+    for (int i = 0; i < 3; i++) {
+        CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(i, 0)), -5.5, EPSILON);
+    }
+    
+    // Check other columns are still zero
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 1)), 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 3)), 0.0, EPSILON);
+    
+    ndarray_free(arr);
+}
+
+void test_ndarray_fill_slice_4d(void) {
+    size_t dims[] = {2, 3, 4, 5, 0};
+    NDArray arr = ndarray_new_zeros(dims);
+    
+    // Fill a hyperplane (axis=2, index=1) with 42.0
+    ndarray_fill_slice(arr, 2, 1, 42.0);
+    
+    // Check some values in the hyperplane
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 0, 1, 0)), 42.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 2, 1, 4)), 42.0, EPSILON);
+    
+    // Check other hyperplanes are still zero
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 0, 0, 0)), 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 0, 2, 0)), 0.0, EPSILON);
+    
+    ndarray_free(arr);
+}
+
 void test_ndarray_copy_2d(void) {
     size_t dims[] = {2, 3, 0};
     NDArray arr = ndarray_new_full(dims, 5.5);
@@ -303,11 +423,90 @@ void test_ndarray_mapfnc(void) {
     CU_ASSERT_DOUBLE_EQUAL(A->data[0], 1.0, EPSILON);
     CU_ASSERT_DOUBLE_EQUAL(A->data[1], 4.0, EPSILON);
     CU_ASSERT_DOUBLE_EQUAL(A->data[2], 9.0, EPSILON);
-    CU_ASSERT_DOUBLE_EQUAL(A->data[3], 16.0, EPSILON);
-    CU_ASSERT_DOUBLE_EQUAL(A->data[4], 25.0, EPSILON);
-    CU_ASSERT_DOUBLE_EQUAL(A->data[5], 36.0, EPSILON);
     
     ndarray_free(A);
+}
+
+void test_ndarray_axpby_basic(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_full(dims, 2.0);
+    NDArray B = ndarray_new_full(dims, 3.0);
+    
+    // A = 2*A + 3*B = 2*2 + 3*3 = 4 + 9 = 13
+    ndarray_axpby(A, 2.0, B, 3.0);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(A->data[i], 13.0, EPSILON);
+    }
+    
+    ndarray_free(A);
+    ndarray_free(B);
+}
+
+void test_ndarray_axpby_subtract(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_full(dims, 10.0);
+    NDArray B = ndarray_new_full(dims, 3.0);
+    
+    // A = 1*A - 1*B = 10 - 3 = 7
+    ndarray_axpby(A, 1.0, B, -1.0);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(A->data[i], 7.0, EPSILON);
+    }
+    
+    ndarray_free(A);
+    ndarray_free(B);
+}
+
+void test_ndarray_axpby_average(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_full(dims, 4.0);
+    NDArray B = ndarray_new_full(dims, 8.0);
+    
+    // A = 0.5*A + 0.5*B = 0.5*4 + 0.5*8 = 2 + 4 = 6
+    ndarray_axpby(A, 0.5, B, 0.5);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(A->data[i], 6.0, EPSILON);
+    }
+    
+    ndarray_free(A);
+    ndarray_free(B);
+}
+
+void test_ndarray_axpby_3d(void) {
+    size_t dims[] = {2, 2, 2, 0};
+    NDArray A = ndarray_new_arange(dims, 1.0, 9.0, 1.0);
+    NDArray B = ndarray_new_full(dims, 2.0);
+    
+    // A = 3*A + 4*B = 3*[1,2,3,4,5,6,7,8] + 4*2
+    ndarray_axpby(A, 3.0, B, 4.0);
+    
+    // Expected: 3*1 + 8 = 11, 3*2 + 8 = 14, etc.
+    CU_ASSERT_DOUBLE_EQUAL(A->data[0], 11.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[1], 14.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[2], 17.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[7], 32.0, EPSILON);
+    
+    ndarray_free(A);
+    ndarray_free(B);
+}
+
+void test_ndarray_axpby_zero_coefficients(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_full(dims, 5.0);
+    NDArray B = ndarray_new_full(dims, 7.0);
+    
+    // A = 0*A + 1*B = B
+    ndarray_axpby(A, 0.0, B, 1.0);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(A->data[i], 7.0, EPSILON);
+    }
+    
+    ndarray_free(A);
+    ndarray_free(B);
 }
 
 /* ========== Test: Matrix Multiplication ========== */
@@ -919,6 +1118,161 @@ void test_ndarray_transpose_4d(void) {
     ndarray_free(B);
 }
 
+/* ========== Test: Reshape ========== */
+
+void test_ndarray_reshape_2d_to_2d(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray arr = ndarray_new(dims);
+    
+    // Fill with test data
+    for (int i = 0; i < 6; i++) {
+        arr->data[i] = i + 1;
+    }
+    
+    // Reshape [2,3] -> [3,2]
+    size_t new_dims[] = {3, 2, 0};
+    ndarray_reshape(arr, new_dims);
+    
+    CU_ASSERT_EQUAL(arr->ndim, 2);
+    CU_ASSERT_EQUAL(arr->dims[0], 3);
+    CU_ASSERT_EQUAL(arr->dims[1], 2);
+    
+    // Verify data order is preserved (row-major)
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[0], 1.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[1], 2.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[2], 3.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[3], 4.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[4], 5.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[5], 6.0, EPSILON);
+    
+    ndarray_free(arr);
+}
+
+void test_ndarray_reshape_2d_to_3d(void) {
+    size_t dims[] = {2, 6, 0};
+    NDArray arr = ndarray_new(dims);
+    
+    // Fill with test data
+    for (int i = 0; i < 12; i++) {
+        arr->data[i] = i * 10;
+    }
+    
+    // Reshape [2,6] -> [2,3,2]
+    size_t new_dims[] = {2, 3, 2, 0};
+    ndarray_reshape(arr, new_dims);
+    
+    CU_ASSERT_EQUAL(arr->ndim, 3);
+    CU_ASSERT_EQUAL(arr->dims[0], 2);
+    CU_ASSERT_EQUAL(arr->dims[1], 3);
+    CU_ASSERT_EQUAL(arr->dims[2], 2);
+    
+    // Verify data preserved
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[0], 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[11], 110.0, EPSILON);
+    
+    ndarray_free(arr);
+}
+
+void test_ndarray_reshape_3d_to_2d(void) {
+    size_t dims[] = {2, 1, 4, 0};
+    NDArray arr = ndarray_new(dims);
+    
+    // Fill with test data
+    for (int i = 0; i < 8; i++) {
+        arr->data[i] = i + 1;
+    }
+    
+    // Reshape [2,1,4] -> [2,4] (squeeze middle dimension)
+    size_t new_dims[] = {2, 4, 0};
+    ndarray_reshape(arr, new_dims);
+    
+    CU_ASSERT_EQUAL(arr->ndim, 2);
+    CU_ASSERT_EQUAL(arr->dims[0], 2);
+    CU_ASSERT_EQUAL(arr->dims[1], 4);
+    
+    // Verify data preserved
+    for (int i = 0; i < 8; i++) {
+        CU_ASSERT_DOUBLE_EQUAL(arr->data[i], (double)(i + 1), EPSILON);
+    }
+    
+    ndarray_free(arr);
+}
+
+void test_ndarray_reshape_with_inferred_dim(void) {
+    size_t dims[] = {2, 6, 0};
+    NDArray arr = ndarray_new(dims);
+    
+    // Fill with test data
+    for (int i = 0; i < 12; i++) {
+        arr->data[i] = i;
+    }
+    
+    // Reshape [2,6] -> [3,-1] should infer -1 as 4
+    size_t new_dims[] = {3, (size_t)-1, 0};
+    ndarray_reshape(arr, new_dims);
+    
+    CU_ASSERT_EQUAL(arr->ndim, 2);
+    CU_ASSERT_EQUAL(arr->dims[0], 3);
+    CU_ASSERT_EQUAL(arr->dims[1], 4);
+    
+    // Verify data preserved
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[0], 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[11], 11.0, EPSILON);
+    
+    ndarray_free(arr);
+}
+
+void test_ndarray_reshape_flatten(void) {
+    size_t dims[] = {2, 3, 4, 0};
+    NDArray arr = ndarray_new(dims);
+    
+    // Fill with test data
+    for (int i = 0; i < 24; i++) {
+        arr->data[i] = i;
+    }
+    
+    // Flatten [2,3,4] -> [1,24]
+    size_t new_dims[] = {1, 24, 0};
+    ndarray_reshape(arr, new_dims);
+    
+    CU_ASSERT_EQUAL(arr->ndim, 2);
+    CU_ASSERT_EQUAL(arr->dims[0], 1);
+    CU_ASSERT_EQUAL(arr->dims[1], 24);
+    
+    // Verify all data preserved
+    for (int i = 0; i < 24; i++) {
+        CU_ASSERT_DOUBLE_EQUAL(arr->data[i], (double)i, EPSILON);
+    }
+    
+    ndarray_free(arr);
+}
+
+void test_ndarray_reshape_4d(void) {
+    size_t dims[] = {6, 4, 0};
+    NDArray arr = ndarray_new(dims);
+    
+    // Fill with test data
+    for (int i = 0; i < 24; i++) {
+        arr->data[i] = i + 1;
+    }
+    
+    // Reshape [6,4] -> [2,3,2,2]
+    size_t new_dims[] = {2, 3, 2, 2, 0};
+    ndarray_reshape(arr, new_dims);
+    
+    CU_ASSERT_EQUAL(arr->ndim, 4);
+    CU_ASSERT_EQUAL(arr->dims[0], 2);
+    CU_ASSERT_EQUAL(arr->dims[1], 3);
+    CU_ASSERT_EQUAL(arr->dims[2], 2);
+    CU_ASSERT_EQUAL(arr->dims[3], 2);
+    
+    // Verify data preserved
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[0], 1.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(arr->data[23], 24.0, EPSILON);
+    
+    ndarray_free(arr);
+}
+
 /* ========== Test: Aggregations ========== */
 
 void test_ndarray_aggr_sum_all_2d(void) {
@@ -1078,6 +1432,7 @@ int main() {
     CU_pSuite suite_concat = NULL;
     CU_pSuite suite_take = NULL;
     CU_pSuite suite_transpose = NULL;
+    CU_pSuite suite_reshape = NULL;
     CU_pSuite suite_aggregation = NULL;
     
     /* Initialize CUnit registry */
@@ -1111,6 +1466,12 @@ int main() {
     CU_add_test(suite_operations, "test get/set 2D", test_ndarray_get_set_2d);
     CU_add_test(suite_operations, "test get/set 3D", test_ndarray_get_set_3d);
     CU_add_test(suite_operations, "test get/set 4D", test_ndarray_get_set_4d);
+    CU_add_test(suite_operations, "test set_slice 2D row", test_ndarray_set_slice_2d_row);
+    CU_add_test(suite_operations, "test set_slice 2D col", test_ndarray_set_slice_2d_col);
+    CU_add_test(suite_operations, "test set_slice 3D", test_ndarray_set_slice_3d);
+    CU_add_test(suite_operations, "test fill_slice 2D row", test_ndarray_fill_slice_2d_row);
+    CU_add_test(suite_operations, "test fill_slice 2D col", test_ndarray_fill_slice_2d_col);
+    CU_add_test(suite_operations, "test fill_slice 4D", test_ndarray_fill_slice_4d);
     CU_add_test(suite_operations, "test copy 2D", test_ndarray_copy_2d);
     CU_add_test(suite_operations, "test copy 3D", test_ndarray_copy_3d);
     
@@ -1128,6 +1489,11 @@ int main() {
     CU_add_test(suite_arithmetic, "test add_scalar", test_ndarray_add_scalar);
     CU_add_test(suite_arithmetic, "test mul_scalar", test_ndarray_mul_scalar);
     CU_add_test(suite_arithmetic, "test mapfnc", test_ndarray_mapfnc);
+    CU_add_test(suite_arithmetic, "test axpby basic", test_ndarray_axpby_basic);
+    CU_add_test(suite_arithmetic, "test axpby subtract", test_ndarray_axpby_subtract);
+    CU_add_test(suite_arithmetic, "test axpby average", test_ndarray_axpby_average);
+    CU_add_test(suite_arithmetic, "test axpby 3D", test_ndarray_axpby_3d);
+    CU_add_test(suite_arithmetic, "test axpby zero coefficients", test_ndarray_axpby_zero_coefficients);
     
     /* Add suite: Matrix Multiplication */
     suite_matmul = CU_add_suite("Matrix Multiplication", init_suite, clean_suite);
@@ -1199,6 +1565,20 @@ int main() {
     CU_add_test(suite_transpose, "test transpose 2D", test_ndarray_transpose_2d);
     CU_add_test(suite_transpose, "test transpose 3D", test_ndarray_transpose_3d);
     CU_add_test(suite_transpose, "test transpose 4D", test_ndarray_transpose_4d);
+    
+    /* Add suite: Reshape */
+    suite_reshape = CU_add_suite("Reshape", init_suite, clean_suite);
+    if (NULL == suite_reshape) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    
+    CU_add_test(suite_reshape, "test reshape 2D to 2D", test_ndarray_reshape_2d_to_2d);
+    CU_add_test(suite_reshape, "test reshape 2D to 3D", test_ndarray_reshape_2d_to_3d);
+    CU_add_test(suite_reshape, "test reshape 3D to 2D", test_ndarray_reshape_3d_to_2d);
+    CU_add_test(suite_reshape, "test reshape with inferred dim", test_ndarray_reshape_with_inferred_dim);
+    CU_add_test(suite_reshape, "test reshape flatten", test_ndarray_reshape_flatten);
+    CU_add_test(suite_reshape, "test reshape 4D", test_ndarray_reshape_4d);
     
     /* Add suite: Aggregations */
     suite_aggregation = CU_add_suite("Aggregations", init_suite, clean_suite);

@@ -12,3 +12,8 @@
 0.1.2 - 2026-01-05
 
 - build system improved - MacOS support added
+
+0.2.0 - 2026-01-06
+
+- new functions: ndarray_reshape, ndarray_set_slice, ndarray_fill_slice,
+  ndarray_axpby

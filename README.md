@@ -184,6 +184,29 @@ ndarray_set(arr, NDA_POS(1, 2), 42.0);
 // Get value at position (1, 2)
 double val = ndarray_get(arr, NDA_POS(1, 2));
 
+// Set an entire row (axis 0) from an array of values
+double row_data[] = {1.0, 2.0, 3.0, 4.0};
+ndarray_set_slice(arr, 0, 1, row_data);  // Set row 1
+
+// Set an entire column (axis 1) from an array of values
+double col_data[] = {10.0, 20.0, 30.0};
+ndarray_set_slice(arr, 1, 2, col_data);  // Set column 2
+
+// Fill an entire row with a scalar value
+ndarray_fill_slice(arr, 0, 0, 0.0);  // Fill row 0 with zeros
+
+// Fill an entire column with a scalar value
+ndarray_fill_slice(arr, 1, 3, 99.0);  // Fill column 3 with 99.0
+
+// Works for any dimension - set a hyperplane in 3D array
+NDArray arr3d = ndarray_new_zeros(NDA_DIMS(2, 3, 4));
+double plane_data[8];  // 2*4 = 8 values for plane perpendicular to axis 1
+for (int i = 0; i < 8; i++) plane_data[i] = i * 5.0;
+ndarray_set_slice(arr3d, 1, 1, plane_data);  // Set middle plane
+
+ndarray_free_all(NDA_LIST(arr, arr3d));
+```
+
 // Print the array
 ndarray_print(arr, "My Array", 4);  // precision = 4 decimal places
 
@@ -206,11 +229,16 @@ ndarray_mul(A, B);
 ndarray_add_scalar(A, 10.0);
 ndarray_mul_scalar(A, 2.0);
 
+// Linear combination: A = alpha*A + beta*B
+NDArray C = ndarray_new_full(NDA_DIMS(3, 3), 5.0);
+NDArray D = ndarray_new_full(NDA_DIMS(3, 3), 3.0);
+ndarray_axpby(C, 2.0, D, 3.0);  // C = 2*C + 3*D = 2*5 + 3*3 = 19
+
 // Apply custom function element-wise
 double square(double x) { return x * x; }
 ndarray_mapfnc(A, square);
 
-ndarray_free_all(NDA_LIST(A, B));
+ndarray_free_all(NDA_LIST(A, B, C, D));
 ```
 
 **Matrix Operations:**
@@ -247,7 +275,13 @@ NDArray concat = ndarray_new_concat(1, NDA_LIST(A, B));  // Result: 2x6
 // Extract subregion
 NDArray sub = ndarray_new_take(A, 1, 0, 2);  // Take columns 0 and 1
 
-ndarray_free_all(NDA_LIST(A, B, stacked, concat, sub));
+// Reshape array in-place (data preserved in row-major order)
+NDArray C = ndarray_new_arange(NDA_DIMS(2, 6), 0, 12, 1);  // [2,6]
+ndarray_reshape(C, NDA_DIMS(3, 4));  // Now [3,4]
+ndarray_reshape(C, NDA_DIMS(2, 2, 3));  // Now [2,2,3]
+ndarray_reshape(C, NDA_DIMS(4, -1));  // Now [4,3] (inferred dimension)
+
+ndarray_free_all(NDA_LIST(A, B, stacked, concat, sub, C));
 ```
 
 **Aggregations:**
