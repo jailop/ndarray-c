@@ -167,3 +167,61 @@ void ndarray_fill_slice(NDArray arr, int axis, size_t index, double value) {
         }
     }
 }
+
+double* ndarray_get_slice_ptr(NDArray arr, int axis, size_t index) {
+    assert(arr != NULL && "ndarray cannot be NULL");
+    assert(axis >= 0 && axis < (int)arr->ndim && "axis out of range");
+    assert(index < arr->dims[axis] && "index exceeds dimension size");
+    
+    // Calculate offset to the start of the slice
+    size_t offset = 0;
+    size_t stride = 1;
+    
+    // Calculate stride for dimensions after the target axis
+    for (size_t i = axis + 1; i < arr->ndim; ++i) {
+        stride *= arr->dims[i];
+    }
+    
+    // Offset is index * stride
+    offset = index * stride;
+    
+    return &arr->data[offset];
+}
+
+void ndarray_copy_slice(NDArray src, int src_axis, size_t src_idx,
+                        NDArray dst, int dst_axis, size_t dst_idx) {
+    assert(src != NULL && dst != NULL && "ndarrays cannot be NULL");
+    assert(src_axis >= 0 && src_axis < (int)src->ndim && "src_axis out of range");
+    assert(dst_axis >= 0 && dst_axis < (int)dst->ndim && "dst_axis out of range");
+    assert(src_idx < src->dims[src_axis] && "src_idx exceeds dimension size");
+    assert(dst_idx < dst->dims[dst_axis] && "dst_idx exceeds dimension size");
+    
+    // Calculate slice sizes
+    size_t src_slice_size = ndarray_get_slice_size(src, src_axis);
+    size_t dst_slice_size = ndarray_get_slice_size(dst, dst_axis);
+    
+    assert(src_slice_size == dst_slice_size && "slice sizes must match");
+    
+    // Get pointers to the slices
+    double* src_ptr = ndarray_get_slice_ptr(src, src_axis, src_idx);
+    double* dst_ptr = ndarray_get_slice_ptr(dst, dst_axis, dst_idx);
+    
+    // Copy the data
+    memcpy(dst_ptr, src_ptr, src_slice_size * sizeof(double));
+}
+
+size_t ndarray_get_slice_size(NDArray arr, int axis) {
+    assert(arr != NULL && "ndarray cannot be NULL");
+    assert(axis >= 0 && axis < (int)arr->ndim && "axis out of range");
+    
+    // Size is the product of all dimensions except the target axis
+    size_t size = 1;
+    for (size_t i = 0; i < arr->ndim; ++i) {
+        if ((int)i != axis) {
+            size *= arr->dims[i];
+        }
+    }
+    
+    return size;
+}
+

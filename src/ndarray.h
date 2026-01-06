@@ -141,6 +141,55 @@ void ndarray_set_slice(NDArray arr, int axis, size_t index, double* values);
 void ndarray_fill_slice(NDArray arr, int axis, size_t index, double value);
 
 /**
+ * Get pointer to a slice along an axis.
+ * Returns a pointer to the beginning of the slice. User must not access
+ * beyond the slice bounds. Pointer is valid as long as the array exists.
+ * 
+ * @param arr The ndarray
+ * @param axis The axis along which to get the slice
+ * @param index The index along the axis
+ * @return Pointer to the start of the slice data
+ * 
+ * Examples:
+ *   2D [3,4]: axis=0, index=1 -> pointer to row 1 (4 elements)
+ *   3D [2,3,4]: axis=1, index=1 -> pointer to middle plane (2*4=8 elements)
+ */
+double* ndarray_get_slice_ptr(NDArray arr, int axis, size_t index);
+
+/**
+ * Copy a slice from one array to another.
+ * Copies data from a slice in the source array to a slice in the destination.
+ * 
+ * @param src Source ndarray
+ * @param src_axis Axis in source
+ * @param src_idx Index along source axis
+ * @param dst Destination ndarray
+ * @param dst_axis Axis in destination
+ * @param dst_idx Index along destination axis
+ * 
+ * Examples:
+ *   Copy row 0 from A to row 2 of B: ndarray_copy_slice(A, 0, 0, B, 0, 2)
+ *   Copy column 1 from A to column 3 of B: ndarray_copy_slice(A, 1, 1, B, 1, 3)
+ */
+void ndarray_copy_slice(NDArray src, int src_axis, size_t src_idx,
+                        NDArray dst, int dst_axis, size_t dst_idx);
+
+/**
+ * Get the size of a slice along an axis.
+ * Returns the number of elements in a slice perpendicular to the given axis.
+ * 
+ * @param arr The ndarray
+ * @param axis The axis
+ * @return Number of elements in a slice
+ * 
+ * Examples:
+ *   2D [3,4]: axis=0 -> 4 (elements per row)
+ *   2D [3,4]: axis=1 -> 3 (elements per column)
+ *   3D [2,3,4]: axis=1 -> 8 (2*4 elements per plane)
+ */
+size_t ndarray_get_slice_size(NDArray arr, int axis);
+
+/**
  * Pretty-prints an ndarray to stdout.
  * Automatically formats output based on dimensionality:
  * - 2D: matrix format with aligned columns
@@ -323,6 +372,288 @@ NDArray ndarray_mapfnc(NDArray A, double (*func)(double));
  *   ndarray_axpby(A, 0.5, B, 0.5)  // A = (A + B) / 2 (average)
  */
 NDArray ndarray_axpby(NDArray A, double alpha, NDArray B, double beta);
+
+/**
+ * Scale and shift: A = alpha*A + beta
+ * Efficiently computes an affine transformation on array elements.
+ * Uses optimized BLAS dscal for scaling.
+ * 
+ * @param A The ndarray to modify
+ * @param alpha Scaling factor
+ * @param beta Shift value
+ * @return A handle to the modified ndarray A
+ * 
+ * Examples:
+ *   ndarray_scale_shift(A, 2.0, 3.0)    // A = 2*A + 3
+ *   ndarray_scale_shift(A, 0.5, 0.0)    // A = A / 2
+ *   ndarray_scale_shift(A, 1.0, -5.0)   // A = A - 5
+ */
+NDArray ndarray_scale_shift(NDArray A, double alpha, double beta);
+
+/**
+ * Element-wise multiply then scale: A = A * B * scalar
+ * Computes element-wise product of A and B, then scales by scalar.
+ * All operations are fused for better performance.
+ * 
+ * @param A The first ndarray (modified in place)
+ * @param B The second ndarray
+ * @param scalar Scaling factor
+ * @return A handle to the modified ndarray A
+ * 
+ * Examples:
+ *   ndarray_mul_scaled(A, B, 2.0)   // A = 2 * A * B
+ *   ndarray_mul_scaled(A, B, 0.5)   // A = (A * B) / 2
+ */
+NDArray ndarray_mul_scaled(NDArray A, NDArray B, double scalar);
+
+/**
+ * Map function, then multiply: A = func(A) * B * alpha
+ * Applies a function element-wise to A, then multiplies by B and scales.
+ * Fused operation for better performance than separate map + multiply.
+ * 
+ * @param A The first ndarray (modified in place)
+ * @param func Function to apply to each element of A
+ * @param B The second ndarray
+ * @param alpha Scaling factor
+ * @return A handle to the modified ndarray A
+ * 
+ * Examples:
+ *   ndarray_map_mul(A, sqrt, B, dt)  // A = sqrt(A) * B * dt
+ *   ndarray_map_mul(A, exp, B, 1.0)  // A = exp(A) * B
+ */
+NDArray ndarray_map_mul(NDArray A, double (*func)(double), 
+                        NDArray B, double alpha);
+
+/**
+ * Fused multiply-add: C = alpha * (A * B) + beta * C
+ * Element-wise multiply A and B, scale by alpha, add to beta*C.
+ * Efficiently computes weighted element-wise product with accumulation.
+ * 
+ * @param A The first source ndarray
+ * @param B The second source ndarray
+ * @param C The destination ndarray (modified in place)
+ * @param alpha Scaling factor for A*B
+ * @param beta Scaling factor for existing C values
+ * @return A handle to the modified ndarray C
+ * 
+ * Examples:
+ *   ndarray_mul_add(A, B, C, 1.0, 0.0)  // C = A * B
+ *   ndarray_mul_add(A, B, C, 1.0, 1.0)  // C = C + A * B
+ *   ndarray_mul_add(A, B, C, 2.0, 0.5)  // C = 2*(A*B) + 0.5*C
+ */
+NDArray ndarray_mul_add(NDArray A, NDArray B, NDArray C, 
+                        double alpha, double beta);
+
+/**
+ * General matrix-vector multiply: y = alpha * A * x + beta * y
+ * Computes matrix-vector product using optimized BLAS dgemv.
+ * A must be 2D, x and y must be vectors (one dimension = 1).
+ * 
+ * @param A The matrix (2D ndarray)
+ * @param x The input vector (column [n,1] or row [1,n])
+ * @param alpha Scaling factor for A*x
+ * @param beta Scaling factor for existing y values
+ * @param y The output vector (modified in place)
+ * 
+ * Examples:
+ *   ndarray_gemv(A, x, 1.0, 0.0, y)  // y = A * x
+ *   ndarray_gemv(A, x, 1.0, 1.0, y)  // y = y + A * x
+ *   ndarray_gemv(A, x, 2.0, 0.5, y)  // y = 2*A*x + 0.5*y
+ */
+void ndarray_gemv(NDArray A, NDArray x, double alpha, 
+                  double beta, NDArray y);
+
+/**
+ * Clip values below a minimum threshold: A = max(A, min_val)
+ * All elements less than min_val are set to min_val.
+ * SIMD-optimized for performance.
+ * 
+ * @param A The ndarray to modify
+ * @param min_val Minimum value threshold
+ * @return A handle to the modified ndarray A
+ * 
+ * Examples:
+ *   ndarray_clip_min(A, 0.0)    // Non-negativity constraint
+ *   ndarray_clip_min(A, -1.0)   // Clip to [-1, +inf)
+ * 
+ * Common uses: Non-negativity constraints, ReLU activation, numerical stability
+ */
+NDArray ndarray_clip_min(NDArray A, double min_val);
+
+/**
+ * Clip values above a maximum threshold: A = min(A, max_val)
+ * All elements greater than max_val are set to max_val.
+ * SIMD-optimized for performance.
+ * 
+ * @param A The ndarray to modify
+ * @param max_val Maximum value threshold
+ * @return A handle to the modified ndarray A
+ * 
+ * Examples:
+ *   ndarray_clip_max(A, 1.0)    // Clip to (-inf, 1]
+ *   ndarray_clip_max(A, 100.0)  // Cap at 100
+ * 
+ * Common uses: Saturation, preventing overflow, capping values
+ */
+NDArray ndarray_clip_max(NDArray A, double max_val);
+
+/**
+ * Clip values to a range: A = clamp(A, min_val, max_val)
+ * All elements are constrained to [min_val, max_val].
+ * SIMD-optimized for performance.
+ * 
+ * @param A The ndarray to modify
+ * @param min_val Minimum value threshold
+ * @param max_val Maximum value threshold
+ * @return A handle to the modified ndarray A
+ * 
+ * Examples:
+ *   ndarray_clip(A, 0.0, 1.0)    // Clip to [0, 1] (probabilities)
+ *   ndarray_clip(A, -1.0, 1.0)   // Clip to [-1, 1] (tanh-like)
+ * 
+ * Common uses: Normalized ranges, activation functions, data validation
+ */
+NDArray ndarray_clip(NDArray A, double min_val, double max_val);
+
+/**
+ * Absolute value: A = |A|
+ * Computes element-wise absolute value.
+ * 
+ * @param A The ndarray to modify
+ * @return A handle to the modified ndarray A
+ * 
+ * Examples:
+ *   ndarray_abs(A)  // All values become non-negative
+ * 
+ * Common uses: Distance calculations, error metrics, magnitude
+ */
+NDArray ndarray_abs(NDArray A);
+
+/**
+ * Sign function: A = sign(A)
+ * Returns -1 for negative values, 0 for zero, +1 for positive values.
+ * 
+ * @param A The ndarray to modify
+ * @return A handle to the modified ndarray A
+ * 
+ * Examples:
+ *   ndarray_sign(A)  // Extract sign information
+ * 
+ * Common uses: Direction indicators, sign-based algorithms
+ */
+NDArray ndarray_sign(NDArray A);
+
+/**
+ * Element-wise equality comparison: result = (A == B)
+ * Returns 1.0 where elements are equal, 0.0 otherwise.
+ * 
+ * @param A First ndarray
+ * @param B Second ndarray
+ * @return New ndarray with comparison results
+ * 
+ * Common uses: Boolean masks, condition checking
+ */
+NDArray ndarray_new_equal(NDArray A, NDArray B);
+
+/**
+ * Element-wise less-than comparison: result = (A < B)
+ * Returns 1.0 where A < B, 0.0 otherwise.
+ * 
+ * @param A First ndarray
+ * @param B Second ndarray
+ * @return New ndarray with comparison results
+ */
+NDArray ndarray_new_less(NDArray A, NDArray B);
+
+/**
+ * Element-wise greater-than comparison: result = (A > B)
+ * Returns 1.0 where A > B, 0.0 otherwise.
+ * 
+ * @param A First ndarray
+ * @param B Second ndarray
+ * @return New ndarray with comparison results
+ */
+NDArray ndarray_new_greater(NDArray A, NDArray B);
+
+/**
+ * Scalar equality comparison: result = (A == value)
+ * Returns 1.0 where elements equal value, 0.0 otherwise.
+ * 
+ * @param A The ndarray
+ * @param value Scalar value to compare against
+ * @return New ndarray with comparison results
+ * 
+ * Example: Find all zeros: ndarray_new_equal_scalar(A, 0.0)
+ */
+NDArray ndarray_new_equal_scalar(NDArray A, double value);
+
+/**
+ * Scalar less-than comparison: result = (A < value)
+ * Returns 1.0 where elements are less than value, 0.0 otherwise.
+ * 
+ * @param A The ndarray
+ * @param value Scalar value to compare against
+ * @return New ndarray with comparison results
+ */
+NDArray ndarray_new_less_scalar(NDArray A, double value);
+
+/**
+ * Scalar greater-than comparison: result = (A > value)
+ * Returns 1.0 where elements are greater than value, 0.0 otherwise.
+ * 
+ * @param A The ndarray
+ * @param value Scalar value to compare against
+ * @return New ndarray with comparison results
+ */
+NDArray ndarray_new_greater_scalar(NDArray A, double value);
+
+/**
+ * Logical AND: result = (A && B)
+ * Returns 1.0 where both elements are non-zero, 0.0 otherwise.
+ * 
+ * @param A First ndarray (treated as boolean)
+ * @param B Second ndarray (treated as boolean)
+ * @return New ndarray with logical AND results
+ * 
+ * Common uses: Combining conditions, boolean masks
+ */
+NDArray ndarray_logical_and(NDArray A, NDArray B);
+
+/**
+ * Logical OR: result = (A || B)
+ * Returns 1.0 where at least one element is non-zero, 0.0 otherwise.
+ * 
+ * @param A First ndarray (treated as boolean)
+ * @param B Second ndarray (treated as boolean)
+ * @return New ndarray with logical OR results
+ */
+NDArray ndarray_logical_or(NDArray A, NDArray B);
+
+/**
+ * Logical NOT: result = !A
+ * Returns 1.0 where element is zero, 0.0 where non-zero.
+ * 
+ * @param A The ndarray (treated as boolean)
+ * @return New ndarray with logical NOT results
+ */
+NDArray ndarray_logical_not(NDArray A);
+
+/**
+ * Element-wise ternary operator: result = condition ? x : y
+ * NumPy-style where function. Selects elements from x or y based on condition.
+ * 
+ * @param condition Boolean array (non-zero = true)
+ * @param x Array to select from when condition is true
+ * @param y Array to select from when condition is false
+ * @return New ndarray with selected values
+ * 
+ * Example:
+ *   NDArray positive = ndarray_new_greater_scalar(A, 0.0);
+ *   NDArray result = ndarray_where(positive, A, zeros);  // Keep only positive values
+ * 
+ * Common uses: Conditional replacement, masking, piecewise functions
+ */
+NDArray ndarray_where(NDArray condition, NDArray x, NDArray y);
 
 /**
  * Tensor contraction (generalized tensor product).

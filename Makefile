@@ -31,7 +31,7 @@ EXAMPLEDIR = examples
 
 SRCS = $(SRCDIR)/ndarray_core.c $(SRCDIR)/ndarray_creation.c $(SRCDIR)/ndarray_arithmetic.c \
        $(SRCDIR)/ndarray_linalg.c $(SRCDIR)/ndarray_manipulation.c $(SRCDIR)/ndarray_aggregation.c \
-       $(SRCDIR)/ndarray_print.c $(SRCDIR)/ndarray_io.c
+       $(SRCDIR)/ndarray_print.c $(SRCDIR)/ndarray_io.c $(SRCDIR)/ndarray_comparison.c
 
 
 OBJ = $(SRCS:.c=.o)

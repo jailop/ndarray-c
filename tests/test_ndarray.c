@@ -509,6 +509,218 @@ void test_ndarray_axpby_zero_coefficients(void) {
     ndarray_free(B);
 }
 
+void test_ndarray_scale_shift(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_full(dims, 4.0);
+    
+    // A = 2*A + 3 = 2*4 + 3 = 11
+    ndarray_scale_shift(A, 2.0, 3.0);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(A->data[i], 11.0, EPSILON);
+    }
+    
+    ndarray_free(A);
+}
+
+void test_ndarray_scale_shift_half(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_arange(dims, 2.0, 8.0, 1.0);
+    
+    // A = 0.5*A + 0 (halve values)
+    ndarray_scale_shift(A, 0.5, 0.0);
+    
+    CU_ASSERT_DOUBLE_EQUAL(A->data[0], 1.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[1], 1.5, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[5], 3.5, EPSILON);
+    
+    ndarray_free(A);
+}
+
+void test_ndarray_mul_scaled(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_full(dims, 2.0);
+    NDArray B = ndarray_new_full(dims, 3.0);
+    
+    // A = A * B * 4 = 2 * 3 * 4 = 24
+    ndarray_mul_scaled(A, B, 4.0);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(A->data[i], 24.0, EPSILON);
+    }
+    
+    ndarray_free(A);
+    ndarray_free(B);
+}
+
+void test_ndarray_mul_scaled_half(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_arange(dims, 1.0, 7.0, 1.0);
+    NDArray B = ndarray_new_full(dims, 2.0);
+    
+    // A = A * B * 0.5 = [1,2,3,4,5,6] * 2 * 0.5 = [1,2,3,4,5,6]
+    ndarray_mul_scaled(A, B, 0.5);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(A->data[i], (double)(i + 1), EPSILON);
+    }
+    
+    ndarray_free(A);
+    ndarray_free(B);
+}
+
+double sqrt_func(double x) {
+    return sqrt(x);
+}
+
+void test_ndarray_map_mul(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_full(dims, 4.0);
+    NDArray B = ndarray_new_full(dims, 3.0);
+    
+    // A = sqrt(A) * B * 2 = sqrt(4) * 3 * 2 = 2 * 3 * 2 = 12
+    ndarray_map_mul(A, sqrt_func, B, 2.0);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(A->data[i], 12.0, EPSILON);
+    }
+    
+    ndarray_free(A);
+    ndarray_free(B);
+}
+
+double identity_func(double x) {
+    return x;
+}
+
+void test_ndarray_map_mul_identity(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_arange(dims, 1.0, 7.0, 1.0);
+    NDArray B = ndarray_new_full(dims, 2.0);
+    
+    // With identity function: A = A * B * 1 = [1,2,3,4,5,6] * 2
+    ndarray_map_mul(A, identity_func, B, 1.0);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(A->data[i], (double)(i + 1) * 2.0, EPSILON);
+    }
+    
+    ndarray_free(A);
+    ndarray_free(B);
+}
+
+void test_ndarray_mul_add_basic(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_full(dims, 2.0);
+    NDArray B = ndarray_new_full(dims, 3.0);
+    NDArray C = ndarray_new_full(dims, 5.0);
+    
+    // C = 2 * (A * B) + 0.5 * C = 2 * (2*3) + 0.5 * 5 = 12 + 2.5 = 14.5
+    ndarray_mul_add(A, B, C, 2.0, 0.5);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(C->data[i], 14.5, EPSILON);
+    }
+    
+    ndarray_free_all(NDA_LIST(A, B, C));
+}
+
+void test_ndarray_mul_add_accumulate(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_full(dims, 2.0);
+    NDArray B = ndarray_new_full(dims, 3.0);
+    NDArray C = ndarray_new_full(dims, 10.0);
+    
+    // C = 1 * (A * B) + 1 * C = 6 + 10 = 16
+    ndarray_mul_add(A, B, C, 1.0, 1.0);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(C->data[i], 16.0, EPSILON);
+    }
+    
+    ndarray_free_all(NDA_LIST(A, B, C));
+}
+
+void test_ndarray_mul_add_replace(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_full(dims, 4.0);
+    NDArray B = ndarray_new_full(dims, 5.0);
+    NDArray C = ndarray_new_full(dims, 100.0);
+    
+    // C = 1 * (A * B) + 0 * C = 20
+    ndarray_mul_add(A, B, C, 1.0, 0.0);
+    
+    for (size_t i = 0; i < 6; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(C->data[i], 20.0, EPSILON);
+    }
+    
+    ndarray_free_all(NDA_LIST(A, B, C));
+}
+
+void test_ndarray_gemv_basic(void) {
+    // A: 3x4 matrix, x: 4x1 vector, y: 3x1 vector
+    size_t dims_a[] = {3, 4, 0};
+    size_t dims_x[] = {4, 1, 0};
+    size_t dims_y[] = {3, 1, 0};
+    
+    NDArray A = ndarray_new_ones(dims_a);
+    NDArray x = ndarray_new_full(dims_x, 2.0);
+    NDArray y = ndarray_new_zeros(dims_y);
+    
+    // y = 1.0 * A * x + 0.0 * y = A * [2,2,2,2]^T = [8,8,8]^T
+    ndarray_gemv(A, x, 1.0, 0.0, y);
+    
+    for (size_t i = 0; i < 3; ++i) {
+        CU_ASSERT_DOUBLE_EQUAL(y->data[i], 8.0, EPSILON);
+    }
+    
+    ndarray_free_all(NDA_LIST(A, x, y));
+}
+
+void test_ndarray_gemv_accumulate(void) {
+    // A: 2x3 matrix, x: 3x1 vector, y: 2x1 vector
+    size_t dims_a[] = {2, 3, 0};
+    size_t dims_x[] = {3, 1, 0};
+    size_t dims_y[] = {2, 1, 0};
+    
+    NDArray A = ndarray_new_ones(dims_a);
+    NDArray x = ndarray_new_full(dims_x, 1.0);
+    NDArray y = ndarray_new_full(dims_y, 5.0);
+    
+    // y = 1.0 * A * x + 1.0 * y = [3,3]^T + [5,5]^T = [8,8]^T
+    ndarray_gemv(A, x, 1.0, 1.0, y);
+    
+    CU_ASSERT_DOUBLE_EQUAL(y->data[0], 8.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(y->data[1], 8.0, EPSILON);
+    
+    ndarray_free_all(NDA_LIST(A, x, y));
+}
+
+void test_ndarray_gemv_scaled(void) {
+    // Test with alpha and beta != 1
+    size_t dims_a[] = {2, 2, 0};
+    size_t dims_x[] = {2, 1, 0};
+    size_t dims_y[] = {2, 1, 0};
+    
+    NDArray A = ndarray_new(dims_a);
+    A->data[0] = 1.0; A->data[1] = 2.0;
+    A->data[2] = 3.0; A->data[3] = 4.0;
+    
+    NDArray x = ndarray_new(dims_x);
+    x->data[0] = 1.0; x->data[1] = 1.0;
+    
+    NDArray y = ndarray_new_full(dims_y, 10.0);
+    
+    // y = 2.0 * A * x + 0.5 * y
+    // A*x = [3, 7]^T, result = 2*[3,7] + 0.5*[10,10] = [6,14] + [5,5] = [11,19]
+    ndarray_gemv(A, x, 2.0, 0.5, y);
+    
+    CU_ASSERT_DOUBLE_EQUAL(y->data[0], 11.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(y->data[1], 19.0, EPSILON);
+    
+    ndarray_free_all(NDA_LIST(A, x, y));
+}
+
 /* ========== Test: Matrix Multiplication ========== */
 
 void test_ndarray_matmul_2d(void) {
@@ -1420,6 +1632,290 @@ void test_ndarray_aggr_min_axis1_4d(void) {
     ndarray_free(result);
 }
 
+/* ========== Test: Conditional Operations ========== */
+
+void test_ndarray_clip_min_basic(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_arange(dims, -3.0, 3.0, 1.0);
+    
+    // Clip to minimum 0.0
+    ndarray_clip_min(A, 0.0);
+    
+    CU_ASSERT_DOUBLE_EQUAL(A->data[0], 0.0, EPSILON);  // was -3
+    CU_ASSERT_DOUBLE_EQUAL(A->data[1], 0.0, EPSILON);  // was -2
+    CU_ASSERT_DOUBLE_EQUAL(A->data[2], 0.0, EPSILON);  // was -1
+    CU_ASSERT_DOUBLE_EQUAL(A->data[3], 0.0, EPSILON);  // was 0
+    CU_ASSERT_DOUBLE_EQUAL(A->data[4], 1.0, EPSILON);  // was 1
+    CU_ASSERT_DOUBLE_EQUAL(A->data[5], 2.0, EPSILON);  // was 2
+    
+    ndarray_free(A);
+}
+
+void test_ndarray_clip_max_basic(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_arange(dims, -1.0, 5.0, 1.0);
+    
+    // Clip to maximum 2.0
+    ndarray_clip_max(A, 2.0);
+    
+    CU_ASSERT_DOUBLE_EQUAL(A->data[0], -1.0, EPSILON);  // was -1
+    CU_ASSERT_DOUBLE_EQUAL(A->data[1], 0.0, EPSILON);   // was 0
+    CU_ASSERT_DOUBLE_EQUAL(A->data[2], 1.0, EPSILON);   // was 1
+    CU_ASSERT_DOUBLE_EQUAL(A->data[3], 2.0, EPSILON);   // was 2
+    CU_ASSERT_DOUBLE_EQUAL(A->data[4], 2.0, EPSILON);   // was 3
+    CU_ASSERT_DOUBLE_EQUAL(A->data[5], 2.0, EPSILON);   // was 4
+    
+    ndarray_free(A);
+}
+
+void test_ndarray_clip_range(void) {
+    size_t dims[] = {2, 4, 0};
+    NDArray A = ndarray_new_arange(dims, -2.0, 6.0, 1.0);
+    
+    // Clip to [-1, 3] range
+    ndarray_clip(A, -1.0, 3.0);
+    
+    CU_ASSERT_DOUBLE_EQUAL(A->data[0], -1.0, EPSILON);  // was -2
+    CU_ASSERT_DOUBLE_EQUAL(A->data[1], -1.0, EPSILON);  // was -1
+    CU_ASSERT_DOUBLE_EQUAL(A->data[2], 0.0, EPSILON);   // was 0
+    CU_ASSERT_DOUBLE_EQUAL(A->data[3], 1.0, EPSILON);   // was 1
+    CU_ASSERT_DOUBLE_EQUAL(A->data[4], 2.0, EPSILON);   // was 2
+    CU_ASSERT_DOUBLE_EQUAL(A->data[5], 3.0, EPSILON);   // was 3
+    CU_ASSERT_DOUBLE_EQUAL(A->data[6], 3.0, EPSILON);   // was 4
+    CU_ASSERT_DOUBLE_EQUAL(A->data[7], 3.0, EPSILON);   // was 5
+    
+    ndarray_free(A);
+}
+
+void test_ndarray_abs_basic(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_arange(dims, -2.0, 4.0, 1.0);
+    
+    ndarray_abs(A);
+    
+    CU_ASSERT_DOUBLE_EQUAL(A->data[0], 2.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[1], 1.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[2], 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[3], 1.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[4], 2.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[5], 3.0, EPSILON);
+    
+    ndarray_free(A);
+}
+
+void test_ndarray_sign_basic(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new(dims);
+    A->data[0] = -5.0;
+    A->data[1] = -0.5;
+    A->data[2] = 0.0;
+    A->data[3] = 0.5;
+    A->data[4] = 5.0;
+    A->data[5] = 100.0;
+    
+    ndarray_sign(A);
+    
+    CU_ASSERT_DOUBLE_EQUAL(A->data[0], -1.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[1], -1.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[2], 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[3], 1.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[4], 1.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(A->data[5], 1.0, EPSILON);
+    
+    ndarray_free(A);
+}
+
+/* ========== Test: Slice Access ========== */
+
+void test_ndarray_get_slice_ptr_2d(void) {
+    size_t dims[] = {3, 4, 0};
+    NDArray A = ndarray_new_arange(dims, 0.0, 12.0, 1.0);
+    
+    // Get pointer to row 1
+    double* row1 = ndarray_get_slice_ptr(A, 0, 1);
+    CU_ASSERT_DOUBLE_EQUAL(row1[0], 4.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(row1[1], 5.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(row1[2], 6.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(row1[3], 7.0, EPSILON);
+    
+    ndarray_free(A);
+}
+
+void test_ndarray_copy_slice_2d(void) {
+    size_t dims[] = {3, 4, 0};
+    NDArray A = ndarray_new_arange(dims, 0.0, 12.0, 1.0);
+    NDArray B = ndarray_new_zeros(dims);
+    
+    // Copy row 1 from A to row 2 of B
+    ndarray_copy_slice(A, 0, 1, B, 0, 2);
+    
+    CU_ASSERT_DOUBLE_EQUAL(B->data[8], 4.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(B->data[9], 5.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(B->data[10], 6.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(B->data[11], 7.0, EPSILON);
+    
+    // Other rows should still be zero
+    CU_ASSERT_DOUBLE_EQUAL(B->data[0], 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(B->data[4], 0.0, EPSILON);
+    
+    ndarray_free_all(NDA_LIST(A, B));
+}
+
+void test_ndarray_get_slice_size(void) {
+    size_t dims2d[] = {3, 4, 0};
+    NDArray A2d = ndarray_new(dims2d);
+    
+    CU_ASSERT_EQUAL(ndarray_get_slice_size(A2d, 0), 4);   // Row has 4 elements
+    CU_ASSERT_EQUAL(ndarray_get_slice_size(A2d, 1), 3);   // Column has 3 elements
+    
+    size_t dims3d[] = {2, 3, 4, 0};
+    NDArray A3d = ndarray_new(dims3d);
+    
+    CU_ASSERT_EQUAL(ndarray_get_slice_size(A3d, 0), 12);  // 3*4
+    CU_ASSERT_EQUAL(ndarray_get_slice_size(A3d, 1), 8);   // 2*4
+    CU_ASSERT_EQUAL(ndarray_get_slice_size(A3d, 2), 6);   // 2*3
+    
+    ndarray_free_all(NDA_LIST(A2d, A3d));
+}
+
+/* ========== Test: Comparison Operations ========== */
+
+void test_ndarray_equal(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new(dims);
+    NDArray B = ndarray_new(dims);
+    
+    A->data[0] = 1.0; B->data[0] = 1.0;
+    A->data[1] = 2.0; B->data[1] = 3.0;
+    A->data[2] = 3.0; B->data[2] = 3.0;
+    A->data[3] = 4.0; B->data[3] = 4.0;
+    A->data[4] = 5.0; B->data[4] = 6.0;
+    A->data[5] = 7.0; B->data[5] = 7.0;
+    
+    NDArray result = ndarray_new_equal(A, B);
+    
+    CU_ASSERT_DOUBLE_EQUAL(result->data[0], 1.0, EPSILON);  // equal
+    CU_ASSERT_DOUBLE_EQUAL(result->data[1], 0.0, EPSILON);  // not equal
+    CU_ASSERT_DOUBLE_EQUAL(result->data[2], 1.0, EPSILON);  // equal
+    CU_ASSERT_DOUBLE_EQUAL(result->data[3], 1.0, EPSILON);  // equal
+    CU_ASSERT_DOUBLE_EQUAL(result->data[4], 0.0, EPSILON);  // not equal
+    CU_ASSERT_DOUBLE_EQUAL(result->data[5], 1.0, EPSILON);  // equal
+    
+    ndarray_free_all(NDA_LIST(A, B, result));
+}
+
+void test_ndarray_less_greater(void) {
+    size_t dims[] = {2, 2, 0};
+    NDArray A = ndarray_new_arange(dims, 1.0, 5.0, 1.0);
+    NDArray B = ndarray_new_full(dims, 2.5);
+    
+    NDArray less = ndarray_new_less(A, B);
+    CU_ASSERT_DOUBLE_EQUAL(less->data[0], 1.0, EPSILON);  // 1 < 2.5
+    CU_ASSERT_DOUBLE_EQUAL(less->data[1], 1.0, EPSILON);  // 2 < 2.5
+    CU_ASSERT_DOUBLE_EQUAL(less->data[2], 0.0, EPSILON);  // 3 < 2.5
+    CU_ASSERT_DOUBLE_EQUAL(less->data[3], 0.0, EPSILON);  // 4 < 2.5
+    
+    NDArray greater = ndarray_new_greater(A, B);
+    CU_ASSERT_DOUBLE_EQUAL(greater->data[0], 0.0, EPSILON);  // 1 > 2.5
+    CU_ASSERT_DOUBLE_EQUAL(greater->data[1], 0.0, EPSILON);  // 2 > 2.5
+    CU_ASSERT_DOUBLE_EQUAL(greater->data[2], 1.0, EPSILON);  // 3 > 2.5
+    CU_ASSERT_DOUBLE_EQUAL(greater->data[3], 1.0, EPSILON);  // 4 > 2.5
+    
+    ndarray_free_all(NDA_LIST(A, B, less, greater));
+}
+
+void test_ndarray_scalar_comparison(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray A = ndarray_new_arange(dims, 0.0, 6.0, 1.0);
+    
+    NDArray eq = ndarray_new_equal_scalar(A, 3.0);
+    CU_ASSERT_DOUBLE_EQUAL(eq->data[3], 1.0, EPSILON);  // Only index 3 == 3.0
+    CU_ASSERT_DOUBLE_EQUAL(eq->data[0], 0.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(eq->data[5], 0.0, EPSILON);
+    
+    NDArray lt = ndarray_new_less_scalar(A, 3.0);
+    CU_ASSERT_DOUBLE_EQUAL(lt->data[0], 1.0, EPSILON);  // 0 < 3
+    CU_ASSERT_DOUBLE_EQUAL(lt->data[1], 1.0, EPSILON);  // 1 < 3
+    CU_ASSERT_DOUBLE_EQUAL(lt->data[2], 1.0, EPSILON);  // 2 < 3
+    CU_ASSERT_DOUBLE_EQUAL(lt->data[3], 0.0, EPSILON);  // 3 < 3
+    
+    NDArray gt = ndarray_new_greater_scalar(A, 3.0);
+    CU_ASSERT_DOUBLE_EQUAL(gt->data[4], 1.0, EPSILON);  // 4 > 3
+    CU_ASSERT_DOUBLE_EQUAL(gt->data[5], 1.0, EPSILON);  // 5 > 3
+    CU_ASSERT_DOUBLE_EQUAL(gt->data[2], 0.0, EPSILON);  // 2 > 3
+    
+    ndarray_free_all(NDA_LIST(A, eq, lt, gt));
+}
+
+void test_ndarray_logical_and_or(void) {
+    size_t dims[] = {2, 2, 0};
+    NDArray A = ndarray_new(dims);
+    NDArray B = ndarray_new(dims);
+    
+    A->data[0] = 1.0; B->data[0] = 1.0;
+    A->data[1] = 1.0; B->data[1] = 0.0;
+    A->data[2] = 0.0; B->data[2] = 1.0;
+    A->data[3] = 0.0; B->data[3] = 0.0;
+    
+    NDArray and_result = ndarray_logical_and(A, B);
+    CU_ASSERT_DOUBLE_EQUAL(and_result->data[0], 1.0, EPSILON);  // T && T
+    CU_ASSERT_DOUBLE_EQUAL(and_result->data[1], 0.0, EPSILON);  // T && F
+    CU_ASSERT_DOUBLE_EQUAL(and_result->data[2], 0.0, EPSILON);  // F && T
+    CU_ASSERT_DOUBLE_EQUAL(and_result->data[3], 0.0, EPSILON);  // F && F
+    
+    NDArray or_result = ndarray_logical_or(A, B);
+    CU_ASSERT_DOUBLE_EQUAL(or_result->data[0], 1.0, EPSILON);  // T || T
+    CU_ASSERT_DOUBLE_EQUAL(or_result->data[1], 1.0, EPSILON);  // T || F
+    CU_ASSERT_DOUBLE_EQUAL(or_result->data[2], 1.0, EPSILON);  // F || T
+    CU_ASSERT_DOUBLE_EQUAL(or_result->data[3], 0.0, EPSILON);  // F || F
+    
+    ndarray_free_all(NDA_LIST(A, B, and_result, or_result));
+}
+
+void test_ndarray_logical_not(void) {
+    size_t dims[] = {2, 2, 0};
+    NDArray A = ndarray_new(dims);
+    
+    A->data[0] = 1.0;
+    A->data[1] = 0.0;
+    A->data[2] = 5.0;
+    A->data[3] = 0.0;
+    
+    NDArray result = ndarray_logical_not(A);
+    
+    CU_ASSERT_DOUBLE_EQUAL(result->data[0], 0.0, EPSILON);  // !T
+    CU_ASSERT_DOUBLE_EQUAL(result->data[1], 1.0, EPSILON);  // !F
+    CU_ASSERT_DOUBLE_EQUAL(result->data[2], 0.0, EPSILON);  // !T
+    CU_ASSERT_DOUBLE_EQUAL(result->data[3], 1.0, EPSILON);  // !F
+    
+    ndarray_free_all(NDA_LIST(A, result));
+}
+
+void test_ndarray_where(void) {
+    size_t dims[] = {2, 3, 0};
+    NDArray condition = ndarray_new(dims);
+    NDArray x = ndarray_new_full(dims, 10.0);
+    NDArray y = ndarray_new_full(dims, 20.0);
+    
+    condition->data[0] = 1.0;  // true
+    condition->data[1] = 0.0;  // false
+    condition->data[2] = 1.0;  // true
+    condition->data[3] = 0.0;  // false
+    condition->data[4] = 1.0;  // true
+    condition->data[5] = 0.0;  // false
+    
+    NDArray result = ndarray_where(condition, x, y);
+    
+    CU_ASSERT_DOUBLE_EQUAL(result->data[0], 10.0, EPSILON);  // from x
+    CU_ASSERT_DOUBLE_EQUAL(result->data[1], 20.0, EPSILON);  // from y
+    CU_ASSERT_DOUBLE_EQUAL(result->data[2], 10.0, EPSILON);  // from x
+    CU_ASSERT_DOUBLE_EQUAL(result->data[3], 20.0, EPSILON);  // from y
+    CU_ASSERT_DOUBLE_EQUAL(result->data[4], 10.0, EPSILON);  // from x
+    CU_ASSERT_DOUBLE_EQUAL(result->data[5], 20.0, EPSILON);  // from y
+    
+    ndarray_free_all(NDA_LIST(condition, x, y, result));
+}
+
 /* ========== Main Test Runner ========== */
 
 int main() {
@@ -1434,6 +1930,9 @@ int main() {
     CU_pSuite suite_transpose = NULL;
     CU_pSuite suite_reshape = NULL;
     CU_pSuite suite_aggregation = NULL;
+    CU_pSuite suite_conditional = NULL;
+    CU_pSuite suite_slice_access = NULL;
+    CU_pSuite suite_comparison = NULL;
     
     /* Initialize CUnit registry */
     if (CUE_SUCCESS != CU_initialize_registry()) {
@@ -1494,6 +1993,18 @@ int main() {
     CU_add_test(suite_arithmetic, "test axpby average", test_ndarray_axpby_average);
     CU_add_test(suite_arithmetic, "test axpby 3D", test_ndarray_axpby_3d);
     CU_add_test(suite_arithmetic, "test axpby zero coefficients", test_ndarray_axpby_zero_coefficients);
+    CU_add_test(suite_arithmetic, "test scale_shift", test_ndarray_scale_shift);
+    CU_add_test(suite_arithmetic, "test scale_shift half", test_ndarray_scale_shift_half);
+    CU_add_test(suite_arithmetic, "test mul_scaled", test_ndarray_mul_scaled);
+    CU_add_test(suite_arithmetic, "test mul_scaled half", test_ndarray_mul_scaled_half);
+    CU_add_test(suite_arithmetic, "test map_mul", test_ndarray_map_mul);
+    CU_add_test(suite_arithmetic, "test map_mul identity", test_ndarray_map_mul_identity);
+    CU_add_test(suite_arithmetic, "test mul_add basic", test_ndarray_mul_add_basic);
+    CU_add_test(suite_arithmetic, "test mul_add accumulate", test_ndarray_mul_add_accumulate);
+    CU_add_test(suite_arithmetic, "test mul_add replace", test_ndarray_mul_add_replace);
+    CU_add_test(suite_arithmetic, "test gemv basic", test_ndarray_gemv_basic);
+    CU_add_test(suite_arithmetic, "test gemv accumulate", test_ndarray_gemv_accumulate);
+    CU_add_test(suite_arithmetic, "test gemv scaled", test_ndarray_gemv_scaled);
     
     /* Add suite: Matrix Multiplication */
     suite_matmul = CU_add_suite("Matrix Multiplication", init_suite, clean_suite);
@@ -1596,6 +2107,44 @@ int main() {
     CU_add_test(suite_aggregation, "test mean axis0 3D", test_ndarray_aggr_mean_axis0_3d);
     CU_add_test(suite_aggregation, "test max axis2 3D", test_ndarray_aggr_max_axis2_3d);
     CU_add_test(suite_aggregation, "test min axis1 4D", test_ndarray_aggr_min_axis1_4d);
+    
+    /* Add suite: Conditional Operations */
+    suite_conditional = CU_add_suite("Conditional Operations", init_suite, clean_suite);
+    if (NULL == suite_conditional) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    
+    CU_add_test(suite_conditional, "test clip_min basic", test_ndarray_clip_min_basic);
+    CU_add_test(suite_conditional, "test clip_max basic", test_ndarray_clip_max_basic);
+    CU_add_test(suite_conditional, "test clip range", test_ndarray_clip_range);
+    CU_add_test(suite_conditional, "test abs basic", test_ndarray_abs_basic);
+    CU_add_test(suite_conditional, "test sign basic", test_ndarray_sign_basic);
+    
+    /* Add suite: Slice Access */
+    suite_slice_access = CU_add_suite("Slice Access", init_suite, clean_suite);
+    if (NULL == suite_slice_access) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    
+    CU_add_test(suite_slice_access, "test get_slice_ptr 2D", test_ndarray_get_slice_ptr_2d);
+    CU_add_test(suite_slice_access, "test copy_slice 2D", test_ndarray_copy_slice_2d);
+    CU_add_test(suite_slice_access, "test get_slice_size", test_ndarray_get_slice_size);
+    
+    /* Add suite: Comparison Operations */
+    suite_comparison = CU_add_suite("Comparison Operations", init_suite, clean_suite);
+    if (NULL == suite_comparison) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    
+    CU_add_test(suite_comparison, "test equal", test_ndarray_equal);
+    CU_add_test(suite_comparison, "test less greater", test_ndarray_less_greater);
+    CU_add_test(suite_comparison, "test scalar comparison", test_ndarray_scalar_comparison);
+    CU_add_test(suite_comparison, "test logical and or", test_ndarray_logical_and_or);
+    CU_add_test(suite_comparison, "test logical not", test_ndarray_logical_not);
+    CU_add_test(suite_comparison, "test where", test_ndarray_where);
     
     /* Run all tests using the CUnit Basic interface */
     CU_basic_set_mode(CU_BRM_VERBOSE);

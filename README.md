@@ -234,11 +234,23 @@ NDArray C = ndarray_new_full(NDA_DIMS(3, 3), 5.0);
 NDArray D = ndarray_new_full(NDA_DIMS(3, 3), 3.0);
 ndarray_axpby(C, 2.0, D, 3.0);  // C = 2*C + 3*D = 2*5 + 3*3 = 19
 
+// Fused operations for better performance
+ndarray_scale_shift(C, 0.5, 10.0);  // C = 0.5*C + 10 (scale and shift)
+ndarray_mul_scaled(C, D, 2.0);       // C = C * D * 2 (multiply then scale)
+
+// Map function then multiply (common in numerical computing)
+double sqrt_fn(double x) { return sqrt(x); }
+ndarray_map_mul(C, sqrt_fn, D, 0.5);  // C = sqrt(C) * D * 0.5
+
+// Fused multiply-add
+NDArray E = ndarray_new_ones(NDA_DIMS(3, 3));
+ndarray_mul_add(C, D, E, 2.0, 1.0);  // E = 2*(C*D) + E
+
 // Apply custom function element-wise
 double square(double x) { return x * x; }
 ndarray_mapfnc(A, square);
 
-ndarray_free_all(NDA_LIST(A, B, C, D));
+ndarray_free_all(NDA_LIST(A, B, C, D, E));
 ```
 
 **Matrix Operations:**
@@ -252,13 +264,90 @@ NDArray C = ndarray_new_matmul(A, B);  // Result: 3x5
 // Transpose
 NDArray At = ndarray_new_transpose(A);
 
+// Matrix-vector multiply: y = alpha * A * x + beta * y
+NDArray x = ndarray_new_full(NDA_DIMS(4, 1), 2.0);  // Column vector
+NDArray y = ndarray_new_zeros(NDA_DIMS(3, 1));
+ndarray_gemv(A, x, 1.0, 0.0, y);  // y = A * x
+
 // Tensor contraction
 NDArray X = ndarray_new(NDA_DIMS(2, 3, 4));
 NDArray Y = ndarray_new(NDA_DIMS(4, 5));
 // Contract on axis 2 of X and axis 0 of Y
 NDArray Z = ndarray_new_tensordot(X, Y, NDA_AXES(2), NDA_AXES(0));  
 
-ndarray_free_all(NDA_LIST(A, B, C, At, X, Y, Z));
+ndarray_free_all(NDA_LIST(A, B, C, At, x, y, X, Y, Z));
+```
+
+**Conditional Operations:**
+
+```c
+// Non-negativity constraints (common in physics, finance, ML)
+NDArray values = ndarray_new_arange(NDA_DIMS(3, 3), -4.0, 5.0, 1.0);
+ndarray_clip_min(values, 0.0);  // ReLU activation, non-negative constraints
+
+// Saturation / capping
+ndarray_clip_max(values, 100.0);  // Prevent overflow
+
+// Normalize to range [0, 1]
+ndarray_clip(values, 0.0, 1.0);  // Probabilities, normalized ranges
+
+// Absolute value and sign
+NDArray errors = ndarray_new_arange(NDA_DIMS(2, 3), -2.0, 4.0, 1.0);
+ndarray_abs(errors);   // Distance calculations, L1 norm
+ndarray_sign(errors);  // Direction indicators
+
+ndarray_free_all(NDA_LIST(values, errors));
+```
+
+**Comparison and Logical Operations:**
+
+```c
+// Element-wise comparisons (returns 1.0 for true, 0.0 for false)
+NDArray A = ndarray_new_arange(NDA_DIMS(2, 3), 0.0, 6.0, 1.0);
+NDArray B = ndarray_new_full(NDA_DIMS(2, 3), 3.0);
+
+NDArray eq = ndarray_new_equal(A, B);           // A == B
+NDArray lt = ndarray_new_less(A, B);            // A < B
+NDArray gt = ndarray_new_greater(A, B);         // A > B
+
+// Scalar comparisons
+NDArray positive = ndarray_new_greater_scalar(A, 0.0);  // Find positive values
+NDArray zeros = ndarray_new_equal_scalar(A, 0.0);       // Find zeros
+
+// Logical operations
+NDArray mask1 = ndarray_new_greater_scalar(A, 2.0);
+NDArray mask2 = ndarray_new_less_scalar(A, 5.0);
+NDArray combined = ndarray_logical_and(mask1, mask2);   // 2 < A < 5
+
+// NumPy-style where (ternary operator)
+NDArray x = ndarray_new_full(NDA_DIMS(2, 3), 10.0);
+NDArray y = ndarray_new_full(NDA_DIMS(2, 3), -10.0);
+NDArray result = ndarray_where(positive, x, y);  // positive ? x : y
+
+ndarray_free_all(NDA_LIST(A, B, eq, lt, gt, positive, zeros, 
+                          mask1, mask2, combined, x, y, result));
+```
+
+**Slice Access (Advanced):**
+
+```c
+// Direct pointer access for advanced users
+NDArray matrix = ndarray_new_arange(NDA_DIMS(4, 5), 0.0, 20.0, 1.0);
+
+// Get pointer to row 2 (5 elements)
+double* row2 = ndarray_get_slice_ptr(matrix, 0, 2);
+printf("Row 2: [%.1f, %.1f, %.1f, %.1f, %.1f]\n", 
+       row2[0], row2[1], row2[2], row2[3], row2[4]);
+
+// Copy slices between arrays
+NDArray dest = ndarray_new_zeros(NDA_DIMS(4, 5));
+ndarray_copy_slice(matrix, 0, 1, dest, 0, 3);  // Copy row 1 to row 3
+
+// Get slice size for allocation
+size_t row_size = ndarray_get_slice_size(matrix, 0);  // 5 elements per row
+size_t col_size = ndarray_get_slice_size(matrix, 1);  // 4 elements per column
+
+ndarray_free_all(NDA_LIST(matrix, dest));
 ```
 
 **Array Manipulation:**

@@ -114,6 +114,95 @@ defer c.deinit();
 const d = try NDArray.full(&[_]usize{3, 3}, 3.0);
 defer d.deinit();
 c.axpby(2.0, d, 3.0);  // c = 2*c + 3*d = 2*5 + 3*3 = 19
+
+// Fused operations
+c.scaleShift(0.5, 10.0);     // c = 0.5*c + 10
+c.mulScaled(d, 2.0);          // c = c * d * 2
+c.gemv(x, 1.0, 0.0, y);       // y = c * x (matrix-vector)
+```
+
+**Conditional Operations:**
+
+```zig
+const values = try NDArray.arange(&[_]usize{3, 3}, -4.0, 5.0, 1.0);
+defer values.deinit();
+
+// Clipping operations
+values.clipMin(0.0);           // Non-negativity constraint
+values.clipMax(100.0);         // Cap maximum value
+values.clip(0.0, 1.0);         // Normalize to [0, 1]
+
+// Absolute value and sign
+const errors = try NDArray.arange(&[_]usize{2, 3}, -2.0, 4.0, 1.0);
+defer errors.deinit();
+errors.abs();                  // Distance calculations
+errors.sign();                 // Direction indicators (-1, 0, 1)
+```
+
+**Comparison and Logical Operations:**
+
+```zig
+const a = try NDArray.arange(&[_]usize{2, 3}, 0.0, 6.0, 1.0);
+defer a.deinit();
+
+const b = try NDArray.full(&[_]usize{2, 3}, 3.0);
+defer b.deinit();
+
+// Element-wise comparisons (returns 1.0/0.0)
+const eq = try a.equal(b);           // a == b
+defer eq.deinit();
+
+const lt = try a.less(b);            // a < b
+defer lt.deinit();
+
+const gt = try a.greater(b);         // a > b
+defer gt.deinit();
+
+// Scalar comparisons
+const positive = try a.greaterScalar(0.0);  // Find positive values
+defer positive.deinit();
+
+const zeros = try a.equalScalar(0.0);       // Find zeros
+defer zeros.deinit();
+
+// Logical operations
+const mask1 = try a.greaterScalar(2.0);
+defer mask1.deinit();
+
+const mask2 = try a.lessScalar(5.0);
+defer mask2.deinit();
+
+const combined = try mask1.logicalAnd(mask2);  // 2 < a < 5
+defer combined.deinit();
+
+// NumPy-style where
+const x = try NDArray.full(&[_]usize{2, 3}, 10.0);
+defer x.deinit();
+
+const y = try NDArray.full(&[_]usize{2, 3}, -10.0);
+defer y.deinit();
+
+const result = try NDArray.where(positive, x, y);  // positive ? x : y
+defer result.deinit();
+```
+
+**Slice Access:**
+
+```zig
+const matrix = try NDArray.arange(&[_]usize{4, 5}, 0.0, 20.0, 1.0);
+defer matrix.deinit();
+
+// Get pointer to slice (advanced users)
+const row2_ptr = matrix.getSlicePtr(0, 2);  // Pointer to row 2
+
+// Copy slices between arrays
+const dest = try NDArray.zeros(&[_]usize{4, 5});
+defer dest.deinit();
+NDArray.copySlice(matrix, 0, 1, dest, 0, 3);  // Copy row 1 to row 3
+
+// Get slice size
+const row_size = matrix.getSliceSize(0);  // Elements per row
+const col_size = matrix.getSliceSize(1);  // Elements per column
 ```
 
 **Matrix Operations:**

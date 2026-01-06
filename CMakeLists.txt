@@ -123,6 +123,7 @@ set(NDARRAY_SOURCES
     src/ndarray_aggregation.c
     src/ndarray_print.c
     src/ndarray_io.c
+    src/ndarray_comparison.c
 )
 
 set(NDARRAY_HEADERS
