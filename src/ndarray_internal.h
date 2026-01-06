@@ -22,11 +22,16 @@
     #include <openblas/cblas.h>
 #endif
 
-#include <omp.h>
+#ifdef _OPENMP
+    #include <omp.h>
+    #define OMP_PRAGMA(x) _Pragma(#x)
+#else
+    #define OMP_PRAGMA(x)
+#endif
+
 #include "ndarray.h"
 
 #define BLOCK_SIZE 64
-#define OMP_PRAGMA(x) _Pragma(#x)
 
 size_t ndarray_size(NDArray t);
 size_t ndarray_offset(NDArray t, size_t *pos);
