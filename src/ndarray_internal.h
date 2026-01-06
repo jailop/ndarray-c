@@ -33,6 +33,15 @@
 
 #define BLOCK_SIZE 64
 
+// Parallelization thresholds
+#ifndef OMP_THRESHOLD
+    #define OMP_THRESHOLD 10000  // Minimum elements for parallel execution
+#endif
+
+#ifndef TRANSPOSE_BLOCK_SIZE
+    #define TRANSPOSE_BLOCK_SIZE 32  // Cache-friendly block size for transpose
+#endif
+
 size_t ndarray_size(NDArray t);
 size_t ndarray_offset(NDArray t, size_t *pos);
 size_t compute_stride(NDArray A, int axis);

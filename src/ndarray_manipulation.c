@@ -30,9 +30,19 @@ NDArray ndarray_new_stack(int axis, NDArray* arr_list) {
     // Copy data based on axis position
     if (axis == 0) {
         // Stack along first axis: simple sequential copy
-        for (size_t k = 0; k < count; ++k) {
-            memcpy(result->data + k * elem_per_array, arr_list[k]->data, 
-                   elem_per_array * sizeof(double));
+        // Parallelize for very large arrays
+        if (elem_per_array > OMP_THRESHOLD) {
+            OMP_PRAGMA(omp parallel for)
+            for (size_t k = 0; k < count; ++k) {
+                memcpy(result->data + k * elem_per_array, arr_list[k]->data, 
+                       elem_per_array * sizeof(double));
+            }
+        } else {
+            // Sequential for small arrays to avoid overhead
+            for (size_t k = 0; k < count; ++k) {
+                memcpy(result->data + k * elem_per_array, arr_list[k]->data, 
+                       elem_per_array * sizeof(double));
+            }
         }
     } else {
         // Stack along other axes: strided copy
@@ -112,15 +122,30 @@ NDArray ndarray_new_concat(int axis, NDArray* arr_list) {
     // Copy data based on axis position
     if (axis == (int)(arr_list[0]->ndim - 1)) {
         // Concatenate along last axis: copy each "row" separately
-        OMP_PRAGMA(omp parallel for)
-        for (size_t outer = 0; outer < before_axis_size; ++outer) {
-            size_t dst_offset = outer * total_concat_size;
-            for (size_t k = 0; k < count; ++k) {
-                size_t src_offset = outer * arr_list[k]->dims[axis];
-                memcpy(result->data + dst_offset, 
-                       arr_list[k]->data + src_offset,
-                       arr_list[k]->dims[axis] * sizeof(double));
-                dst_offset += arr_list[k]->dims[axis];
+        // Only parallelize if we have enough work to justify the overhead
+        if (before_axis_size >= 100 || total_concat_size > OMP_THRESHOLD) {
+            OMP_PRAGMA(omp parallel for)
+            for (size_t outer = 0; outer < before_axis_size; ++outer) {
+                size_t dst_offset = outer * total_concat_size;
+                for (size_t k = 0; k < count; ++k) {
+                    size_t src_offset = outer * arr_list[k]->dims[axis];
+                    memcpy(result->data + dst_offset, 
+                           arr_list[k]->data + src_offset,
+                           arr_list[k]->dims[axis] * sizeof(double));
+                    dst_offset += arr_list[k]->dims[axis];
+                }
+            }
+        } else {
+            // Sequential for small arrays
+            for (size_t outer = 0; outer < before_axis_size; ++outer) {
+                size_t dst_offset = outer * total_concat_size;
+                for (size_t k = 0; k < count; ++k) {
+                    size_t src_offset = outer * arr_list[k]->dims[axis];
+                    memcpy(result->data + dst_offset, 
+                           arr_list[k]->data + src_offset,
+                           arr_list[k]->dims[axis] * sizeof(double));
+                    dst_offset += arr_list[k]->dims[axis];
+                }
             }
         }
     } else if (axis == 0) {
@@ -227,7 +252,7 @@ NDArray ndarray_new_transpose(NDArray A) {
     if (A->ndim == 2) {
         size_t rows = A->dims[0];
         size_t cols = A->dims[1];
-        const size_t block_size = 32;
+        const size_t block_size = TRANSPOSE_BLOCK_SIZE;
         OMP_PRAGMA(omp parallel for collapse(2))
         for (size_t i0 = 0; i0 < rows; i0 += block_size) {
             for (size_t j0 = 0; j0 < cols; j0 += block_size) {

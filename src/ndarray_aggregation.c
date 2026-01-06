@@ -131,19 +131,20 @@ static void aggr_axis_std(NDArray result, NDArray A, int axis) {
     for (size_t i = 0; i < result_size; ++i) {
         size_t outer_idx = i / stride;
         size_t inner_idx = i % stride;
+        
+        // Use Welford's online algorithm for better numerical stability
         double mean = 0.0;
+        double m2 = 0.0;
+        
         for (size_t j = 0; j < axis_dim; ++j) {
             size_t idx = outer_idx * (axis_dim * stride) + j * stride + inner_idx;
-            mean += A->data[idx];
+            double delta = A->data[idx] - mean;
+            mean += delta / (double)(j + 1);
+            double delta2 = A->data[idx] - mean;
+            m2 += delta * delta2;
         }
-        mean /= axis_dim;
-        double variance = 0.0;
-        for (size_t j = 0; j < axis_dim; ++j) {
-            size_t idx = outer_idx * (axis_dim * stride) + j * stride + inner_idx;
-            double diff = A->data[idx] - mean;
-            variance += diff * diff;
-        }
-        result->data[i] = sqrt(variance / axis_dim);
+        
+        result->data[i] = sqrt(m2 / axis_dim);
     }
 }
 

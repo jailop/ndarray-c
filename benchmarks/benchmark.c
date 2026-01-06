@@ -203,6 +203,69 @@ BenchmarkResult bench_linspace(size_t size, int iterations) {
     return result;
 }
 
+// Benchmark: Arange (NEW - optimized with parallelization)
+BenchmarkResult bench_arange(size_t size, int iterations) {
+    BenchmarkResult result = {"Arange generation", 0.0, 0};
+    
+    double start = get_time();
+    for (int i = 0; i < iterations; ++i) {
+        NDArray A = ndarray_new_arange(NDA_DIMS(1, size), 0.0, (double)size, 1.0);
+        ndarray_free(A);
+    }
+    result.time_sec = get_time() - start;
+    result.operations = (size_t)iterations * size;
+    
+    return result;
+}
+
+// Benchmark: Random uniform (NEW - optimized with parallelization)
+BenchmarkResult bench_randunif(size_t rows, size_t cols, int iterations) {
+    BenchmarkResult result = {"Random uniform generation", 0.0, 0};
+    
+    double start = get_time();
+    for (int i = 0; i < iterations; ++i) {
+        NDArray A = ndarray_new_randunif(NDA_DIMS(rows, cols), 0.0, 1.0);
+        ndarray_free(A);
+    }
+    result.time_sec = get_time() - start;
+    result.operations = (size_t)iterations * rows * cols;
+    
+    return result;
+}
+
+// Benchmark: Random normal (NEW - optimized with parallelization)
+BenchmarkResult bench_randnorm(size_t rows, size_t cols, int iterations) {
+    BenchmarkResult result = {"Random normal generation", 0.0, 0};
+    
+    double start = get_time();
+    for (int i = 0; i < iterations; ++i) {
+        NDArray A = ndarray_new_randnorm(NDA_DIMS(rows, cols), 0.0, 1.0);
+        ndarray_free(A);
+    }
+    result.time_sec = get_time() - start;
+    result.operations = (size_t)iterations * rows * cols;
+    
+    return result;
+}
+
+// Benchmark: Standard deviation (NEW - optimized with Welford's algorithm)
+BenchmarkResult bench_std_aggr(size_t rows, size_t cols, int iterations) {
+    BenchmarkResult result = {"Standard deviation aggregation", 0.0, 0};
+    
+    NDArray A = ndarray_new_arange(NDA_DIMS(rows, cols), 0.0, (double)(rows * cols), 1.0);
+    
+    double start = get_time();
+    for (int i = 0; i < iterations; ++i) {
+        NDArray s = ndarray_new_axis_aggr(A, -1, NDARRAY_AGGR_STD);
+        ndarray_free(s);
+    }
+    result.time_sec = get_time() - start;
+    result.operations = (size_t)iterations * rows * cols;
+    
+    ndarray_free(A);
+    return result;
+}
+
 void print_header(const char *title) {
     printf("\n");
     printf("================================================================================\n");
@@ -309,6 +372,36 @@ int main(int argc, char *argv[]) {
         
         BenchmarkResult r3 = bench_tensor_contraction(1000, 50);
         print_result(&r3);
+    }
+    
+    // NEW: Random and optimized creation operations
+    print_header("Random & Creation Operations (NEW OPTIMIZATIONS)");
+    {
+        printf("  Small arrays (1000x1000):\n");
+        BenchmarkResult r1 = bench_arange(1000000, 20);
+        print_result(&r1);
+        
+        BenchmarkResult r2 = bench_randunif(1000, 1000, 10);
+        print_result(&r2);
+        
+        BenchmarkResult r3 = bench_randnorm(1000, 1000, 10);
+        print_result(&r3);
+        
+        BenchmarkResult r4 = bench_std_aggr(1000, 1000, 50);
+        print_result(&r4);
+        
+        printf("\n  Large arrays (5000x5000):\n");
+        BenchmarkResult r5 = bench_arange(25000000, 5);
+        print_result(&r5);
+        
+        BenchmarkResult r6 = bench_randunif(5000, 5000, 3);
+        print_result(&r6);
+        
+        BenchmarkResult r7 = bench_randnorm(5000, 5000, 3);
+        print_result(&r7);
+        
+        BenchmarkResult r8 = bench_std_aggr(5000, 5000, 10);
+        print_result(&r8);
     }
     
     printf("\n");
