@@ -1,17 +1,8 @@
 name: Generate and Deploy Documentation
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/ndarray.h'
-      - 'src/ndarray.c'
-      - 'src/ndarray.zig'
-      - 'README.md'
-      - 'README-zig.md'
-      - 'Doxyfile'
-      - '.github/workflows/docs.yml'
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:

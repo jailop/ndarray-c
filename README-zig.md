@@ -216,12 +216,55 @@ Requirements:
 - OpenBLAS: For optimized BLAS operations (required)
 - OpenMP: For parallel operations (required)
 
-Build and run examples:
+### Installing Dependencies
 
+**macOS (Homebrew):**
 ```bash
+brew install zig libomp openblas
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install zig libomp-dev libopenblas-dev
+```
+
+**Fedora/RHEL:**
+```bash
+sudo dnf install zig libomp-devel openblas-devel
+```
+
+### Build Commands
+
+**Examples:**
+```bash
+zig build                  # Build examples
 zig build run              # Run basic example
-zig build run-extended     # Run advanced example
-zig build test             # Run tests
+zig build run-extended     # Run extended example
+```
+
+**Libraries:**
+```bash
+zig build lib              # Build both static and shared
+zig build static           # Build static library only
+zig build shared           # Build shared library only
+```
+
+Output: `zig-out/lib/libndarray.{a,dylib,so}` and `zig-out/include/ndarray.h`
+
+**Tests:**
+```bash
+zig build test             # Run Zig unit tests
+zig build test-c           # Run C unit tests (requires CUnit)
+zig build test-all         # Run all tests
+```
+
+**Benchmarks:**
+```bash
+zig build bench            # Build benchmark executables
+
+# Note: Due to Zig cache limitations with mixed compilation flags,
+# use the automated script which supports all build systems:
+cd benchmarks && ./run_benchmark.sh
 ```
 
 ## Using as a Package
@@ -314,26 +357,3 @@ exe.linkSystemLibrary("omp");
 exe.linkSystemLibrary("openblas");
 ```
 
-## Project Structure
-
-```
-ndarray-c/
-├── src/                    # C and Zig source files
-│   ├── ndarray.h          # C header
-│   ├── ndarray_internal.h # Internal C header
-│   ├── ndarray_*.c        # C implementation files
-│   └── ndarray.zig        # Zig bindings
-├── tests/                  # Test files
-│   └── test_ndarray.c     # C tests
-├── benchmarks/             # Benchmark files
-│   └── benchmark.c        # Performance benchmarks
-├── examples/               # Example files
-│   ├── example.c          # C example
-│   ├── basic.zig          # Zig basic example
-│   └── extended.zig       # Zig extended example
-├── docs/                   # Generated documentation
-├── Makefile               # C build system
-├── build.zig              # Zig build system
-├── README.md              # Main documentation (C)
-└── README-zig.md          # This file (Zig documentation)
-```
