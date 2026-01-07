@@ -65,10 +65,10 @@ pub fn main() !void {
     b.print("Array B (twos)", 1);
 
     // Modify a in place
-    a.add(b);
+    _ = a.add(b);
     a.print("A after adding B", 1);
 
-    a.mulScalar(2.0);
+    _ = a.mulScalar(2.0);
     a.print("A after multiplying by 2", 1);
 
     // Transpose

@@ -118,10 +118,10 @@ BenchmarkResult bench_aggregation(size_t rows, size_t cols, int iterations) {
     
     double start = get_time();
     for (int i = 0; i < iterations; ++i) {
-        NDArray s = ndarray_new_axis_aggr(A, -1, NDARRAY_AGGR_SUM);
-        NDArray m = ndarray_new_axis_aggr(A, -1, NDARRAY_AGGR_MEAN);
-        NDArray mx = ndarray_new_axis_aggr(A, -1, NDARRAY_AGGR_MAX);
-        NDArray mn = ndarray_new_axis_aggr(A, -1, NDARRAY_AGGR_MIN);
+        NDArray s = ndarray_new_aggr(A, -1, NDA_AGGR_SUM);
+        NDArray m = ndarray_new_aggr(A, -1, NDA_AGGR_MEAN);
+        NDArray mx = ndarray_new_aggr(A, -1, NDA_AGGR_MAX);
+        NDArray mn = ndarray_new_aggr(A, -1, NDA_AGGR_MIN);
         ndarray_free_all(NDA_LIST(s, m, mx, mn));
     }
     result.time_sec = get_time() - start;
@@ -256,7 +256,7 @@ BenchmarkResult bench_std_aggr(size_t rows, size_t cols, int iterations) {
     
     double start = get_time();
     for (int i = 0; i < iterations; ++i) {
-        NDArray s = ndarray_new_axis_aggr(A, -1, NDARRAY_AGGR_STD);
+        NDArray s = ndarray_new_aggr(A, -1, NDA_AGGR_STD);
         ndarray_free(s);
     }
     result.time_sec = get_time() - start;

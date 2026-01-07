@@ -1,6 +1,5 @@
 const std = @import("std");
 
-// Common C source files for the ndarray library
 const c_source_files = &[_][]const u8{
     "src/ndarray_core.c",
     "src/ndarray_creation.c",
@@ -11,6 +10,7 @@ const c_source_files = &[_][]const u8{
     "src/ndarray_print.c",
     "src/ndarray_io.c",
     "src/ndarray_comparison.c",
+    "src/ndarray_random.c",
 };
 
 const c_flags = &[_][]const u8{
@@ -20,7 +20,6 @@ const c_flags = &[_][]const u8{
     "-fopenmp",
 };
 
-/// Configure include paths for Homebrew libraries on macOS
 fn addHomebrewPaths(step: anytype, b: *std.Build, homebrew_prefix: ?[]const u8) void {
     if (homebrew_prefix) |prefix| {
         step.addIncludePath(.{ .cwd_relative = b.fmt("{s}/opt/libomp/include", .{prefix}) });
@@ -30,7 +29,6 @@ fn addHomebrewPaths(step: anytype, b: *std.Build, homebrew_prefix: ?[]const u8) 
     }
 }
 
-/// Configure common library and include setup for compile steps
 fn configureCompileStep(step: anytype, b: *std.Build, homebrew_prefix: ?[]const u8) void {
     step.addCSourceFiles(.{
         .files = c_source_files,
@@ -43,7 +41,6 @@ fn configureCompileStep(step: anytype, b: *std.Build, homebrew_prefix: ?[]const 
     step.linkSystemLibrary("openblas");
 }
 
-/// Create a module with Homebrew include paths
 fn createModuleWithPaths(b: *std.Build, comptime opts: type, options: opts, homebrew_prefix: ?[]const u8) *std.Build.Module {
     const module = b.createModule(options);
     module.addIncludePath(.{ .cwd_relative = "src" });
@@ -51,7 +48,6 @@ fn createModuleWithPaths(b: *std.Build, comptime opts: type, options: opts, home
     return module;
 }
 
-/// Create an executable with ndarray module imported
 fn createExecutable(b: *std.Build, name: []const u8, source_file: []const u8, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, ndarray_module: *std.Build.Module, homebrew_prefix: ?[]const u8) *std.Build.Step.Compile {
     const exe = b.addExecutable(.{
         .name = name,
@@ -67,7 +63,6 @@ fn createExecutable(b: *std.Build, name: []const u8, source_file: []const u8, ta
     return exe;
 }
 
-/// Add a run step for an executable
 fn addRunStep(b: *std.Build, exe: *std.Build.Step.Compile, step_name: []const u8, description: []const u8) void {
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
@@ -75,15 +70,14 @@ fn addRunStep(b: *std.Build, exe: *std.Build.Step.Compile, step_name: []const u8
     run_step.dependOn(&run_cmd.step);
 }
 
-/// Build a C library (static or dynamic)
-fn buildLibrary(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, linkage: std.builtin.LinkMode, version: ?std.SemanticVersion, homebrew_prefix: ?[]const u8) *std.Build.Step.Compile {
+fn buildLibrary(b: *std.Build, name: []const u8, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, linkage: std.builtin.LinkMode, version: ?std.SemanticVersion, homebrew_prefix: ?[]const u8) *std.Build.Step.Compile {
     const lib_module = createModuleWithPaths(b, std.Build.Module.CreateOptions, .{
         .target = target,
         .optimize = optimize,
     }, homebrew_prefix);
 
     const lib = b.addLibrary(.{
-        .name = "ndarray",
+        .name = name,
         .root_module = lib_module,
         .linkage = linkage,
         .version = version,
@@ -99,7 +93,6 @@ fn buildLibrary(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.b
     return lib;
 }
 
-/// Build a benchmark executable
 fn buildBenchmark(b: *std.Build, name: []const u8, with_openmp: bool, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, homebrew_prefix: ?[]const u8) *std.Build.Step.Compile {
     const bench = b.addExecutable(.{
         .name = name,
@@ -124,13 +117,11 @@ fn buildBenchmark(b: *std.Build, name: []const u8, with_openmp: bool, target: st
     
     const flags = if (with_openmp) bench_flags_omp else bench_flags_base;
     
-    // Add benchmark source
     bench.addCSourceFile(.{
         .file = b.path("benchmarks/benchmark.c"),
         .flags = flags,
     });
     
-    // Add library sources
     bench.addCSourceFiles(.{
         .files = c_source_files,
         .flags = flags,
@@ -151,21 +142,17 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Detect Homebrew paths on macOS for cross-platform compatibility
     const is_macos = target.result.os.tag == .macos or @import("builtin").os.tag == .macos;
     const homebrew_prefix: ?[]const u8 = if (is_macos) "/opt/homebrew" else null;
 
-    // Create the module for export
     _ = b.addModule("ndarray", .{
         .root_source_file = b.path("src/ndarray.zig"),
     });
 
-    // Module for internal use in examples
     const ndarray_module = createModuleWithPaths(b, std.Build.Module.CreateOptions, .{
         .root_source_file = b.path("src/ndarray.zig"),
     }, homebrew_prefix);
 
-    // Build executables
     const example = createExecutable(b, "example", "examples/basic.zig", target, optimize, ndarray_module, homebrew_prefix);
     addRunStep(b, example, "run", "Run the example");
 
@@ -207,12 +194,10 @@ pub fn build(b: *std.Build) void {
     const c_test_step = b.step("test-c", "Run C unit tests (requires CUnit)");
     c_test_step.dependOn(&run_c_test.step);
 
-    // Run all tests
     const all_tests_step = b.step("test-all", "Run all tests (Zig and C)");
     all_tests_step.dependOn(&run_zig_tests.step);
     all_tests_step.dependOn(&run_c_test.step);
 
-    // Benchmarks
     const bench_seq = buildBenchmark(b, "benchmark_seq", false, target, optimize, homebrew_prefix);
     const bench_omp = buildBenchmark(b, "benchmark_omp", true, target, optimize, homebrew_prefix);
     
@@ -228,11 +213,12 @@ pub fn build(b: *std.Build) void {
     const run_bench_omp_step = b.step("run-bench-omp", "Run OpenMP benchmark");
     run_bench_omp_step.dependOn(&run_bench_omp.step);
 
-    // Build C libraries
-    _ = buildLibrary(b, target, optimize, .static, null, homebrew_prefix);
-    _ = buildLibrary(b, target, optimize, .dynamic, .{ .major = 1, .minor = 0, .patch = 0 }, homebrew_prefix);
+    const static_lib = buildLibrary(b, "ndarray", target, optimize, .static, null, homebrew_prefix);
+    const dynamic_lib = buildLibrary(b, "ndarray-dynamic", target, optimize, .dynamic, .{ .major = 1, .minor = 0, .patch = 0 }, homebrew_prefix);
+    
+    _ = static_lib;
+    _ = dynamic_lib;
 
-    // Build steps for libraries
     const lib_step = b.step("lib", "Build both static and shared libraries");
     lib_step.dependOn(b.getInstallStep());
 
