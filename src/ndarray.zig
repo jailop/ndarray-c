@@ -185,43 +185,56 @@ pub const NDArray = struct {
     }
 
     /// Element-wise addition (modifies self in place)
-    pub fn add(self: NDArray, other: NDArray) void {
+    pub fn add(self: NDArray, other: NDArray) NDArray {
         _ = c.ndarray_add(self.ptr, other.ptr);
+        return self;
     }
 
     /// Element-wise multiplication (modifies self in place)
-    pub fn mul(self: NDArray, other: NDArray) void {
+    pub fn mul(self: NDArray, other: NDArray) NDArray {
         _ = c.ndarray_mul(self.ptr, other.ptr);
+        return self;
     }
 
     /// Add scalar (modifies self in place)
-    pub fn addScalar(self: NDArray, scalar: f64) void {
+    pub fn addScalar(self: NDArray, scalar: f64) NDArray {
         _ = c.ndarray_add_scalar(self.ptr, scalar);
+        return self;
     }
 
     /// Multiply by scalar (modifies self in place)
-    pub fn mulScalar(self: NDArray, scalar: f64) void {
+    pub fn mulScalar(self: NDArray, scalar: f64) NDArray {
         _ = c.ndarray_mul_scalar(self.ptr, scalar);
+        return self;
     }
 
     /// Linear combination: self = alpha*self + beta*other
     /// Computes self = alpha*self + beta*other and stores result in self
-    pub fn axpby(self: NDArray, alpha: f64, other: NDArray, beta: f64) void {
+    pub fn axpby(self: NDArray, alpha: f64, other: NDArray, beta: f64) NDArray {
         _ = c.ndarray_axpby(self.ptr, alpha, other.ptr, beta);
+        return self;
     }
 
     /// Scale and shift: self = alpha*self + beta
-    pub fn scaleShift(self: NDArray, alpha: f64, beta: f64) void {
+    pub fn scaleShift(self: NDArray, alpha: f64, beta: f64) NDArray {
         _ = c.ndarray_scale_shift(self.ptr, alpha, beta);
+        return self;
     }
 
     /// Element-wise multiply then scale: self = self * other * scalar
-    pub fn mulScaled(self: NDArray, other: NDArray, scalar: f64) void {
+    pub fn mulScaled(self: NDArray, other: NDArray, scalar: f64) NDArray {
         _ = c.ndarray_mul_scaled(self.ptr, other.ptr, scalar);
+        return self;
+    }
+
+    /// Apply function to each element in place: self = func(self)
+    pub fn mapFn(self: NDArray, func: *const fn (f64) callconv(.c) f64) NDArray {
+        _ = c.ndarray_mapfnc(self.ptr, func);
+        return self;
     }
 
     /// Map function then multiply: self = func(self) * other * alpha
-    pub fn mapMul(self: NDArray, func: *const fn (f64) callconv(.C) f64, 
+    pub fn mapMul(self: NDArray, func: *const fn (f64) callconv(.c) f64, 
                   other: NDArray, alpha: f64) void {
         _ = c.ndarray_map_mul(self.ptr, func, other.ptr, alpha);
     }
@@ -238,13 +251,15 @@ pub const NDArray = struct {
     }
 
     /// Clip values below minimum threshold
-    pub fn clipMin(self: NDArray, min_val: f64) void {
+    pub fn clipMin(self: NDArray, min_val: f64) NDArray {
         _ = c.ndarray_clip_min(self.ptr, min_val);
+        return self;
     }
 
     /// Clip values above maximum threshold
-    pub fn clipMax(self: NDArray, max_val: f64) void {
+    pub fn clipMax(self: NDArray, max_val: f64) NDArray {
         _ = c.ndarray_clip_max(self.ptr, max_val);
+        return self;
     }
 
     /// Clip values to range [min_val, max_val]
@@ -435,16 +450,16 @@ pub const NDArray = struct {
 
 /// Aggregation types
 pub const AggrType = enum(c_int) {
-    sum = c.NDARRAY_AGGR_SUM,
-    mean = c.NDARRAY_AGGR_MEAN,
-    max = c.NDARRAY_AGGR_MAX,
-    min = c.NDARRAY_AGGR_MIN,
-    std = c.NDARRAY_AGGR_STD,
+    sum = c.NDA_AGGR_SUM,
+    mean = c.NDA_AGGR_MEAN,
+    max = c.NDA_AGGR_MAX,
+    min = c.NDA_AGGR_MIN,
+    std = c.NDA_AGGR_STD,
 };
 
 /// Aggregate over axis
 pub fn aggregate(arr: NDArray, axis: i32, aggr_type: AggrType) !NDArray {
-    const ptr = c.ndarray_new_axis_aggr(arr.ptr, axis, @intFromEnum(aggr_type));
+    const ptr = c.ndarray_new_aggr(arr.ptr, axis, @intFromEnum(aggr_type));
     if (ptr == null) return error.AggregateFailed;
     return NDArray{ .ptr = ptr };
 }
