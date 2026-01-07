@@ -89,6 +89,100 @@ arr3d.setSlice(1, 1, &plane_data);  // Set middle plane
 arr.print("My Array", 4); // precision = 4 decimal places
 ```
 
+**Method Chaining (Fluent Interface):**
+
+Many operations support method chaining for cleaner code:
+
+```zig
+const arr = try NDArray.zeros(&[_]usize{3, 4});
+defer arr.deinit();
+
+// Chain multiple operations
+_ = arr.addScalar(5.0)
+    .mulScalar(2.0)
+    .clipMin(0.0);
+
+// More complex chains
+const a = try NDArray.randomNormal(&[_]usize{100, 100}, 0.0, 1.0);
+defer a.deinit();
+
+_ = a.mapFn(sqrt)           // Apply sqrt to each element
+    .mul(b)                  // Multiply by b
+    .addScalar(10.0)        // Add 10
+    .clipMin(0.0);          // Ensure non-negative
+
+// Variance calculation with chaining
+const variance = try NDArray.zeros(&[_]usize{3, 4});
+defer variance.deinit();
+
+_ = variance.scaleShift(1.0 - kappa * dt, kappa * theta * dt)
+    .add(stochastic_term)
+    .clipMin(0.0);
+```
+
+**Using Math Functions with mapFn:**
+
+The `mapFn()` method applies a function to each element. You can use
+Zig's built-in math functions by wrapping them with C calling
+convention:
+
+```zig
+const std = @import("std");
+const ndarray = @import("ndarray");
+const NDArray = ndarray.NDArray;
+
+// Wrapper functions for Zig math with C calling convention
+fn sqrt(x: f64) callconv(.c) f64 {
+    return @sqrt(x);  // Zig built-in sqrt
+}
+
+fn exp(x: f64) callconv(.c) f64 {
+    return @exp(x);   // Zig built-in exp
+}
+
+fn log(x: f64) callconv(.c) f64 {
+    return @log(x);   // Zig built-in log
+}
+
+fn sin(x: f64) callconv(.c) f64 {
+    return @sin(x);   // Zig built-in sin
+}
+
+// Custom function
+fn square(x: f64) callconv(.c) f64 {
+    return x * x;
+}
+
+pub fn main() !void {
+    const arr = try NDArray.arange(&[_]usize{1, 10}, 1.0, 11.0, 1.0);
+    defer arr.deinit();
+    // Apply sqrt to all elements
+    _ = arr.mapFn(sqrt);
+    // Apply exponential
+    _ = arr.mapFn(exp);
+    // Apply custom function
+    _ = arr.mapFn(square);
+    arr.print("Result", 4);
+}
+```
+
+Alternative - Using std.math:
+
+You can also use `std.math` functions:
+
+```zig
+fn sqrt(x: f64) callconv(.c) f64 {
+    return std.math.sqrt(x);  // Runtime function
+}
+
+fn exp(x: f64) callconv(.c) f64 {
+    return std.math.exp(x);   // Runtime function
+}
+```
+
+Both `@sqrt` and `std.math.sqrt` produce identical results, but `@sqrt`
+may be optimized better by the compiler.
+
 **Element-wise Operations:**
 
 ```zig
@@ -98,27 +192,30 @@ defer a.deinit();
 const b = try NDArray.full(&[_]usize{3, 3}, 2.0);
 defer b.deinit();
 
-// Element-wise addition (modifies a in place)
-a.add(b);
+// Element-wise addition (modifies a in place, returns a for chaining)
+_ = a.add(b);
 
-// Element-wise multiplication (modifies a in place)
-a.mul(b);
+// Element-wise multiplication (modifies a in place, returns a for chaining)
+_ = a.mul(b);
 
 // Scalar operations
-a.addScalar(5.0);
-a.mulScalar(2.0);
+_ = a.addScalar(5.0);
+_ = a.mulScalar(2.0);
 
 // Linear combination: a = alpha*a + beta*b
 const c = try NDArray.full(&[_]usize{3, 3}, 5.0);
 defer c.deinit();
 const d = try NDArray.full(&[_]usize{3, 3}, 3.0);
 defer d.deinit();
-c.axpby(2.0, d, 3.0);  // c = 2*c + 3*d = 2*5 + 3*3 = 19
+_ = c.axpby(2.0, d, 3.0);  // c = 2*c + 3*d = 2*5 + 3*3 = 19
 
 // Fused operations
-c.scaleShift(0.5, 10.0);     // c = 0.5*c + 10
-c.mulScaled(d, 2.0);          // c = c * d * 2
-c.gemv(x, 1.0, 0.0, y);       // y = c * x (matrix-vector)
+_ = c.scaleShift(0.5, 10.0);     // c = 0.5*c + 10
+_ = c.mulScaled(d, 2.0);          // c = c * d * 2
+
+// Apply custom function to each element
+extern fn sqrt(f64) f64;
+_ = a.mapFn(sqrt);  // Apply sqrt to all elements
 ```
 
 **Conditional Operations:**
@@ -127,16 +224,16 @@ c.gemv(x, 1.0, 0.0, y);       // y = c * x (matrix-vector)
 const values = try NDArray.arange(&[_]usize{3, 3}, -4.0, 5.0, 1.0);
 defer values.deinit();
 
-// Clipping operations
-values.clipMin(0.0);           // Non-negativity constraint
-values.clipMax(100.0);         // Cap maximum value
-values.clip(0.0, 1.0);         // Normalize to [0, 1]
+// Clipping operations (support chaining)
+_ = values.clipMin(0.0)           // Non-negativity constraint
+    .clipMax(100.0)                // Cap maximum value
+    .clip(0.0, 1.0);               // Normalize to [0, 1]
 
 // Absolute value and sign
 const errors = try NDArray.arange(&[_]usize{2, 3}, -2.0, 4.0, 1.0);
 defer errors.deinit();
-errors.abs();                  // Distance calculations
-errors.sign();                 // Direction indicators (-1, 0, 1)
+_ = errors.abs();                  // Distance calculations
+_ = errors.sign();                 // Direction indicators (-1, 0, 1)
 ```
 
 **Comparison and Logical Operations:**
@@ -393,21 +490,27 @@ cd benchmarks && ./run_benchmark.sh
 
 ## Using as a Package
 
-In your project's `build.zig.zon`:
+Step 1: Add to `build.zig.zon`
 
 ```zig
 .{
-    .name = "myproject",
+    .name = .myproject,
     .version = "0.1.0",
     .dependencies = .{
         .ndarray = .{
-            .path = "../path/to/ndarray-c",
+            .url = "https://github.com/jailop/ndarray-c/archive/refs/tags/v0.2.2.tar.gz",
+            .hash = "1220000000000000000000000000000000000000000000000000000000000000",
         },
     },
 }
 ```
 
-In your project's `build.zig`:
+Step 2: Run `zig build`
+
+Zig will download the package and tell you the correct hash. Update your
+`build.zig.zon` with the correct hash.
+
+Step 3: Update your `build.zig`
 
 ```zig
 const std = @import("std");
@@ -416,68 +519,70 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Get the ndarray dependency
+    const exe = b.addExecutable(.{
+        .name = "myapp",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+
+    // Get ndarray dependency from package manager
     const ndarray_dep = b.dependency("ndarray", .{
         .target = target,
         .optimize = optimize,
     });
 
-    const exe = b.addExecutable(.{
-        .name = "myapp",
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
+    // Get the Zig module and compiled library artifact
+    const ndarray_module = ndarray_dep.module("ndarray");
+    const ndarray_lib = ndarray_dep.artifact("ndarray");
 
-    // Import the ndarray module
-    exe.root_module.addImport("ndarray", ndarray_dep.module("ndarray"));
+    // Import the module
+    exe.root_module.addImport("ndarray", ndarray_module);
 
-    // Link required libraries
-    exe.linkLibC();
-    exe.linkSystemLibrary("omp");
-    exe.linkSystemLibrary("openblas");
+    // Link the library (automatically includes OpenMP and OpenBLAS)
+    exe.linkLibrary(ndarray_lib);
 
     b.installArtifact(exe);
 }
 ```
 
-In your `build.zig.zon`:
+Step 4: Use in your code
 
 ```zig
-.dependencies = .{
-    .ndarray = .{
-        .url = "https://github.com/jailop/ndarray-c/archive/refs/tags/v1.0.0.tar.gz",
-        .hash = "1220...", // Zig will provide the correct hash
-    },
+const ndarray = @import("ndarray");
+const NDArray = ndarray.NDArray;
+
+pub fn main() !void {
+    const arr = try NDArray.randomNormal(&[_]usize{100, 100}, 0.0, 1.0);
+    defer arr.deinit();
+    
+    _ = arr.mulScalar(2.0).addScalar(10.0);
+    arr.print("My Array", 4);
 }
 ```
 
-Copy `src/ndarray.zig` to your project and compile the C sources directly:
+System Requirements:
 
-```zig
-// In your build.zig
-const ndarray_module = b.createModule(.{
-    .root_source_file = b.path("src/ndarray.zig"),
-});
+Users of your application need OpenMP and OpenBLAS installed on their system:
 
-exe.root_module.addImport("ndarray", ndarray_module);
-
-exe.addCSourceFiles(.{
-    .files = &.{
-        "path/to/ndarray-c/src/ndarray_core.c",
-        "path/to/ndarray-c/src/ndarray_creation.c",
-        "path/to/ndarray-c/src/ndarray_arithmetic.c",
-        "path/to/ndarray-c/src/ndarray_linalg.c",
-        "path/to/ndarray-c/src/ndarray_manipulation.c",
-        "path/to/ndarray-c/src/ndarray_aggregation.c",
-        "path/to/ndarray-c/src/ndarray_print.c",
-        "path/to/ndarray-c/src/ndarray_io.c",
-    },
-    .flags = &.{"-std=c99", "-O3", "-fopenmp"},
-});
-
-exe.linkLibC();
-exe.linkSystemLibrary("omp");
-exe.linkSystemLibrary("openblas");
+**macOS (Homebrew):**
+```bash
+brew install libomp openblas
 ```
 
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install libomp-dev libopenblas-dev
+```
+
+**Fedora/RHEL:**
+```bash
+sudo dnf install libomp-devel openblas-devel
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -S openmp openblas
+```
