@@ -21,7 +21,7 @@ static double aggr_full_sum_mean(NDArray A, int aggr_type) {
     for (size_t i = 0; i < size; ++i) {
         acc += A->data[i];
     }
-    return (aggr_type == NDARRAY_AGGR_MEAN) ? acc / size : acc;
+    return (aggr_type == NDA_AGGR_MEAN) ? acc / size : acc;
 }
 
 static double aggr_full_max(NDArray A) {
@@ -77,7 +77,7 @@ static void aggr_axis_sum_mean(NDArray result, NDArray A, int axis,
                 + inner_idx;
             sum += A->data[idx];
         }
-        result->data[i] = (aggr_type == NDARRAY_AGGR_MEAN) 
+        result->data[i] = (aggr_type == NDA_AGGR_MEAN) 
             ? sum / axis_dim 
             : sum;
     }
@@ -148,7 +148,7 @@ static void aggr_axis_std(NDArray result, NDArray A, int axis) {
     }
 }
 
-NDArray ndarray_new_axis_aggr(NDArray A, int axis, int aggr_type) {
+NDArray ndarray_new_aggr(NDArray A, int axis, int aggr_type) {
     assert(A != NULL && "ndarray cannot be NULL");
     assert(A->ndim >= 2 && "ndarray must have at least 2 dimensions");
     assert((axis == -1 || (axis >= 0 && axis < (int)A->ndim)) 
@@ -157,17 +157,17 @@ NDArray ndarray_new_axis_aggr(NDArray A, int axis, int aggr_type) {
         size_t dims[] = {1, 1, 0};
         NDArray result = ndarray_new(dims);
         switch (aggr_type) {
-            case NDARRAY_AGGR_SUM:
-            case NDARRAY_AGGR_MEAN:
+            case NDA_AGGR_SUM:
+            case NDA_AGGR_MEAN:
                 result->data[0] = aggr_full_sum_mean(A, aggr_type);
                 break;
-            case NDARRAY_AGGR_MAX:
+            case NDA_AGGR_MAX:
                 result->data[0] = aggr_full_max(A);
                 break;
-            case NDARRAY_AGGR_MIN:
+            case NDA_AGGR_MIN:
                 result->data[0] = aggr_full_min(A);
                 break;
-            case NDARRAY_AGGR_STD:
+            case NDA_AGGR_STD:
                 result->data[0] = aggr_full_std(A);
                 break;
         }
@@ -198,17 +198,17 @@ NDArray ndarray_new_axis_aggr(NDArray A, int axis, int aggr_type) {
     result_dims[idx] = 0;
     NDArray result = ndarray_new(result_dims);
     switch (aggr_type) {
-        case NDARRAY_AGGR_SUM:
-        case NDARRAY_AGGR_MEAN:
+        case NDA_AGGR_SUM:
+        case NDA_AGGR_MEAN:
             aggr_axis_sum_mean(result, A, axis, aggr_type);
             break;
-        case NDARRAY_AGGR_MAX:
+        case NDA_AGGR_MAX:
             aggr_axis_max(result, A, axis);
             break;
-        case NDARRAY_AGGR_MIN:
+        case NDA_AGGR_MIN:
             aggr_axis_min(result, A, axis);
             break;
-        case NDARRAY_AGGR_STD:
+        case NDA_AGGR_STD:
             aggr_axis_std(result, A, axis);
             break;
         default:

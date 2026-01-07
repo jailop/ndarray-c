@@ -77,8 +77,8 @@ NDArray result = ndarray_new_tensordot(A, B, NDA_NO_AXES, NDA_NO_AXES);
 
 ```c
 // Aggregate over all axes
-NDArray total = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_SUM);
-NDArray max_val = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_MAX);
+NDArray total = ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_SUM);
+NDArray max_val = ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_MAX);
 ```
 
 `NDA_LIST(...)`: Creates list of NDArray pointers.
@@ -379,13 +379,13 @@ ndarray_free_all(NDA_LIST(A, B, stacked, concat, sub, C));
 NDArray A = ndarray_new_randunif(NDA_DIMS(3, 4), 0.0, 10.0);
 
 // Aggregate along specific axis
-NDArray sum_axis0 = ndarray_new_axis_aggr(A, 0, NDARRAY_AGGR_SUM);
-NDArray mean_axis1 = ndarray_new_axis_aggr(A, 1, NDARRAY_AGGR_MEAN);
-NDArray std_axis0 = ndarray_new_axis_aggr(A, 0, NDARRAY_AGGR_STD);
+NDArray sum_axis0 = ndarray_new_aggr(A, 0, NDA_AGGR_SUM);
+NDArray mean_axis1 = ndarray_new_aggr(A, 1, NDA_AGGR_MEAN);
+NDArray std_axis0 = ndarray_new_aggr(A, 0, NDA_AGGR_STD);
 
 // Aggregate over all axes using NDA_ALL_AXES constant
-NDArray max_all = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_MAX);
-NDArray min_all = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_MIN);
+NDArray max_all = ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_MAX);
+NDArray min_all = ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_MIN);
 
 ndarray_free_all(NDA_LIST(A, sum_axis0, mean_axis1, std_axis0, max_all, min_all));
 ```

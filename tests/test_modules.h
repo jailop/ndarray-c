@@ -22,5 +22,6 @@ void register_aggregation_tests(CU_pSuite suite);
 void register_conditional_tests(CU_pSuite suite);
 void register_slice_tests(CU_pSuite suite);
 void register_comparison_tests(CU_pSuite suite);
+void register_randquality_tests(CU_pSuite suite);
 
 #endif /* TEST_MODULES_H */

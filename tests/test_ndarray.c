@@ -1490,7 +1490,7 @@ void test_ndarray_reshape_4d(void) {
 void test_ndarray_aggr_sum_all_2d(void) {
     size_t dims[] = {2, 3, 0};
     NDArray A = ndarray_new_arange(dims, 1.0, 7.0, 1.0);
-    NDArray result = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_SUM);
+    NDArray result = ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_SUM);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_DOUBLE_EQUAL(result->data[0], 21.0, EPSILON);
@@ -1502,7 +1502,7 @@ void test_ndarray_aggr_sum_all_2d(void) {
 void test_ndarray_aggr_mean_all_3d(void) {
     size_t dims[] = {2, 2, 2, 0};
     NDArray A = ndarray_new_full(dims, 4.0);
-    NDArray result = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_MEAN);
+    NDArray result = ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_MEAN);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_DOUBLE_EQUAL(result->data[0], 4.0, EPSILON);
@@ -1514,7 +1514,7 @@ void test_ndarray_aggr_mean_all_3d(void) {
 void test_ndarray_aggr_max_all_4d(void) {
     size_t dims[] = {2, 2, 2, 2, 0};
     NDArray A = ndarray_new_arange(dims, 0.0, 16.0, 1.0);
-    NDArray result = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_MAX);
+    NDArray result = ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_MAX);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_DOUBLE_EQUAL(result->data[0], 15.0, EPSILON);
@@ -1526,7 +1526,7 @@ void test_ndarray_aggr_max_all_4d(void) {
 void test_ndarray_aggr_min_all_2d(void) {
     size_t dims[] = {3, 3, 0};
     NDArray A = ndarray_new_arange(dims, 5.0, 14.0, 1.0);
-    NDArray result = ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_MIN);
+    NDArray result = ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_MIN);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_DOUBLE_EQUAL(result->data[0], 5.0, EPSILON);
@@ -1543,7 +1543,7 @@ void test_ndarray_aggr_sum_axis0_2d(void) {
         A->data[i] = i + 1;
     }
     
-    NDArray result = ndarray_new_axis_aggr(A, 0, NDARRAY_AGGR_SUM);
+    NDArray result = ndarray_new_aggr(A, 0, NDA_AGGR_SUM);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_EQUAL(result->dims[0], 1);
@@ -1566,7 +1566,7 @@ void test_ndarray_aggr_sum_axis1_2d(void) {
         A->data[i] = i + 1;
     }
     
-    NDArray result = ndarray_new_axis_aggr(A, 1, NDARRAY_AGGR_SUM);
+    NDArray result = ndarray_new_aggr(A, 1, NDA_AGGR_SUM);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_EQUAL(result->dims[0], 2);
@@ -1583,7 +1583,7 @@ void test_ndarray_aggr_sum_axis1_2d(void) {
 void test_ndarray_aggr_mean_axis0_3d(void) {
     size_t dims[] = {2, 3, 4, 0};
     NDArray A = ndarray_new_full(dims, 6.0);
-    NDArray result = ndarray_new_axis_aggr(A, 0, NDARRAY_AGGR_MEAN);
+    NDArray result = ndarray_new_aggr(A, 0, NDA_AGGR_MEAN);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_EQUAL(result->dims[0], 3);
@@ -1600,7 +1600,7 @@ void test_ndarray_aggr_mean_axis0_3d(void) {
 void test_ndarray_aggr_max_axis2_3d(void) {
     size_t dims[] = {2, 3, 4, 0};
     NDArray A = ndarray_new_arange(dims, 0.0, 24.0, 1.0);
-    NDArray result = ndarray_new_axis_aggr(A, 2, NDARRAY_AGGR_MAX);
+    NDArray result = ndarray_new_aggr(A, 2, NDA_AGGR_MAX);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_EQUAL(result->dims[0], 2);
@@ -1621,7 +1621,7 @@ void test_ndarray_aggr_max_axis2_3d(void) {
 void test_ndarray_aggr_min_axis1_4d(void) {
     size_t dims[] = {2, 3, 2, 2, 0};
     NDArray A = ndarray_new_arange(dims, 0.0, 24.0, 1.0);
-    NDArray result = ndarray_new_axis_aggr(A, 1, NDARRAY_AGGR_MIN);
+    NDArray result = ndarray_new_aggr(A, 1, NDA_AGGR_MIN);
     
     CU_ASSERT_PTR_NOT_NULL(result);
     CU_ASSERT_EQUAL(result->dims[0], 2);

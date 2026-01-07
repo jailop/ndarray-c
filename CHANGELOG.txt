@@ -17,3 +17,8 @@
 
 - New functions
 - Tests refactored
+
+0.2.1 - 2026-01-07
+
+- Random array creation reviewed and improved
+- Test added to verify random numbers quality

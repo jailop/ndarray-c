@@ -28,12 +28,13 @@ int main() {
     CU_pSuite suite_conditional = CU_add_suite("Conditional Operations", init_suite, clean_suite);
     CU_pSuite suite_slice = CU_add_suite("Slice Access", init_suite, clean_suite);
     CU_pSuite suite_comparison = CU_add_suite("Comparison Operations", init_suite, clean_suite);
+    CU_pSuite suite_randquality = CU_add_suite("Random Number Quality", init_suite, clean_suite);
 
     /* Check suite creation */
     if (!suite_creation || !suite_operations || !suite_arithmetic || 
         !suite_matmul || !suite_tensordot || !suite_stack || !suite_concat ||
         !suite_take || !suite_transpose || !suite_reshape || !suite_aggregation ||
-        !suite_conditional || !suite_slice || !suite_comparison) {
+        !suite_conditional || !suite_slice || !suite_comparison || !suite_randquality) {
         CU_cleanup_registry();
         return CU_get_error();
     }
@@ -53,6 +54,7 @@ int main() {
     register_conditional_tests(suite_conditional);
     register_slice_tests(suite_slice);
     register_comparison_tests(suite_comparison);
+    register_randquality_tests(suite_randquality);
 
     /* Run all tests */
     CU_basic_set_mode(CU_BRM_VERBOSE);

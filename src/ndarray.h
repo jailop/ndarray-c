@@ -62,8 +62,8 @@ typedef _NDArray* NDArray;
 
 /**
  * Constant to indicate operations on all axes.
- * Used with functions like ndarray_new_axis_aggr.
- * Example: ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_SUM)
+ * Used with functions like ndarray_new_aggr.
+ * Example: ndarray_new_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_SUM)
  */
 #define NDA_ALL_AXES (-1)
 
@@ -760,14 +760,14 @@ NDArray ndarray_new_transpose(NDArray A);
 void ndarray_reshape(NDArray arr, size_t* new_dims);
 
 /**
- * Aggregation types for ndarray_new_axis_aggr function.
+ * Aggregation types for ndarray_new_aggr function.
  */
 enum {
-    NDARRAY_AGGR_SUM = 0,
-    NDARRAY_AGGR_MEAN,
-    NDARRAY_AGGR_STD,
-    NDARRAY_AGGR_MAX,
-    NDARRAY_AGGR_MIN
+    NDA_AGGR_SUM = 0,
+    NDA_AGGR_MEAN,
+    NDA_AGGR_STD,
+    NDA_AGGR_MAX,
+    NDA_AGGR_MIN
 };
 
 /**
@@ -783,10 +783,10 @@ enum {
  * @return A handle to the result ndarray (ndim >= 2)
  * 
  * Example:
- *   ndarray_new_axis_aggr(A, 0, NDARRAY_AGGR_SUM)         // Sum along axis 0
- *   ndarray_new_axis_aggr(A, NDA_ALL_AXES, NDARRAY_AGGR_MEAN)  // Mean of all elements
+ *   ndarray_new_aggr(A, 0, NDA_AGGR_SUM)         // Sum along axis 0
+ *   ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_MEAN)  // Mean of all elements
  */
-NDArray ndarray_new_axis_aggr(NDArray A, int axis, int aggr_type);
+NDArray ndarray_new_aggr(NDArray A, int axis, int aggr_type);
 
 /**
  * Saves an ndarray to a binary file.
