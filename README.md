@@ -7,7 +7,8 @@ A numpy-like ndarray library for C, with Zig bindings.
 - BLAS-optimized operations
  
 [Design Considerations](guide/design.md)  
-[API Reference](https://jailop.github.io/ndarray-c/)
+[API Reference](https://jailop.github.io/ndarray-c/)  
+[Nim Bindings](https://github.com/jailop/ndarray-nim)
 
 ## Disclaimers
 
