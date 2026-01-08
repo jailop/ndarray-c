@@ -20,6 +20,7 @@ A numpy-like ndarray library for C, with Zig bindings.
 ## Design Considerations
 
 - The priority is a clean and simple API over performance
+- The scope is array management. It is not planned to extend this library to support other features, like machine learning routines.
 - Provides helper macros for list manipulation to express dimensions,
   positions, axes, and many ndarrays.
 - Uses assertions for runtime checks; can be disabled with `NDEBUG`
