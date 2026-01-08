@@ -2,9 +2,17 @@
 
 Requirements:
 
-- OpenMP: For parallel operations (required)
+- OpenMP: For parallel operations (required on Linux/macOS, optional on Windows)
 - OpenBLAS: For optimized BLAS operations (required)
 - CUnit: For running tests (optional, only needed for tests)
+
+### Platform-Specific Notes
+
+Windows: This library uses C99 features (VLAs) that require GCC or Clang. MSVC is not supported. Use MinGW-w64 or MSYS2 with GCC. See [Windows build instructions](#windows-build-with-vcpkg) below.
+
+macOS: GCC is recommended over Clang for better OpenMP support. CMake will auto-detect Homebrew installations.
+
+Linux: Standard GCC with OpenMP works out of the box.
 
 ### Build System Options
 
@@ -111,6 +119,30 @@ Run tests:
 
 ### Installing Dependencies
 
+**Windows (vcpkg - Recommended):**
+
+Install vcpkg if not already installed:
+```powershell
+git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+cd C:\vcpkg
+.\bootstrap-vcpkg.bat
+```
+
+Install GCC via MSYS2 or MinGW-w64:
+```powershell
+# Option 1: MSYS2 (recommended)
+# Download from https://www.msys2.org/ and install
+# Then in MSYS2 terminal:
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
+
+# Option 2: Chocolatey
+choco install mingw
+
+# Option 3: Standalone MinGW-w64 from https://winlibs.com/
+```
+
+Dependencies will be automatically installed via vcpkg.json when building with CMake.
+
 **macOS (Homebrew):**
 ```bash
 brew install gcc libomp openblas cunit
@@ -125,6 +157,50 @@ sudo apt-get install gcc libomp-dev libopenblas-dev libcunit1-dev
 ```bash
 sudo dnf install gcc libomp-devel openblas-devel CUnit-devel
 ```
+
+### Windows Build with vcpkg
+
+The project includes a PowerShell build script for easy Windows compilation:
+
+```powershell
+# Quick build (uses Ninja generator with GCC)
+.\build.ps1
+
+# Clean build
+.\build.ps1 -Clean
+
+# Debug build
+.\build.ps1 -BuildType Debug
+
+# With MinGW Makefiles instead of Ninja
+.\build.ps1 -Generator "MinGW Makefiles"
+
+# Build and install
+.\build.ps1 -Install -InstallPrefix "C:\Program Files\ndarray"
+```
+
+Manual CMake build on Windows:
+```powershell
+# Configure with vcpkg toolchain
+cmake -S . -B build -G Ninja `
+  -DCMAKE_TOOLCHAIN_FILE="C:\vcpkg\scripts\buildsystems\vcpkg.cmake" `
+  -DCMAKE_C_COMPILER=gcc
+
+# Build
+cmake --build build --config Release
+
+# Run example
+.\build\example.exe
+```
+
+**Features on Windows:**
+- ✅ Full C99 VLA support (GCC)
+- ✅ OpenMP 4.5 (GCC 15.2.0+)
+- ✅ OpenBLAS via vcpkg
+- ✅ All library features working
+- ⚠️ Random number generation: Uses portable `rand()` fallback on Windows since `drand48_r()` is glibc-specific and not available in MinGW. Random functions work correctly but parallel random generation is disabled for thread-safety. For production use requiring high-quality parallel random numbers, consider using Linux/macOS or implementing a Windows-specific thread-safe RNG.
+
+See [WINDOWS_BUILD.md](../WINDOWS_BUILD.md) for detailed Windows build instructions.
 
 
 ---

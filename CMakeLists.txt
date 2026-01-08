@@ -25,11 +25,20 @@ option(BUILD_EXAMPLES "Build example programs" ON)
 option(BUILD_TESTS "Build C test suite (requires CUnit)" ON)
 option(BUILD_BENCHMARKS "Build benchmark programs" ON)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -pedantic")
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+# Compiler-specific flags
+if(MSVC)
+    # MSVC specific flags (Note: MSVC doesn't support C99 VLAs, use GCC/MinGW instead)
+    add_compile_options(/W3 /O2)
+    message(WARNING "MSVC detected - this project uses C99 VLAs which MSVC doesn't support. Please use GCC (MinGW-w64) or Clang instead.")
+else()
+    # GCC/Clang/MinGW flags
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -pedantic")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+    endif()
 endif()
 
+# OpenMP Configuration
 if(APPLE)
     execute_process(
         COMMAND brew --prefix libomp
@@ -53,37 +62,68 @@ if(APPLE)
     endif()
 endif()
 
-find_package(OpenMP REQUIRED)
-if(OpenMP_C_FOUND)
-    set(OPENMP_LIBRARIES ${OpenMP_C_LIBRARIES})
+# OpenMP is disabled on MSVC due to OpenMP 2.0 limitations
+# On Windows with GCC/MinGW, OpenMP works fine; on Linux/macOS it's required
+if(MSVC)
+    message(STATUS "OpenMP disabled on MSVC (OpenMP 2.0 has limitations with C99 code)")
+    set(OpenMP_C_FOUND FALSE)
+elseif(WIN32)
+    # On Windows with MinGW/GCC, try to find OpenMP
+    find_package(OpenMP)
 else()
-    message(FATAL_ERROR "OpenMP is required but not found. On macOS: brew install libomp")
+    find_package(OpenMP REQUIRED)
 endif()
 
-# Find OpenBLAS
-if(APPLE)
-    # First try Homebrew OpenBLAS
-    execute_process(
-        COMMAND brew --prefix openblas
-        OUTPUT_VARIABLE HOMEBREW_OPENBLAS_PREFIX
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-    if(HOMEBREW_OPENBLAS_PREFIX)
-        set(BLA_VENDOR OpenBLAS)
-        set(BLAS_LIBRARIES "${HOMEBREW_OPENBLAS_PREFIX}/lib/libopenblas.dylib")
-        set(OPENBLAS_INCLUDE_DIR "${HOMEBREW_OPENBLAS_PREFIX}/include")
-        message(STATUS "Using Homebrew OpenBLAS: ${HOMEBREW_OPENBLAS_PREFIX}")
+if(OpenMP_C_FOUND)
+    set(OPENMP_LIBRARIES ${OpenMP_C_LIBRARIES})
+    message(STATUS "OpenMP found and will be used")
+else()
+    if(NOT MSVC AND NOT WIN32)
+        message(FATAL_ERROR "OpenMP is required but not found. On macOS: brew install libomp")
+    else()
+        message(WARNING "OpenMP not found or disabled. Building without OpenMP support.")
     endif()
 endif()
 
-if(NOT BLAS_LIBRARIES)
-    find_package(BLAS REQUIRED)
+# BLAS/OpenBLAS Configuration
+# First try to use vcpkg or system-provided packages
+find_package(OpenBLAS QUIET)
+if(OpenBLAS_FOUND)
+    message(STATUS "Found OpenBLAS via vcpkg or system")
+    set(BLAS_LIBRARIES OpenBLAS::OpenBLAS)
+else()
+    # Try standard BLAS package
+    find_package(BLAS QUIET)
+    if(BLAS_FOUND)
+        message(STATUS "Found BLAS libraries: ${BLAS_LIBRARIES}")
+    else()
+        # Platform-specific fallback for Homebrew on macOS
+        if(APPLE)
+            execute_process(
+                COMMAND brew --prefix openblas
+                OUTPUT_VARIABLE HOMEBREW_OPENBLAS_PREFIX
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+            )
+            if(HOMEBREW_OPENBLAS_PREFIX)
+                set(BLAS_LIBRARIES "${HOMEBREW_OPENBLAS_PREFIX}/lib/libopenblas.dylib")
+                set(OPENBLAS_INCLUDE_DIR "${HOMEBREW_OPENBLAS_PREFIX}/include")
+                message(STATUS "Using Homebrew OpenBLAS: ${HOMEBREW_OPENBLAS_PREFIX}")
+            endif()
+        endif()
+        
+        if(NOT BLAS_LIBRARIES)
+            message(FATAL_ERROR "BLAS library not found. On Windows, install via vcpkg. On macOS: brew install openblas. On Linux: install libopenblas-dev.")
+        endif()
+    endif()
 endif()
 
-# Platform-specific OpenBLAS header detection
-if(NOT OPENBLAS_INCLUDE_DIR)
-    if(APPLE)
+# OpenBLAS include directory detection
+if(NOT OPENBLAS_INCLUDE_DIR AND NOT OpenBLAS_FOUND)
+    if(WIN32)
+        # On Windows with vcpkg, headers should be in the include path automatically
+        find_path(OPENBLAS_INCLUDE_DIR cblas.h)
+    elseif(APPLE)
         # On macOS (Homebrew), cblas.h is directly in include
         find_path(OPENBLAS_INCLUDE_DIR cblas.h
             HINTS
@@ -105,12 +145,12 @@ if(NOT OPENBLAS_INCLUDE_DIR)
             )
         endif()
     endif()
-endif()
-
-if(OPENBLAS_INCLUDE_DIR)
-    message(STATUS "Found OpenBLAS include directory: ${OPENBLAS_INCLUDE_DIR}")
-else()
-    message(FATAL_ERROR "Could not find OpenBLAS include directory")
+    
+    if(OPENBLAS_INCLUDE_DIR)
+        message(STATUS "Found OpenBLAS include directory: ${OPENBLAS_INCLUDE_DIR}")
+    else()
+        message(WARNING "Could not find OpenBLAS include directory - may cause build issues")
+    endif()
 endif()
 
 set(NDARRAY_SOURCES
@@ -136,8 +176,19 @@ target_include_directories(ndarray_obj PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>
 )
-target_include_directories(ndarray_obj PRIVATE ${OPENBLAS_INCLUDE_DIR})
-target_compile_options(ndarray_obj PRIVATE ${OpenMP_C_FLAGS})
+if(OPENBLAS_INCLUDE_DIR)
+    target_include_directories(ndarray_obj PRIVATE ${OPENBLAS_INCLUDE_DIR})
+endif()
+# Get include directories from OpenBLAS target if using vcpkg/CMake config
+if(OpenBLAS_FOUND AND TARGET OpenBLAS::OpenBLAS)
+    get_target_property(OPENBLAS_INCLUDE_DIRS OpenBLAS::OpenBLAS INTERFACE_INCLUDE_DIRECTORIES)
+    if(OPENBLAS_INCLUDE_DIRS)
+        target_include_directories(ndarray_obj PRIVATE ${OPENBLAS_INCLUDE_DIRS})
+    endif()
+endif()
+if(NOT MSVC)
+    target_compile_options(ndarray_obj PRIVATE ${OpenMP_C_FLAGS})
+endif()
 set_property(TARGET ndarray_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if(BUILD_STATIC_LIBS)
@@ -151,10 +202,16 @@ if(BUILD_STATIC_LIBS)
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         $<INSTALL_INTERFACE:include>
     )
-    target_link_libraries(ndarray_static PUBLIC
-        m
-        ${BLAS_LIBRARIES}
-    )
+    
+    # Link libraries
+    target_link_libraries(ndarray_static PUBLIC ${BLAS_LIBRARIES})
+    
+    # Link math library on Unix-like systems
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(ndarray_static PUBLIC m)
+    endif()
+    
+    # Link OpenMP if available
     if(OpenMP_C_FOUND)
         target_link_libraries(ndarray_static PUBLIC OpenMP::OpenMP_C)
     endif()
@@ -171,10 +228,16 @@ if(BUILD_SHARED_LIBS)
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         $<INSTALL_INTERFACE:include>
     )
-    target_link_libraries(ndarray_shared PUBLIC
-        m
-        ${BLAS_LIBRARIES}
-    )
+    
+    # Link libraries
+    target_link_libraries(ndarray_shared PUBLIC ${BLAS_LIBRARIES})
+    
+    # Link math library on Unix-like systems
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(ndarray_shared PUBLIC m)
+    endif()
+    
+    # Link OpenMP if available
     if(OpenMP_C_FOUND)
         target_link_libraries(ndarray_shared PUBLIC OpenMP::OpenMP_C)
     endif()
@@ -230,24 +293,50 @@ endif()
 if(BUILD_BENCHMARKS)
     # Sequential benchmark (without OpenMP)
     add_executable(benchmark_seq benchmarks/benchmark.c)
-    target_compile_options(benchmark_seq PRIVATE -O3 -Wall -pedantic)
-    target_include_directories(benchmark_seq PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${OPENBLAS_INCLUDE_DIR})
+    if(MSVC)
+        target_compile_options(benchmark_seq PRIVATE /O2 /W3)
+    else()
+        target_compile_options(benchmark_seq PRIVATE -O3 -Wall -pedantic)
+    endif()
+    target_include_directories(benchmark_seq PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    if(OPENBLAS_INCLUDE_DIR)
+        target_include_directories(benchmark_seq PRIVATE ${OPENBLAS_INCLUDE_DIR})
+    endif()
     if(TARGET ndarray_static)
         # Link with a modified static lib without OpenMP
         target_sources(benchmark_seq PRIVATE ${NDARRAY_SOURCES})
-        target_link_libraries(benchmark_seq PRIVATE m ${BLAS_LIBRARIES})
+        target_link_libraries(benchmark_seq PRIVATE ${BLAS_LIBRARIES})
+        if(UNIX AND NOT APPLE)
+            target_link_libraries(benchmark_seq PRIVATE m)
+        endif()
     else()
-        target_link_libraries(benchmark_seq PRIVATE ndarray_shared m)
+        target_link_libraries(benchmark_seq PRIVATE ndarray_shared)
+        if(UNIX AND NOT APPLE)
+            target_link_libraries(benchmark_seq PRIVATE m)
+        endif()
     endif()
     
     # OpenMP benchmark (with OpenMP)
     add_executable(benchmark_omp benchmarks/benchmark.c)
-    target_compile_options(benchmark_omp PRIVATE ${OpenMP_C_FLAGS} -O3 -Wall -pedantic)
-    target_include_directories(benchmark_omp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${OPENBLAS_INCLUDE_DIR})
-    if(TARGET ndarray_static)
-        target_link_libraries(benchmark_omp PRIVATE ndarray_static OpenMP::OpenMP_C)
+    if(MSVC)
+        target_compile_options(benchmark_omp PRIVATE /openmp /O2 /W3)
     else()
-        target_link_libraries(benchmark_omp PRIVATE ndarray_shared OpenMP::OpenMP_C)
+        target_compile_options(benchmark_omp PRIVATE ${OpenMP_C_FLAGS} -O3 -Wall -pedantic)
+    endif()
+    target_include_directories(benchmark_omp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    if(OPENBLAS_INCLUDE_DIR)
+        target_include_directories(benchmark_omp PRIVATE ${OPENBLAS_INCLUDE_DIR})
+    endif()
+    if(TARGET ndarray_static)
+        target_link_libraries(benchmark_omp PRIVATE ndarray_static)
+        if(OpenMP_C_FOUND)
+            target_link_libraries(benchmark_omp PRIVATE OpenMP::OpenMP_C)
+        endif()
+    else()
+        target_link_libraries(benchmark_omp PRIVATE ndarray_shared)
+        if(OpenMP_C_FOUND)
+            target_link_libraries(benchmark_omp PRIVATE OpenMP::OpenMP_C)
+        endif()
     endif()
     install(TARGETS benchmark_seq benchmark_omp
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

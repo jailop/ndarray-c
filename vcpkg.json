@@ -1,0 +1,9 @@
+{
+  "name": "ndarray-c",
+  "version": "1.0.0",
+  "description": "N-dimensional array library for C with NumPy-like API",
+  "dependencies": [
+    "openblas"
+  ],
+  "builtin-baseline": "b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01"
+}

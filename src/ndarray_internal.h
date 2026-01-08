@@ -13,10 +13,21 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
 
-#ifdef __APPLE__
+#ifndef _WIN32
+    #include <sys/ioctl.h>
+    #include <unistd.h>
+#else
+    #include <io.h>
+    #define isatty _isatty
+    #define fileno _fileno
+#endif
+
+#if defined(__APPLE__)
+    #include <cblas.h>
+#elif defined(_WIN32)
+    // On Windows with vcpkg, OpenBLAS includes are in openblas/ directory
+    // but CMake adds that to include path, so we include directly
     #include <cblas.h>
 #else
     #include <openblas/cblas.h>
@@ -24,9 +35,20 @@
 
 #ifdef _OPENMP
     #include <omp.h>
-    #define OMP_PRAGMA(x) _Pragma(#x)
+    #ifdef _MSC_VER
+        // MSVC OpenMP 2.0 has limitations:
+        // - No simd support
+        // - Loop variables must be signed int and cannot be declared in for statement
+        #define OMP_PRAGMA(x) _Pragma(#x)
+        // Strip "simd" from pragmas for MSVC
+        #define OMP_PRAGMA_SIMD(x) _Pragma("omp parallel for")
+    #else
+        #define OMP_PRAGMA(x) _Pragma(#x)
+        #define OMP_PRAGMA_SIMD(x) _Pragma(x)
+    #endif
 #else
     #define OMP_PRAGMA(x)
+    #define OMP_PRAGMA_SIMD(x)
 #endif
 
 #include "ndarray.h"

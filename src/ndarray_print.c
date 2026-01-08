@@ -61,11 +61,23 @@ void ndarray_print(NDArray arr, const char *name, int precision) {
     if (precision < 0) precision = 4;
     
     // Get terminal width
-    struct winsize w;
     int term_width = 80; // Default fallback
+    
+#ifndef _WIN32
+    struct winsize w;
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1 && w.ws_col > 0) {
         term_width = w.ws_col;
     }
+#else
+    // On Windows, try to get console width
+    #ifdef _MSC_VER
+        #include <windows.h>
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+            term_width = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+        }
+    #endif
+#endif
     
     // Print header
     if (name != NULL) {

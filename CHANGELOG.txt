@@ -37,3 +37,4 @@
 - README - new section on nesting functions
 - Tests for nested functions added
 - License added: BSD 3-clause
+- Support for compiling in Windows added via CMakefile
