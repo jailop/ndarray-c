@@ -11,7 +11,7 @@ A numpy-like ndarray library for C, with Zig bindings.
 - This is a project for learning.
 - The API can change at any moment.
 - It is not intended for production use.
-- Feedback is welcome
+- Feedback is welcomed
 
 **Pending decisions**:
 
