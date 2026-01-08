@@ -1,6 +1,6 @@
 ## Usage
 
-**Helper Macros:**
+## Helper Macros
 
 The library uses macros that simplify array operations and make the code
 more readable. These macros use C99's compound literal feature to create
@@ -52,7 +52,7 @@ NDArray max_val = ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_MAX);
 ndarray_free_all(NDA_LIST(A, B, C));
 ```
 
-**Basic Creation:**
+## Array Creation
 
 ```c
 // Create a 3x4 array
@@ -109,7 +109,7 @@ NDArray arr_4d = ndarray_new_from_data(NDA_DIMS(2, 2, 3, 2), (double*)data_4d);
 ndarray_free_all(NDA_LIST(arr_2d, arr_3d, arr_4d));
 ```
 
-**Saving and Loading Arrays:**
+## Saving and Loading Arrays
 
 ```c
 // Save an array to file
@@ -137,7 +137,7 @@ Binary File Format:
 - Dimension sizes: array of `uint64_t`
 - Data: array of `double` (row-major order)
 
-**Getting and Setting Values:**
+## Getting and Setting Values
 
 ```c
 NDArray arr = ndarray_new_zeros(NDA_DIMS(3, 4));
@@ -178,7 +178,7 @@ ndarray_print(arr, "My Array", 4);  // precision = 4 decimal places
 ndarray_free(arr);
 ```
 
-**Element-wise Operations:**
+## Element-wise Operations
 
 ```c
 NDArray A = ndarray_new_ones(NDA_DIMS(3, 3));
@@ -218,11 +218,10 @@ ndarray_mapfnc(A, square);
 ndarray_free_all(NDA_LIST(A, B, C, D, E));
 ```
 
-**Function Chaining (Nesting):**
+## Function Chaining (Nesting)
 
 In-place operations return a pointer to the modified array, allowing them to be
-chained/nested in a single expression. This enables a fluent API style similar
-to NumPy or MATLAB.
+chained/nested in a single expression.
 
 ```c
 // Basic chaining: operations executed left-to-right
@@ -308,7 +307,7 @@ ndarray_clip_max(
 ndarray_free(X);
 ```
 
-**About Chaining:**
+About Chaining:
 
 1. In-place operations (those without `_new_` in the name) modify the first
    argument and return it for chaining
@@ -344,7 +343,7 @@ ndarray_mul_scalar(ndarray_clip(ndarray_add(ndarray_abs(
 ndarray_free(data);
 ```
 
-**Matrix Operations:**
+## Matrix Operations
 
 ```c
 // Matrix multiplication
@@ -369,7 +368,7 @@ NDArray Z = ndarray_new_tensordot(X, Y, NDA_AXES(2), NDA_AXES(0));
 ndarray_free_all(NDA_LIST(A, B, C, At, x, y, X, Y, Z));
 ```
 
-**Conditional Operations:**
+## Conditional Operations
 
 ```c
 // Non-negativity constraints (common in physics, finance, ML)
@@ -390,7 +389,7 @@ ndarray_sign(errors);  // Direction indicators
 ndarray_free_all(NDA_LIST(values, errors));
 ```
 
-**Comparison and Logical Operations:**
+## Comparison and Logical Operations
 
 ```c
 // Element-wise comparisons (returns 1.0 for true, 0.0 for false)
@@ -419,7 +418,7 @@ ndarray_free_all(NDA_LIST(A, B, eq, lt, gt, positive, zeros,
                           mask1, mask2, combined, x, y, result));
 ```
 
-**Slice Access (Advanced):**
+## Slice Access
 
 ```c
 // Direct pointer access for advanced users
@@ -441,7 +440,7 @@ size_t col_size = ndarray_get_slice_size(matrix, 1);  // 4 elements per column
 ndarray_free_all(NDA_LIST(matrix, dest));
 ```
 
-**Array Manipulation:**
+## Array Manipulation
 
 ```c
 // Stack arrays along a new axis
@@ -464,24 +463,32 @@ ndarray_reshape(C, NDA_DIMS(4, -1));  // Now [4,3] (inferred dimension)
 ndarray_free_all(NDA_LIST(A, B, stacked, concat, sub, C));
 ```
 
-**Aggregations:**
+## Aggregations
 
 ```c
 NDArray A = ndarray_new_randunif(NDA_DIMS(3, 4), 0.0, 10.0);
 
-// Aggregate along specific axis
+// Aggregate along specific axis (returns NDArray)
 NDArray sum_axis0 = ndarray_new_aggr(A, 0, NDA_AGGR_SUM);
 NDArray mean_axis1 = ndarray_new_aggr(A, 1, NDA_AGGR_MEAN);
 NDArray std_axis0 = ndarray_new_aggr(A, 0, NDA_AGGR_STD);
 
-// Aggregate over all axes using NDA_ALL_AXES constant
+// Aggregate over all axes (returns NDArray with shape [1,1])
 NDArray max_all = ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_MAX);
 NDArray min_all = ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_MIN);
 
+// Scalar aggregations (returns double directly, no memory allocation)
+double total = ndarray_scalar_aggr(A, NDA_AGGR_SUM);
+double average = ndarray_scalar_aggr(A, NDA_AGGR_MEAN);
+double maximum = ndarray_scalar_aggr(A, NDA_AGGR_MAX);
+double minimum = ndarray_scalar_aggr(A, NDA_AGGR_MIN);
+double std_dev = ndarray_scalar_aggr(A, NDA_AGGR_STD);
+
 ndarray_free_all(NDA_LIST(A, sum_axis0, mean_axis1, std_axis0, max_all, min_all));
+// Note: No need to free scalar results (total, average, etc.)
 ```
 
-**Example:**
+## Example
 
 ```c
 #include <stdio.h>
@@ -539,7 +546,3 @@ Array 'Loaded Result' [2, 2]:
 [[   58.0    64.0]
  [  139.0   154.0]]
 ```
-
-
----
-[← Design](design.md) | [Back to Main](../README.md) | [Building →](building.md)

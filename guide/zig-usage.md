@@ -1,6 +1,6 @@
 ## Usage
 
-**Array Creation:**
+## Array Creation
 
 ```zig
 const ndarray = @import("ndarray");
@@ -22,7 +22,7 @@ const arr = try NDArray.fromData(&[_]usize{2, 3}, &data);
 defer arr.deinit();
 ```
 
-**Array Creation with Ranges:**
+Array Creation with Ranges:
 
 ```zig
 // Create array with evenly spaced values
@@ -34,7 +34,7 @@ const linear = try NDArray.linspace(&[_]usize{1, 100}, 0, 1, 100);
 defer linear.deinit();
 ```
 
-**Random Arrays:**
+Random Arrays:
 
 ```zig
 // Uniform distribution [0, 1)
@@ -46,7 +46,7 @@ const rand_norm = try NDArray.randomNormal(&[_]usize{3, 4}, 0.0, 1.0);
 defer rand_norm.deinit();
 ```
 
-**Getting and Setting Values:**
+## Getting and Setting Values:
 
 ```zig
 const arr = try NDArray.zeros(&[_]usize{3, 4});
@@ -83,9 +83,9 @@ arr3d.setSlice(1, 1, &plane_data);  // Set middle plane
 arr.print("My Array", 4); // precision = 4 decimal places
 ```
 
-**Method Chaining (Fluent Interface):**
+## Method Chaining
 
-Many operations support method chaining for cleaner code:
+Some operations support method chaining for cleaner code:
 
 ```zig
 const arr = try NDArray.zeros(&[_]usize{3, 4});
@@ -114,7 +114,7 @@ _ = variance.scaleShift(1.0 - kappa * dt, kappa * theta * dt)
     .clipMin(0.0);
 ```
 
-**Using Math Functions with mapFn:**
+## Using Math Functions
 
 The `mapFn()` method applies a function to each element. You can use
 Zig's built-in math functions by wrapping them with C calling
@@ -162,8 +162,6 @@ pub fn main() !void {
 
 Alternative - Using std.math:
 
-You can also use `std.math` functions:
-
 ```zig
 fn sqrt(x: f64) callconv(.c) f64 {
     return std.math.sqrt(x);  // Runtime function
@@ -177,7 +175,7 @@ fn exp(x: f64) callconv(.c) f64 {
 Both `@sqrt` and `std.math.sqrt` produce identical results, but `@sqrt`
 may be optimized better by the compiler.
 
-**Element-wise Operations:**
+## Element-wise Operations
 
 ```zig
 const a = try NDArray.ones(&[_]usize{3, 3});
@@ -212,7 +210,7 @@ extern fn sqrt(f64) f64;
 _ = a.mapFn(sqrt);  // Apply sqrt to all elements
 ```
 
-**Conditional Operations:**
+## Conditional Operations
 
 ```zig
 const values = try NDArray.arange(&[_]usize{3, 3}, -4.0, 5.0, 1.0);
@@ -230,7 +228,7 @@ _ = errors.abs();                  // Distance calculations
 _ = errors.sign();                 // Direction indicators (-1, 0, 1)
 ```
 
-**Comparison and Logical Operations:**
+## Comparison and Logical Operations
 
 ```zig
 const a = try NDArray.arange(&[_]usize{2, 3}, 0.0, 6.0, 1.0);
@@ -277,7 +275,7 @@ const result = try NDArray.where(positive, x, y);  // positive ? x : y
 defer result.deinit();
 ```
 
-**Slice Access:**
+## Slice Access
 
 ```zig
 const matrix = try NDArray.arange(&[_]usize{4, 5}, 0.0, 20.0, 1.0);
@@ -296,7 +294,7 @@ const row_size = matrix.getSliceSize(0);  // Elements per row
 const col_size = matrix.getSliceSize(1);  // Elements per column
 ```
 
-**Matrix Operations:**
+## Matrix Operations
 
 ```zig
 const a = try NDArray.ones(&[_]usize{3, 4});
@@ -312,7 +310,7 @@ defer c.deinit();
 c.print("Result", 2);
 ```
 
-**Tensor Operations:**
+## Tensor Operations
 
 ```zig
 // Create 3D tensors
@@ -327,7 +325,7 @@ const result = try t1.tensordot(t2, &[_]i32{2}, &[_]i32{0});
 defer result.deinit();
 ```
 
-**Array Manipulation:**
+## Array Manipulation
 
 ```zig
 const mat = try NDArray.arange(&[_]usize{3, 4}, 0, 12, 1);
@@ -346,7 +344,7 @@ const copied = try mat.copy();
 defer copied.deinit();
 ```
 
-**Stacking and Concatenating:**
+## Stacking and Concatenating
 
 ```zig
 const a = try NDArray.ones(&[_]usize{2, 3});
@@ -375,13 +373,13 @@ try arr.reshape(&[_]isize{2, 2, 3});  // Now [2,2,3]
 try arr.reshape(&[_]isize{4, -1});  // Now [4,3] (inferred dimension)
 ```
 
-**Aggregations:**
+## Aggregations
 
 ```zig
 const arr = try NDArray.arange(&[_]usize{3, 4}, 1, 13, 1);
 defer arr.deinit();
 
-// Sum all elements
+// Aggregate to NDArray (requires memory management)
 const total = try ndarray.aggregate(arr, -1, .sum);
 defer total.deinit();
 
@@ -393,10 +391,20 @@ defer col_means.deinit();
 const row_maxs = try ndarray.aggregate(arr, 1, .max);
 defer row_maxs.deinit();
 
+// Scalar aggregations (returns f64 directly, no cleanup needed)
+const sum_value = ndarray.scalarAggregate(arr, .sum);      // Sum of all elements
+const mean_value = ndarray.scalarAggregate(arr, .mean);    // Mean of all elements
+const max_value = ndarray.scalarAggregate(arr, .max);      // Maximum value
+const min_value = ndarray.scalarAggregate(arr, .min);      // Minimum value
+const std_value = ndarray.scalarAggregate(arr, .std);      // Standard deviation
+
+std.debug.print("Sum: {d}, Mean: {d}, Max: {d}, Min: {d}, Std: {d}\n",
+                .{sum_value, mean_value, max_value, min_value, std_value});
+
 // Available aggregation types: .sum, .mean, .max, .min, .std
 ```
 
-**Saving and Loading Arrays:**
+## Saving and Loading Arrays
 
 ```zig
 // Save array to file
@@ -412,7 +420,7 @@ defer loaded.deinit();
 loaded.print("Loaded Array", 4);
 ```
 
-**Array Metadata:**
+## Array Metadata
 
 ```zig
 const arr = try NDArray.ones(&[_]usize{3, 4, 5});
@@ -422,7 +430,3 @@ const dims = arr.ndim();        // Returns: 3
 const total = arr.size();       // Returns: 60
 const shape = arr.shape();      // Returns: &[_]usize{3, 4, 5}
 ```
-
-
----
-[← Intro](zig-intro.md) | [Back to Main](../README.md) | [Zig Building →](zig-building.md)

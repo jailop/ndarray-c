@@ -796,6 +796,16 @@ enum {
 NDArray ndarray_new_aggr(const NDArray A, int axis, int aggr_type);
 
 /**
+ * Do an aggregation an all the content of the array. It returns an
+ * scalar.
+ *
+ * @param A The input ndarray
+ * @param aggr_type The type of aggregation to perform.
+ * @return The aggregation value as an scalar
+ */
+double ndarray_scalar_aggr(const NDArray A, int aggr_type);
+
+/**
  * Saves an ndarray to a binary file.
  * File format:
  *   - Magic number (uint32_t): 0x4E444152 ("NDAR" in ASCII)

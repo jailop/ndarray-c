@@ -1,7 +1,3 @@
-/**
- * Aggregation operations
- */
-
 #include "ndarray_internal.h"
 
 size_t compute_stride(NDArray A, int axis) {
@@ -14,8 +10,6 @@ size_t compute_stride(NDArray A, int axis) {
 
 static double aggr_full_sum_mean(NDArray A, int aggr_type) {
     size_t size = ndarray_size(A);
-    // Use CBLAS dasum for sum of absolute values or manual sum
-    // For sum, we use CBLAS ddot with a vector of ones
     double acc = 0.0;
     OMP_PRAGMA(omp parallel for reduction(+:acc))
     for (size_t i = 0; i < size; ++i) {
@@ -131,8 +125,7 @@ static void aggr_axis_std(NDArray result, NDArray A, int axis) {
     for (size_t i = 0; i < result_size; ++i) {
         size_t outer_idx = i / stride;
         size_t inner_idx = i % stride;
-        
-        // Use Welford's online algorithm for better numerical stability
+        // Use Welford's algorithm
         double mean = 0.0;
         double m2 = 0.0;
         
@@ -173,17 +166,16 @@ NDArray ndarray_new_aggr(NDArray A, int axis, int aggr_type) {
         }
         return result;
     }
-    // Compute result dimensions
+    // result dimensions
     size_t result_ndim = A->ndim - 1;
     if (result_ndim < 2) {
         result_ndim = 2;
     }
     size_t result_dims[result_ndim + 1];
     size_t idx = 0;
-    // Build result dimensions, inserting 1 for aggregated axis if needed
+    // result dimensions, inserting 1 for aggregated axis if needed
     for (size_t i = 0; i < A->ndim; ++i) {
         if ((int)i == axis) {
-            // Insert dimension of 1 for the aggregated axis
             if (result_ndim == 2 && A->ndim == 2) {
                 result_dims[idx++] = 1;
             }
@@ -191,7 +183,7 @@ NDArray ndarray_new_aggr(NDArray A, int axis, int aggr_type) {
             result_dims[idx++] = A->dims[i];
         }
     }
-    // If we still don't have 2 dimensions, pad at the end
+    // still don't have 2 dimensions, pad at the end
     while (idx < result_ndim) {
         result_dims[idx++] = 1;
     }
@@ -215,4 +207,23 @@ NDArray ndarray_new_aggr(NDArray A, int axis, int aggr_type) {
             assert(0 && "invalid aggregation type");
     }
     return result;
+}
+
+double ndarray_scalar_aggr(const NDArray A, int aggr_type) {
+    assert(A != NULL && "ndarray cannot be NULL");
+    assert(A->ndim >= 2 && "ndarray must have at least 2 dimensions");
+    switch (aggr_type) {
+        case NDA_AGGR_SUM:
+        case NDA_AGGR_MEAN:
+            return aggr_full_sum_mean(A, aggr_type);
+        case NDA_AGGR_MAX:
+            return aggr_full_max(A);
+        case NDA_AGGR_MIN:
+            return aggr_full_min(A);
+        case NDA_AGGR_STD:
+            return aggr_full_std(A);
+        default:
+            assert(0 && "invalid aggregation type");
+            return 0.0;
+    }
 }

@@ -2,18 +2,7 @@
 
 A numpy-like ndarray library for C, with Zig bindings.
 
-## Features
-
 - Multi-dimensional arrays (ndim >= 2)
-- NumPy-like API with convenient macros
-- Element-wise operations with function chaining
-- Matrix multiplication
-- Tensor operations (stack, concat, tensordot)
-- Aggregations (sum, mean, max, min, std)
-- Comparison and logical operations
-- Array manipulation (reshape, transpose, take)
-- Random number generation (uniform, normal)
-- Save/load arrays to binary files
 - OpenMP parallelization
 - BLAS-optimized operations
 
@@ -26,7 +15,12 @@ A numpy-like ndarray library for C, with Zig bindings.
 
 **Pending decisions**:
 
-- It has not decided the error management approach. At this moment, only asserts are applied.
+- It has not being decided the error management approach. At this
+  moment, only asserts are applied.
+- The intention is that the name of the function indicates if the result
+  is a new allocated array or it is only an scalar. Functions that
+  doesn't have an indication about its return value perform inplace
+  operations over the first argument. This still needs to be refined.
 
 ## For C Users
 
@@ -37,7 +31,6 @@ A numpy-like ndarray library for C, with Zig bindings.
 
 ## For Zig Users
 
-- [Zig Bindings](guide/zig-intro.md)
 - [Zig Usage Guide](guide/zig-usage.md)
 - [Zig Building](guide/zig-building.md)
 
@@ -52,7 +45,7 @@ int main() {
     // Set value at position (1, 2)
     ndarray_set(arr, NDA_POS(1, 2), 42.0);
     // Print the array
-    ndarray_print(arr, "My Array", 2);
+    ndarray_print(arr, "My Array", 2);  // 2 is the output precision
     // Clean up
     ndarray_free(arr);
     return 0;
@@ -71,36 +64,9 @@ pub fn main() !void {
     defer b.deinit();
     // Operations
     _ = a.add(b);  // a = a + b
-    a.print("Result", 2);
+    a.print("Result", 2);  // 2 is the output precision
 }
 ```
-
-## Installation
-
-### Requirements
-
-- C99-compatible compiler (GCC, Clang)
-- OpenMP (for parallel operations)
-- OpenBLAS (for optimized linear algebra)
-- CUnit (optional, for tests)
-
-### Build with CMake
-
-```bash
-mkdir build && cd build
-cmake ..
-cmake --build .
-sudo cmake --build . --target install
-```
-
-### Build with Zig
-
-```bash
-zig build
-```
-
-See [Building](guide/building.md) for more options.
-
 
 ## License
 

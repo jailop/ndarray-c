@@ -115,6 +115,3 @@ mkdir build && cd build
 cmake ..
 cmake --build .
 ```
-
----
-[← Building](building.md) | [Back to Main](../README.md)

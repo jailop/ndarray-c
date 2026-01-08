@@ -450,6 +450,11 @@ pub fn aggregate(arr: NDArray, axis: i32, aggr_type: AggrType) !NDArray {
     return NDArray{ .ptr = ptr };
 }
 
+/// Aggregate all elements to a scalar value
+pub fn scalarAggregate(arr: NDArray, aggr_type: AggrType) f64 {
+    return c.ndarray_scalar_aggr(arr.ptr, @intFromEnum(aggr_type));
+}
+
 /// Stack arrays along a new axis
 pub fn stack(axis: i32, arrays: []const NDArray) !NDArray {
     if (arrays.len > MAX_ARRAYS) return error.TooManyArrays;
@@ -904,6 +909,58 @@ test "aggregate mean" {
     const result = try aggregate(arr, 1, AggrType.mean);
     defer result.deinit();
     try std.testing.expectEqual(@as(f64, 4.0), result.get(&[_]usize{ 0, 0 }));
+}
+
+test "scalar aggregate sum" {
+    const data = [_]f64{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+    const arr = try NDArray.fromData(&[_]usize{ 3, 4 }, &data);
+    defer arr.deinit();
+    const result = scalarAggregate(arr, AggrType.sum);
+    try std.testing.expectEqual(@as(f64, 78.0), result);
+}
+
+test "scalar aggregate mean" {
+    const data = [_]f64{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+    const arr = try NDArray.fromData(&[_]usize{ 3, 4 }, &data);
+    defer arr.deinit();
+    const result = scalarAggregate(arr, AggrType.mean);
+    try std.testing.expectEqual(@as(f64, 6.5), result);
+}
+
+test "scalar aggregate max" {
+    const data = [_]f64{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+    const arr = try NDArray.fromData(&[_]usize{ 3, 4 }, &data);
+    defer arr.deinit();
+    const result = scalarAggregate(arr, AggrType.max);
+    try std.testing.expectEqual(@as(f64, 12.0), result);
+}
+
+test "scalar aggregate min" {
+    const data = [_]f64{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+    const arr = try NDArray.fromData(&[_]usize{ 3, 4 }, &data);
+    defer arr.deinit();
+    const result = scalarAggregate(arr, AggrType.min);
+    try std.testing.expectEqual(@as(f64, 1.0), result);
+}
+
+test "scalar aggregate std" {
+    const data = [_]f64{ 2, 4, 4, 4, 5, 5, 5, 7, 9, 9 };
+    const arr = try NDArray.fromData(&[_]usize{ 2, 5 }, &data);
+    defer arr.deinit();
+    const result = scalarAggregate(arr, AggrType.std);
+    try std.testing.expectApproxEqRel(@as(f64, 2.1540659228538015), result, 1e-10);
+}
+
+test "scalar aggregate consistency" {
+    const arr = try NDArray.ones(&[_]usize{ 10, 10 });
+    defer arr.deinit();
+    
+    // Compare scalar aggregate with array aggregate
+    const result_array = try aggregate(arr, c.NDA_ALL_AXES, AggrType.sum);
+    defer result_array.deinit();
+    const result_scalar = scalarAggregate(arr, AggrType.sum);
+    
+    try std.testing.expectEqual(result_array.get(&[_]usize{ 0, 0 }), result_scalar);
 }
 
 test "stack" {

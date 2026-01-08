@@ -38,3 +38,4 @@
 - Tests for nested functions added
 - License added: BSD 3-clause
 - Support for compiling in Windows added via CMakefile
+- new function: `ndarray_scalar_aggr`

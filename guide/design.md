@@ -18,6 +18,3 @@
 - Uses row-major order for array storage
 - Integrated with OpenMP for parallel operations (required)
 - Uses CBLAS (OpenBLAS) for optimized linear algebra operations (required)
-
----
-[Back to Main](../README.md) | [Usage Guide →](usage.md)

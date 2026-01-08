@@ -155,6 +155,3 @@ sudo dnf install libomp-devel openblas-devel
 ```bash
 sudo pacman -S openmp openblas
 ```
-
----
-[← Zig Usage](zig-usage.md) | [Back to Main](../README.md)
