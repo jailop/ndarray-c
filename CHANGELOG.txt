@@ -22,3 +22,17 @@
 
 - Random array creation reviewed and improved
 - Test added to verify random numbers quality
+
+0.2.2 - 2026-01-07
+
+- zig package review
+
+0.2.3 - 2026-01-07
+
+- const qualitifiers
+- CMakefileLists.txt updated
+- zig aditional dynamic memory allocations removed
+- zig tests extended
+- README divided in multiple files
+- README - new section on nesting functions
+- Tests for nested functions added

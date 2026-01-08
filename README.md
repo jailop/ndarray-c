@@ -253,6 +253,124 @@ ndarray_mapfnc(A, square);
 ndarray_free_all(NDA_LIST(A, B, C, D, E));
 ```
 
+**Function Chaining (Nesting):**
+
+In-place operations return a pointer to the modified array, allowing them to be
+chained/nested in a single expression. This enables a fluent API style similar
+to NumPy or MATLAB.
+
+```c
+// Basic chaining: operations executed left-to-right
+NDArray A = ndarray_new_ones(NDA_DIMS(3, 3));
+NDArray B = ndarray_new_full(NDA_DIMS(3, 3), 2.0);
+
+// Chain arithmetic operations: A = (A + B) * 5.0
+ndarray_mul_scalar(ndarray_add(A, B), 5.0);
+
+// Complex expression in single line
+// result = ((A * 2) + 3) clipped to [0, 10]
+ndarray_clip(ndarray_add_scalar(ndarray_mul_scalar(A, 2.0), 3.0), 0.0, 10.0);
+
+ndarray_free_all(NDA_LIST(A, B));
+```
+
+```c
+// Mathematical transformations
+NDArray data = ndarray_new_randunif(NDA_DIMS(100, 100), -5.0, 5.0);
+
+// ReLU activation: max(0, x)
+ndarray_clip_min(data, 0.0);
+
+// Normalized ReLU: clip to [0,1] then apply function
+double sigmoid(double x) { return 1.0 / (1.0 + exp(-x)); }
+ndarray_mapfnc(ndarray_clip(data, 0.0, 1.0), sigmoid);
+
+// Chain with logical: abs(x) where x > 0, else 0
+NDArray mask = ndarray_new_greater_scalar(data, 0.0);
+NDArray result = ndarray_where(mask, ndarray_abs(data), 
+                                ndarray_new_zeros(NDA_DIMS(100, 100)));
+
+ndarray_free_all(NDA_LIST(data, mask, result));
+```
+
+```c
+// Statistical preprocessing pipeline
+NDArray raw_data = ndarray_new_randnorm(NDA_DIMS(1000, 50), 0.0, 1.0);
+
+// Center and scale: (x - mean) / std, then clip outliers
+NDArray mean = ndarray_new_aggr(raw_data, 0, NDA_AGGR_MEAN);
+NDArray std = ndarray_new_aggr(raw_data, 0, NDA_AGGR_STD);
+
+// Process in one expression: center, scale, clip
+NDArray processed = ndarray_clip(
+    ndarray_mul_scalar(
+        ndarray_add(raw_data, ndarray_mul_scalar(mean, -1.0)),
+        1.0  // Would normally be 1.0/std
+    ),
+    -3.0, 3.0  // Clip to ±3 standard deviations
+);
+
+ndarray_free_all(NDA_LIST(raw_data, mean, std, processed));
+```
+
+```c
+// Combining transformations
+NDArray X = ndarray_new_arange(NDA_DIMS(10, 10), -50.0, 50.0, 1.0);
+
+// Multi-step transformation in single expression:
+// 1. Apply abs() 
+// 2. Add 10
+// 3. Take square root via mapfnc
+// 4. Clip to maximum of 5.0
+double sqrt_fn(double x) { return sqrt(x); }
+ndarray_clip_max(
+    ndarray_mapfnc(
+        ndarray_add_scalar(
+            ndarray_abs(X), 
+            10.0
+        ), 
+        sqrt_fn
+    ), 
+    5.0
+);
+
+ndarray_free(X);
+```
+
+**Important Notes about Chaining:**
+
+1. **In-place operations** (those without `_new_` in the name) modify the first
+   argument and return it for chaining
+2. **Operations creating new arrays** (with `_new_` in the name) cannot be
+   chained as seamlessly since they allocate memory
+3. **Memory management**: Only the outermost array needs to be freed when
+   chaining in-place operations
+4. **Readability**: While chaining is powerful, break complex chains across
+   lines or use intermediate variables for clarity
+
+```c
+// Good: Clear and maintainable
+NDArray data = ndarray_new_ones(NDA_DIMS(5, 5));
+ndarray_mul_scalar(data, 2.0);
+ndarray_add_scalar(data, 1.0);
+ndarray_clip_max(data, 5.0);
+
+// Also good: Chained but readable
+ndarray_clip_max(
+    ndarray_add_scalar(
+        ndarray_mul_scalar(data, 2.0),
+        1.0
+    ),
+    5.0
+);
+
+// Avoid: Too complex
+ndarray_mul_scalar(ndarray_clip(ndarray_add(ndarray_abs(ndarray_mul_scalar(data, -1.0)), 
+                                 ndarray_new_ones(NDA_DIMS(5,5))), 0.0, 1.0), 10.0);
+
+ndarray_free(data);
+```
+
 **Matrix Operations:**
 
 ```c

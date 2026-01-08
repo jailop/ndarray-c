@@ -75,7 +75,7 @@ typedef _NDArray* NDArray;
  * @param dims Array of dimensions, ending with 0.
  * @return A handle to the newly created ndarray, or NULL if ndim < 2.
  */
-NDArray ndarray_new(size_t *dims);
+NDArray ndarray_new(const size_t *dims);
 
 /**
  * Frees the memory allocated for the ndarray.
@@ -98,7 +98,7 @@ void ndarray_free_all(NDArray* arr_list);
  * dimension.
  * @return The computed offset in the data array.
  */
-size_t ndarray_offset(NDArray t, size_t *pos);
+size_t ndarray_offset(const NDArray t, const size_t *pos);
 
 /**
  * Sets the value at the specified position in the ndarray.
@@ -106,7 +106,7 @@ size_t ndarray_offset(NDArray t, size_t *pos);
  * @param pos An array of size_t representing the position in each dimension.
  * @param value The value to set.
  */
-void ndarray_set(NDArray t, size_t* pos, double value);
+void ndarray_set(const NDArray t, const size_t* pos, double value);
 
 /**
  * Gets the value at the specified position in the ndarray.
@@ -114,7 +114,7 @@ void ndarray_set(NDArray t, size_t* pos, double value);
  * @param pos An array of size_t representing the position in each dimension.
  * @return The value at the specified position.
  */
-double ndarray_get(NDArray t, size_t* pos);
+double ndarray_get(const NDArray t, const size_t* pos);
 
 /**
  * Sets values along a slice of the array at a specific index on an axis.
@@ -126,7 +126,8 @@ double ndarray_get(NDArray t, size_t* pos);
  * @param index The index along the axis where to set values
  * @param values Array of values to set (size must match the slice size)
  */
-void ndarray_set_slice(NDArray arr, int axis, size_t index, double* values);
+void ndarray_set_slice(const NDArray arr, int axis, size_t index,
+        const double* values);
 
 /**
  * Fills a slice of the array with a scalar value at a specific index on an axis.
@@ -138,7 +139,8 @@ void ndarray_set_slice(NDArray arr, int axis, size_t index, double* values);
  * @param index The index along the axis where to fill
  * @param value The scalar value to fill with
  */
-void ndarray_fill_slice(NDArray arr, int axis, size_t index, double value);
+void ndarray_fill_slice(const NDArray arr, int axis, size_t index,
+        double value);
 
 /**
  * Get pointer to a slice along an axis.
@@ -154,7 +156,7 @@ void ndarray_fill_slice(NDArray arr, int axis, size_t index, double value);
  *   2D [3,4]: axis=0, index=1 -> pointer to row 1 (4 elements)
  *   3D [2,3,4]: axis=1, index=1 -> pointer to middle plane (2*4=8 elements)
  */
-double* ndarray_get_slice_ptr(NDArray arr, int axis, size_t index);
+double* ndarray_get_slice_ptr(const NDArray arr, int axis, size_t index);
 
 /**
  * Copy a slice from one array to another.
@@ -171,8 +173,8 @@ double* ndarray_get_slice_ptr(NDArray arr, int axis, size_t index);
  *   Copy row 0 from A to row 2 of B: ndarray_copy_slice(A, 0, 0, B, 0, 2)
  *   Copy column 1 from A to column 3 of B: ndarray_copy_slice(A, 1, 1, B, 1, 3)
  */
-void ndarray_copy_slice(NDArray src, int src_axis, size_t src_idx,
-                        NDArray dst, int dst_axis, size_t dst_idx);
+void ndarray_copy_slice(const NDArray src, int src_axis, size_t src_idx,
+                        const NDArray dst, int dst_axis, size_t dst_idx);
 
 /**
  * Get the size of a slice along an axis.
@@ -187,7 +189,7 @@ void ndarray_copy_slice(NDArray src, int src_axis, size_t src_idx,
  *   2D [3,4]: axis=1 -> 3 (elements per column)
  *   3D [2,3,4]: axis=1 -> 8 (2*4 elements per plane)
  */
-size_t ndarray_get_slice_size(NDArray arr, int axis);
+size_t ndarray_get_slice_size(const NDArray arr, int axis);
 
 /**
  * Pretty-prints an ndarray to stdout.
@@ -205,21 +207,21 @@ size_t ndarray_get_slice_size(NDArray arr, int axis);
  *    [  5.0000   6.0000   7.0000   8.0000]
  *    [  9.0000  10.0000  11.0000  12.0000]]
  */
-void ndarray_print(NDArray arr, const char *name, int precision);
+void ndarray_print(const NDArray arr, const char *name, int precision);
 
 /**
  * Creates a copy of the given ndarray.
  * @param t The ndarray to copy.
  * @return A handle to the newly created copy of the ndarray.
  */
-NDArray ndarray_new_copy(NDArray t);
+NDArray ndarray_new_copy(const NDArray t);
 
 /**
  * Creates a new ndarray filled with zeros.
  * @param dims An array of size_t representing the dimensions of the ndarray.
  * @return A handle to the newly created ndarray filled with zeros.
  */
-NDArray ndarray_new_zeros(size_t *dims);
+NDArray ndarray_new_zeros(const size_t *dims);
 
 /**
  * Creates a new ndarray from existing data.
@@ -243,14 +245,14 @@ NDArray ndarray_new_zeros(size_t *dims);
  *   double data4d[2][2][3][2] = {...};
  *   NDArray c = ndarray_new_from_data(NDA_DIMS(2, 2, 3, 2), (double*)data4d);
  */
-NDArray ndarray_new_from_data(size_t *dims, double *data);
+NDArray ndarray_new_from_data(const size_t *dims, const double *data);
 
 /**
  * Creates a new ndarray filled with ones.
  * @param dims An array of size_t representing the dimensions of the ndarray.
  * @return A handle to the newly created ndarray filled with ones.
  */
-NDArray ndarray_new_ones(size_t *dims);
+NDArray ndarray_new_ones(const size_t *dims);
 
 /**
  * Creates a new ndarray filled with the specified value.
@@ -258,7 +260,7 @@ NDArray ndarray_new_ones(size_t *dims);
  * @param value The value to fill the ndarray with.
  * @return A handle to the newly created ndarray filled with the specified value.
  */
-NDArray ndarray_new_full(size_t *dims, double value);
+NDArray ndarray_new_full(const size_t *dims, double value);
 
 /**
  * Creates a new ndarray with values in the range
@@ -267,9 +269,11 @@ NDArray ndarray_new_full(size_t *dims, double value);
  * @param start The starting value of the sequence.
  * @param stop The ending value of the sequence (exclusive).
  * @param step The step size between values.
- * @return A handle to the newly created ndarray with the specified range of values.
+ * @return A handle to the newly created ndarray with the specified
+ *   range of values.
  */
-NDArray ndarray_new_arange(size_t *dims, double start, double stop, double step);
+NDArray ndarray_new_arange(const size_t *dims, double start, double stop,
+        double step);
 
 /**
  * Creates a new ndarray with linearly spaced values
@@ -280,7 +284,8 @@ NDArray ndarray_new_arange(size_t *dims, double start, double stop, double step)
  * @param num The number of values to generate.
  * @return A handle to the newly created ndarray with linearly spaced values.
  */
-NDArray ndarray_new_linspace(size_t *dims, double start, double stop, size_t num);
+NDArray ndarray_new_linspace(const size_t *dims, double start, double stop,
+        size_t num);
 
 /**
  * Creates a new ndarray with random values normally
@@ -290,7 +295,7 @@ NDArray ndarray_new_linspace(size_t *dims, double start, double stop, size_t num
  * @param stddev The standard deviation of the normal distribution.
  * @return A handle to the newly created ndarray with random values.
  */
-NDArray ndarray_new_randnorm(size_t *dims, double mean, double stddev);
+NDArray ndarray_new_randnorm(const size_t *dims, double mean, double stddev);
 
 /**
  * Creates a new ndarray with random values uniformly
@@ -300,7 +305,7 @@ NDArray ndarray_new_randnorm(size_t *dims, double mean, double stddev);
  * @param high The upper bound of the uniform distribution.
  * @return A handle to the newly created ndarray with random values.
  */
-NDArray ndarray_new_randunif(size_t *dims, double low, double high);
+NDArray ndarray_new_randunif(const size_t *dims, double low, double high);
 
 /**
  * Adds two ndarrays element-wise. The result is stored in
@@ -311,7 +316,7 @@ NDArray ndarray_new_randunif(size_t *dims, double low, double high);
  * the addition.
  * This function modifies the input ndarray A in place.
  */
-NDArray ndarray_add(NDArray A, NDArray B);
+NDArray ndarray_add(const NDArray A, const NDArray B);
 
 /**
  * Multiplies two ndarrays element-wise. The result is stored in
@@ -322,7 +327,7 @@ NDArray ndarray_add(NDArray A, NDArray B);
  * the multiplication.
  * This function modifies the input ndarray A in place.
  */
-NDArray ndarray_mul(NDArray A, NDArray B);
+NDArray ndarray_mul(const NDArray A, const NDArray B);
 
 /**
  * Adds a scalar value to each element of the input ndarray.
@@ -332,7 +337,7 @@ NDArray ndarray_mul(NDArray A, NDArray B);
  * by the scalar value.
  * This function modifies the input ndarray in place.
  */
-NDArray ndarray_add_scalar(NDArray A, double scalar);
+NDArray ndarray_add_scalar(const NDArray A, double scalar);
 
 /**
  * Multiplies each element of the input ndarray by a scalar value.
@@ -342,7 +347,7 @@ NDArray ndarray_add_scalar(NDArray A, double scalar);
  * by the scalar value.
  * This function modifies the input ndarray in place.
  */
-NDArray ndarray_mul_scalar(NDArray A, double scalar);
+NDArray ndarray_mul_scalar(const NDArray A, double scalar);
 
 /**
  * Applies a function element-wise
@@ -353,7 +358,7 @@ NDArray ndarray_mul_scalar(NDArray A, double scalar);
  * each element.
  * This function modifies the input ndarray in place.
  */
-NDArray ndarray_mapfnc(NDArray A, double (*func)(double));
+NDArray ndarray_mapfnc(const NDArray A, double (*func)(double));
 
 /**
  * Linear combination: A = alpha*A + beta*B
@@ -371,7 +376,8 @@ NDArray ndarray_mapfnc(NDArray A, double (*func)(double));
  *   ndarray_axpby(A, 1.0, B, -1.0) // A = A - B
  *   ndarray_axpby(A, 0.5, B, 0.5)  // A = (A + B) / 2 (average)
  */
-NDArray ndarray_axpby(NDArray A, double alpha, NDArray B, double beta);
+NDArray ndarray_axpby(const NDArray A, double alpha, const NDArray B,
+        double beta);
 
 /**
  * Scale and shift: A = alpha*A + beta
@@ -388,7 +394,7 @@ NDArray ndarray_axpby(NDArray A, double alpha, NDArray B, double beta);
  *   ndarray_scale_shift(A, 0.5, 0.0)    // A = A / 2
  *   ndarray_scale_shift(A, 1.0, -5.0)   // A = A - 5
  */
-NDArray ndarray_scale_shift(NDArray A, double alpha, double beta);
+NDArray ndarray_scale_shift(const NDArray A, double alpha, double beta);
 
 /**
  * Element-wise multiply then scale: A = A * B * scalar
@@ -404,7 +410,7 @@ NDArray ndarray_scale_shift(NDArray A, double alpha, double beta);
  *   ndarray_mul_scaled(A, B, 2.0)   // A = 2 * A * B
  *   ndarray_mul_scaled(A, B, 0.5)   // A = (A * B) / 2
  */
-NDArray ndarray_mul_scaled(NDArray A, NDArray B, double scalar);
+NDArray ndarray_mul_scaled(const NDArray A, const NDArray B, double scalar);
 
 /**
  * Map function, then multiply: A = func(A) * B * alpha
@@ -421,8 +427,8 @@ NDArray ndarray_mul_scaled(NDArray A, NDArray B, double scalar);
  *   ndarray_map_mul(A, sqrt, B, dt)  // A = sqrt(A) * B * dt
  *   ndarray_map_mul(A, exp, B, 1.0)  // A = exp(A) * B
  */
-NDArray ndarray_map_mul(NDArray A, double (*func)(double), 
-                        NDArray B, double alpha);
+NDArray ndarray_map_mul(const NDArray A, double (*func)(double), 
+                        const NDArray B, double alpha);
 
 /**
  * Fused multiply-add: C = alpha * (A * B) + beta * C
@@ -441,7 +447,7 @@ NDArray ndarray_map_mul(NDArray A, double (*func)(double),
  *   ndarray_mul_add(A, B, C, 1.0, 1.0)  // C = C + A * B
  *   ndarray_mul_add(A, B, C, 2.0, 0.5)  // C = 2*(A*B) + 0.5*C
  */
-NDArray ndarray_mul_add(NDArray A, NDArray B, NDArray C, 
+NDArray ndarray_mul_add(const NDArray A, const NDArray B, const NDArray C, 
                         double alpha, double beta);
 
 /**
@@ -460,8 +466,8 @@ NDArray ndarray_mul_add(NDArray A, NDArray B, NDArray C,
  *   ndarray_gemv(A, x, 1.0, 1.0, y)  // y = y + A * x
  *   ndarray_gemv(A, x, 2.0, 0.5, y)  // y = 2*A*x + 0.5*y
  */
-void ndarray_gemv(NDArray A, NDArray x, double alpha, 
-                  double beta, NDArray y);
+NDArray ndarray_gemv(const NDArray A, const NDArray x, double alpha, 
+                  double beta, const NDArray y);
 
 /**
  * Clip values below a minimum threshold: A = max(A, min_val)
@@ -478,7 +484,7 @@ void ndarray_gemv(NDArray A, NDArray x, double alpha,
  * 
  * Common uses: Non-negativity constraints, ReLU activation, numerical stability
  */
-NDArray ndarray_clip_min(NDArray A, double min_val);
+NDArray ndarray_clip_min(const NDArray A, double min_val);
 
 /**
  * Clip values above a maximum threshold: A = min(A, max_val)
@@ -495,7 +501,7 @@ NDArray ndarray_clip_min(NDArray A, double min_val);
  * 
  * Common uses: Saturation, preventing overflow, capping values
  */
-NDArray ndarray_clip_max(NDArray A, double max_val);
+NDArray ndarray_clip_max(const NDArray A, double max_val);
 
 /**
  * Clip values to a range: A = clamp(A, min_val, max_val)
@@ -513,7 +519,7 @@ NDArray ndarray_clip_max(NDArray A, double max_val);
  * 
  * Common uses: Normalized ranges, activation functions, data validation
  */
-NDArray ndarray_clip(NDArray A, double min_val, double max_val);
+NDArray ndarray_clip(const NDArray A, double min_val, double max_val);
 
 /**
  * Absolute value: A = |A|
@@ -527,7 +533,7 @@ NDArray ndarray_clip(NDArray A, double min_val, double max_val);
  * 
  * Common uses: Distance calculations, error metrics, magnitude
  */
-NDArray ndarray_abs(NDArray A);
+NDArray ndarray_abs(const NDArray A);
 
 /**
  * Sign function: A = sign(A)
@@ -541,7 +547,7 @@ NDArray ndarray_abs(NDArray A);
  * 
  * Common uses: Direction indicators, sign-based algorithms
  */
-NDArray ndarray_sign(NDArray A);
+NDArray ndarray_sign(const NDArray A);
 
 /**
  * Element-wise equality comparison: result = (A == B)
@@ -553,7 +559,7 @@ NDArray ndarray_sign(NDArray A);
  * 
  * Common uses: Boolean masks, condition checking
  */
-NDArray ndarray_new_equal(NDArray A, NDArray B);
+NDArray ndarray_new_equal(const NDArray A, const NDArray B);
 
 /**
  * Element-wise less-than comparison: result = (A < B)
@@ -563,7 +569,7 @@ NDArray ndarray_new_equal(NDArray A, NDArray B);
  * @param B Second ndarray
  * @return New ndarray with comparison results
  */
-NDArray ndarray_new_less(NDArray A, NDArray B);
+NDArray ndarray_new_less(const NDArray A, const NDArray B);
 
 /**
  * Element-wise greater-than comparison: result = (A > B)
@@ -573,7 +579,7 @@ NDArray ndarray_new_less(NDArray A, NDArray B);
  * @param B Second ndarray
  * @return New ndarray with comparison results
  */
-NDArray ndarray_new_greater(NDArray A, NDArray B);
+NDArray ndarray_new_greater(const NDArray A, const NDArray B);
 
 /**
  * Scalar equality comparison: result = (A == value)
@@ -585,7 +591,7 @@ NDArray ndarray_new_greater(NDArray A, NDArray B);
  * 
  * Example: Find all zeros: ndarray_new_equal_scalar(A, 0.0)
  */
-NDArray ndarray_new_equal_scalar(NDArray A, double value);
+NDArray ndarray_new_equal_scalar(const NDArray A, double value);
 
 /**
  * Scalar less-than comparison: result = (A < value)
@@ -595,7 +601,7 @@ NDArray ndarray_new_equal_scalar(NDArray A, double value);
  * @param value Scalar value to compare against
  * @return New ndarray with comparison results
  */
-NDArray ndarray_new_less_scalar(NDArray A, double value);
+NDArray ndarray_new_less_scalar(const NDArray A, double value);
 
 /**
  * Scalar greater-than comparison: result = (A > value)
@@ -605,7 +611,7 @@ NDArray ndarray_new_less_scalar(NDArray A, double value);
  * @param value Scalar value to compare against
  * @return New ndarray with comparison results
  */
-NDArray ndarray_new_greater_scalar(NDArray A, double value);
+NDArray ndarray_new_greater_scalar(const NDArray A, double value);
 
 /**
  * Logical AND: result = (A && B)
@@ -617,7 +623,7 @@ NDArray ndarray_new_greater_scalar(NDArray A, double value);
  * 
  * Common uses: Combining conditions, boolean masks
  */
-NDArray ndarray_logical_and(NDArray A, NDArray B);
+NDArray ndarray_logical_and(const NDArray A, const NDArray B);
 
 /**
  * Logical OR: result = (A || B)
@@ -627,7 +633,7 @@ NDArray ndarray_logical_and(NDArray A, NDArray B);
  * @param B Second ndarray (treated as boolean)
  * @return New ndarray with logical OR results
  */
-NDArray ndarray_logical_or(NDArray A, NDArray B);
+NDArray ndarray_logical_or(const NDArray A, const NDArray B);
 
 /**
  * Logical NOT: result = !A
@@ -636,7 +642,7 @@ NDArray ndarray_logical_or(NDArray A, NDArray B);
  * @param A The ndarray (treated as boolean)
  * @return New ndarray with logical NOT results
  */
-NDArray ndarray_logical_not(NDArray A);
+NDArray ndarray_logical_not(const NDArray A);
 
 /**
  * Element-wise ternary operator: result = condition ? x : y
@@ -653,7 +659,8 @@ NDArray ndarray_logical_not(NDArray A);
  * 
  * Common uses: Conditional replacement, masking, piecewise functions
  */
-NDArray ndarray_where(NDArray condition, NDArray x, NDArray y);
+NDArray ndarray_where(const NDArray condition, const NDArray x,
+        const NDArray y);
 
 /**
  * Tensor contraction (generalized tensor product).
@@ -674,7 +681,7 @@ NDArray ndarray_where(NDArray condition, NDArray x, NDArray y);
  *   Multi-axis:   ndarray_new_tensordot(A, B, NDA_AXES(2, 3), NDA_AXES(0, 1))
  *   Outer product: ndarray_new_tensordot(A, B, NDA_NO_AXES, NDA_NO_AXES)
  */
-NDArray ndarray_new_tensordot(NDArray A, NDArray B, 
+NDArray ndarray_new_tensordot(const NDArray A, const NDArray B, 
                                int *axes_a, int *axes_b);
 
 /**
@@ -691,7 +698,7 @@ NDArray ndarray_new_tensordot(NDArray A, NDArray B,
  * @return A handle to the newly created ndarray resulting from the
  * matrix multiplication, or NULL if dimensions are incompatible.
  */
-NDArray ndarray_new_matmul(NDArray A, NDArray B);
+NDArray ndarray_new_matmul(const NDArray A, const NDArray B);
 
 /**
  * Stacks ndarrays along a new axis (all shapes must be identical).
@@ -736,7 +743,7 @@ NDArray ndarray_new_concat(int axis, NDArray* arr_list);
  *   A=[4,5], axis=0, start=1, end=3 -> [2,5] (rows 1 and 2)
  *   A=[3,6], axis=1, start=2, end=5 -> [3,3] (columns 2,3,4)
  */
-NDArray ndarray_new_take(NDArray arr, int axis, size_t start, size_t end);
+NDArray ndarray_new_take(const NDArray arr, int axis, size_t start, size_t end);
 
 /**
  * Creates a new ndarray that is the transpose of the given ndarray.
@@ -746,7 +753,7 @@ NDArray ndarray_new_take(NDArray arr, int axis, size_t start, size_t end);
  * @param A The input ndarray.
  * @return A handle to the newly created transposed ndarray.
  */
-NDArray ndarray_new_transpose(NDArray A);
+NDArray ndarray_new_transpose(const NDArray A);
 
 /**
  * Reshapes an ndarray in-place to new dimensions.
@@ -757,7 +764,7 @@ NDArray ndarray_new_transpose(NDArray A);
  * @param new_dims New dimensions (terminated by 0). Use -1 for one dimension
  *                 to be automatically inferred from the total size.
  */
-void ndarray_reshape(NDArray arr, size_t* new_dims);
+void ndarray_reshape(const NDArray arr, const size_t* new_dims);
 
 /**
  * Aggregation types for ndarray_new_aggr function.
@@ -786,7 +793,7 @@ enum {
  *   ndarray_new_aggr(A, 0, NDA_AGGR_SUM)         // Sum along axis 0
  *   ndarray_new_aggr(A, NDA_ALL_AXES, NDA_AGGR_MEAN)  // Mean of all elements
  */
-NDArray ndarray_new_aggr(NDArray A, int axis, int aggr_type);
+NDArray ndarray_new_aggr(const NDArray A, int axis, int aggr_type);
 
 /**
  * Saves an ndarray to a binary file.
@@ -804,7 +811,7 @@ NDArray ndarray_new_aggr(NDArray A, int axis, int aggr_type);
  * Example:
  *   ndarray_save(arr, "mydata.bin");
  */
-int ndarray_save(NDArray arr, const char *filename);
+int ndarray_save(const NDArray arr, const char *filename);
 
 /**
  * Loads an ndarray from a binary file.

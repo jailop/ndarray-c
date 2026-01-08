@@ -29,7 +29,7 @@ static inline double box_muller_gaussian(struct drand48_data *rng_state,
 
 
 
-NDArray ndarray_new_randnorm(size_t *dims, double mean, double stddev) {
+NDArray ndarray_new_randnorm(const size_t *dims, double mean, double stddev) {
     NDArray t = ndarray_new(dims);
     size_t size = ndarray_size(t);
     
@@ -74,7 +74,7 @@ NDArray ndarray_new_randnorm(size_t *dims, double mean, double stddev) {
     return t;
 }
 
-NDArray ndarray_new_randunif(size_t *dims, double low, double high) {
+NDArray ndarray_new_randunif(const size_t *dims, double low, double high) {
     NDArray t = ndarray_new(dims);
     size_t size = ndarray_size(t);
     double range = high - low;

@@ -46,7 +46,6 @@
 #endif
 
 size_t ndarray_size(NDArray t);
-size_t ndarray_offset(NDArray t, size_t *pos);
 size_t compute_stride(NDArray A, int axis);
 double generate_gaussian(double mean, double std);
 

@@ -1,20 +1,20 @@
 #include "ndarray_internal.h"
 
-NDArray ndarray_new_zeros(size_t *dims) {
+NDArray ndarray_new_zeros(const size_t *dims) {
     NDArray t = ndarray_new(dims);
     size_t size = ndarray_size(t);
     memset(t->data, 0, sizeof(double) * size);
     return t;
 }
 
-NDArray ndarray_new_from_data(size_t *dims, double *data) {
+NDArray ndarray_new_from_data(const size_t *dims, const double *data) {
     NDArray t = ndarray_new(dims);
     size_t size = ndarray_size(t);
     memcpy(t->data, data, sizeof(double) * size);
     return t;
 }
 
-NDArray ndarray_new_ones(size_t *dims) {
+NDArray ndarray_new_ones(const size_t *dims) {
     NDArray t = ndarray_new(dims);
     size_t size = ndarray_size(t);
     OMP_PRAGMA(omp parallel for simd)
@@ -24,7 +24,7 @@ NDArray ndarray_new_ones(size_t *dims) {
     return t;
 }
 
-NDArray ndarray_new_full(size_t *dims, double value) {
+NDArray ndarray_new_full(const size_t *dims, double value) {
     NDArray t = ndarray_new(dims);
     size_t size = ndarray_size(t);
     OMP_PRAGMA(omp parallel for simd)
@@ -34,7 +34,7 @@ NDArray ndarray_new_full(size_t *dims, double value) {
     return t;
 }
 
-NDArray ndarray_new_arange(size_t *dims, double start, double stop,
+NDArray ndarray_new_arange(const size_t *dims, double start, double stop,
         double step) {
     NDArray t = ndarray_new(dims);
     size_t size = ndarray_size(t);
@@ -59,7 +59,7 @@ NDArray ndarray_new_arange(size_t *dims, double start, double stop,
     return t;
 }
 
-NDArray ndarray_new_linspace(size_t *dims, double start, double stop,
+NDArray ndarray_new_linspace(const size_t *dims, double start, double stop,
         size_t num) {
     NDArray t = ndarray_new(dims);
     size_t size = ndarray_size(t);
@@ -75,5 +75,3 @@ NDArray ndarray_new_linspace(size_t *dims, double start, double stop,
     }
     return t;
 }
-
-

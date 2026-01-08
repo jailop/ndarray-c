@@ -91,4 +91,3 @@ example: $(OBJ) $(EXAMPLEDIR)/example.c
 
 ndarray_test: $(TEST_OBJECTS) $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lcunit
-

@@ -29,12 +29,14 @@ int main() {
     CU_pSuite suite_slice = CU_add_suite("Slice Access", init_suite, clean_suite);
     CU_pSuite suite_comparison = CU_add_suite("Comparison Operations", init_suite, clean_suite);
     CU_pSuite suite_randquality = CU_add_suite("Random Number Quality", init_suite, clean_suite);
+    CU_pSuite suite_chaining = CU_add_suite("Function Chaining", init_suite, clean_suite);
 
     /* Check suite creation */
     if (!suite_creation || !suite_operations || !suite_arithmetic || 
         !suite_matmul || !suite_tensordot || !suite_stack || !suite_concat ||
         !suite_take || !suite_transpose || !suite_reshape || !suite_aggregation ||
-        !suite_conditional || !suite_slice || !suite_comparison || !suite_randquality) {
+        !suite_conditional || !suite_slice || !suite_comparison || !suite_randquality ||
+        !suite_chaining) {
         CU_cleanup_registry();
         return CU_get_error();
     }
@@ -55,6 +57,7 @@ int main() {
     register_slice_tests(suite_slice);
     register_comparison_tests(suite_comparison);
     register_randquality_tests(suite_randquality);
+    register_chaining_tests(suite_chaining);
 
     /* Run all tests */
     CU_basic_set_mode(CU_BRM_VERBOSE);

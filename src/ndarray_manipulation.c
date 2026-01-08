@@ -1,7 +1,3 @@
-/**
- * Shape manipulation operations
- */
-
 #include "ndarray_internal.h"
 
 NDArray ndarray_new_stack(int axis, NDArray* arr_list) {
@@ -98,7 +94,6 @@ NDArray ndarray_new_concat(int axis, NDArray* arr_list) {
     for (size_t i = 0; i < count; ++i) {
         total_concat_size += arr_list[i]->dims[axis];
     }
-    
     // Build result dimensions (same ndim, extended along axis)
     size_t result_dims[arr_list[0]->ndim + 1];
     for (size_t i = 0; i < arr_list[0]->ndim; ++i) {
@@ -113,12 +108,10 @@ NDArray ndarray_new_concat(int axis, NDArray* arr_list) {
     for (size_t i = 0; i < (size_t)axis; ++i) {
         before_axis_size *= arr_list[0]->dims[i];
     }
-    
     size_t after_axis_size = 1;
     for (size_t i = axis + 1; i < arr_list[0]->ndim; ++i) {
         after_axis_size *= arr_list[0]->dims[i];
     }
-    
     // Copy data based on axis position
     if (axis == (int)(arr_list[0]->ndim - 1)) {
         // Concatenate along last axis: copy each "row" separately
@@ -164,7 +157,6 @@ NDArray ndarray_new_concat(int axis, NDArray* arr_list) {
         for (size_t i = 1; i < count; ++i) {
             cumulative_offsets[i] = cumulative_offsets[i-1] + arr_list[i-1]->dims[axis];
         }
-        
         OMP_PRAGMA(omp parallel for)
         for (size_t outer = 0; outer < before_axis_size; ++outer) {
             for (size_t k = 0; k < count; ++k) {
@@ -179,11 +171,11 @@ NDArray ndarray_new_concat(int axis, NDArray* arr_list) {
             }
         }
     }
-    
     return result;
 }
 
-NDArray ndarray_new_take(NDArray arr, int axis, size_t start, size_t end) {
+NDArray ndarray_new_take(const NDArray arr, int axis, size_t start, 
+        size_t end) {
     assert(arr != NULL && "ndarray cannot be NULL");
     assert(arr->ndim >= 2 && "ndarray must have at least 2 dimensions");
     assert(axis >= 0 && axis < (int)arr->ndim && "axis out of range");
@@ -240,7 +232,7 @@ NDArray ndarray_new_take(NDArray arr, int axis, size_t start, size_t end) {
     return result;
 }
 
-NDArray ndarray_new_transpose(NDArray A) {
+NDArray ndarray_new_transpose(const NDArray A) {
     assert(A != NULL && "ndarray cannot be NULL");
     assert(A->ndim >= 2 && "ndarray must have at least 2 dimensions");
     size_t new_dims[A->ndim + 1];
@@ -295,7 +287,7 @@ NDArray ndarray_new_transpose(NDArray A) {
     return B;
 }
 
-void ndarray_reshape(NDArray arr, size_t* new_dims) {
+void ndarray_reshape(const NDArray arr, const size_t* new_dims) {
     assert(arr != NULL && "ndarray cannot be NULL");
     assert(new_dims != NULL && "new_dims cannot be NULL");
     // Count new dimensions and calculate total size
@@ -339,4 +331,3 @@ void ndarray_reshape(NDArray arr, size_t* new_dims) {
         }
     }
 }
-

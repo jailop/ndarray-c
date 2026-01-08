@@ -60,7 +60,7 @@ else()
     message(FATAL_ERROR "OpenMP is required but not found. On macOS: brew install libomp")
 endif()
 
-# Find OpenBLAS - prefer Homebrew installation
+# Find OpenBLAS
 if(APPLE)
     # First try Homebrew OpenBLAS
     execute_process(
@@ -113,7 +113,6 @@ else()
     message(FATAL_ERROR "Could not find OpenBLAS include directory")
 endif()
 
-# Library source files
 set(NDARRAY_SOURCES
     src/ndarray_core.c
     src/ndarray_creation.c
@@ -124,6 +123,7 @@ set(NDARRAY_SOURCES
     src/ndarray_print.c
     src/ndarray_io.c
     src/ndarray_comparison.c
+    src/ndarray_random.c
 )
 
 set(NDARRAY_HEADERS
@@ -131,7 +131,6 @@ set(NDARRAY_HEADERS
     src/ndarray_internal.h
 )
 
-# Create object library for common compilation
 add_library(ndarray_obj OBJECT ${NDARRAY_SOURCES})
 target_include_directories(ndarray_obj PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
@@ -141,7 +140,6 @@ target_include_directories(ndarray_obj PRIVATE ${OPENBLAS_INCLUDE_DIR})
 target_compile_options(ndarray_obj PRIVATE ${OpenMP_C_FLAGS})
 set_property(TARGET ndarray_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-# Static library
 if(BUILD_STATIC_LIBS)
     add_library(ndarray_static STATIC $<TARGET_OBJECTS:ndarray_obj>)
     set_target_properties(ndarray_static PROPERTIES
@@ -162,7 +160,6 @@ if(BUILD_STATIC_LIBS)
     endif()
 endif()
 
-# Shared library
 if(BUILD_SHARED_LIBS)
     add_library(ndarray_shared SHARED $<TARGET_OBJECTS:ndarray_obj>)
     set_target_properties(ndarray_shared PROPERTIES
@@ -183,7 +180,6 @@ if(BUILD_SHARED_LIBS)
     endif()
 endif()
 
-# Example executable
 if(BUILD_EXAMPLES)
     add_executable(example examples/example.c)
     if(TARGET ndarray_static)
@@ -193,7 +189,6 @@ if(BUILD_EXAMPLES)
     endif()
 endif()
 
-# Test executable
 if(BUILD_TESTS)
     # Find CUnit with Homebrew hint on macOS
     if(APPLE AND HOMEBREW_OPENBLAS_PREFIX)
@@ -232,7 +227,6 @@ if(BUILD_TESTS)
     endif()
 endif()
 
-# Benchmark executables
 if(BUILD_BENCHMARKS)
     # Sequential benchmark (without OpenMP)
     add_executable(benchmark_seq benchmarks/benchmark.c)
@@ -255,17 +249,13 @@ if(BUILD_BENCHMARKS)
     else()
         target_link_libraries(benchmark_omp PRIVATE ndarray_shared OpenMP::OpenMP_C)
     endif()
-    
-    # Install benchmarks
     install(TARGETS benchmark_seq benchmark_omp
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endif()
 
-# Installation
 include(GNUInstallDirs)
 
-# Install libraries
 if(BUILD_STATIC_LIBS)
     install(TARGETS ndarray_static
         EXPORT ndarrayTargets
@@ -284,26 +274,22 @@ if(BUILD_SHARED_LIBS)
     )
 endif()
 
-# Install headers
 install(FILES src/ndarray.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-# Install examples
 if(BUILD_EXAMPLES)
     install(TARGETS example
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endif()
 
-# Export targets for find_package support
 install(EXPORT ndarrayTargets
     FILE ndarrayTargets.cmake
     NAMESPACE ndarray::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ndarray
 )
 
-# Create config file
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/ndarrayConfigVersion.cmake"
@@ -325,9 +311,6 @@ install(FILES
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ndarray
 )
 
-# Print configuration summary
-message(STATUS "")
-message(STATUS "========== Build Configuration ==========")
 message(STATUS "Build type:         ${CMAKE_BUILD_TYPE}")
 message(STATUS "C Compiler:         ${CMAKE_C_COMPILER}")
 message(STATUS "C Flags:            ${CMAKE_C_FLAGS}")
@@ -341,5 +324,3 @@ if(OpenMP_C_FOUND)
 endif()
 message(STATUS "BLAS libraries:     ${BLAS_LIBRARIES}")
 message(STATUS "Install prefix:     ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "=========================================")
-message(STATUS "")
