@@ -39,3 +39,7 @@
 - License added: BSD 3-clause
 - Support for compiling in Windows added via CMakefile
 - new function: `ndarray_scalar_aggr`
+
+2.3.4
+
+- zig bindings refactored

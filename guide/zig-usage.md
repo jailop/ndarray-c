@@ -7,18 +7,18 @@ const ndarray = @import("ndarray");
 const NDArray = ndarray.NDArray;
 
 // Create arrays with different initializations
-const zeros = try NDArray.zeros(&[_]usize{3, 4});
+const zeros = try NDArray.zeros(&.{3, 4});
 defer zeros.deinit();
 
-const ones = try NDArray.ones(&[_]usize{3, 4});
+const ones = try NDArray.ones(&.{3, 4});
 defer ones.deinit();
 
-const filled = try NDArray.full(&[_]usize{3, 4}, 42.0);
+const filled = try NDArray.full(&.{3, 4}, 42.0);
 defer filled.deinit();
 
 // Create from existing data
 const data = [_]f64{ 1, 2, 3, 4, 5, 6 };
-const arr = try NDArray.fromData(&[_]usize{2, 3}, &data);
+const arr = try NDArray.fromData(&.{2, 3}, &data);
 defer arr.deinit();
 ```
 
@@ -26,11 +26,11 @@ Array Creation with Ranges:
 
 ```zig
 // Create array with evenly spaced values
-const range = try NDArray.arange(&[_]usize{1, 10}, 0, 10, 1);
+const range = try NDArray.arange(&.{1, 10}, 0, 10, 1);
 defer range.deinit();
 
 // Create array with linearly spaced values
-const linear = try NDArray.linspace(&[_]usize{1, 100}, 0, 1, 100);
+const linear = try NDArray.linspace(&.{1, 100}, 0, 1, 100);
 defer linear.deinit();
 ```
 
@@ -38,25 +38,25 @@ Random Arrays:
 
 ```zig
 // Uniform distribution [0, 1)
-const rand_unif = try NDArray.randomUniform(&[_]usize{3, 4}, 0.0, 1.0);
+const rand_unif = try NDArray.randomUniform(&.{3, 4}, 0.0, 1.0);
 defer rand_unif.deinit();
 
 // Normal distribution (mean=0, std=1)
-const rand_norm = try NDArray.randomNormal(&[_]usize{3, 4}, 0.0, 1.0);
+const rand_norm = try NDArray.randomNormal(&.{3, 4}, 0.0, 1.0);
 defer rand_norm.deinit();
 ```
 
 ## Getting and Setting Values:
 
 ```zig
-const arr = try NDArray.zeros(&[_]usize{3, 4});
+const arr = try NDArray.zeros(&.{3, 4});
 defer arr.deinit();
 
 // Set value at position (1, 2)
-arr.set(&[_]usize{1, 2}, 42.0);
+arr.set(&.{1, 2}, 42.0);
 
 // Get value at position (1, 2)
-const val = arr.get(&[_]usize{1, 2});
+const val = arr.get(&.{1, 2});
 
 // Set an entire row from an array of values
 const row_data = [_]f64{1.0, 2.0, 3.0, 4.0};
@@ -73,7 +73,7 @@ arr.fillSlice(0, 0, 0.0);  // Fill row 0 with zeros
 arr.fillSlice(1, 3, 99.0);  // Fill column 3 with 99.0
 
 // Works for any dimension - set a hyperplane in 3D array
-const arr3d = try NDArray.zeros(&[_]usize{2, 3, 4});
+const arr3d = try NDArray.zeros(&.{2, 3, 4});
 defer arr3d.deinit();
 var plane_data: [8]f64 = undefined;  // 2*4 = 8 values
 for (0..8) |i| plane_data[i] = @as(f64, @floatFromInt(i)) * 5.0;
@@ -88,27 +88,22 @@ arr.print("My Array", 4); // precision = 4 decimal places
 Some operations support method chaining for cleaner code:
 
 ```zig
-const arr = try NDArray.zeros(&[_]usize{3, 4});
+const arr = try NDArray.zeros(&.{3, 4});
 defer arr.deinit();
-
 // Chain multiple operations
 _ = arr.addScalar(5.0)
     .mulScalar(2.0)
     .clipMin(0.0);
-
 // More complex chains
-const a = try NDArray.randomNormal(&[_]usize{100, 100}, 0.0, 1.0);
+const a = try NDArray.randomNormal(&.{100, 100}, 0.0, 1.0);
 defer a.deinit();
-
 _ = a.mapFn(sqrt)           // Apply sqrt to each element
-    .mul(b)                  // Multiply by b
+    .mul(b)                 // Multiply by b
     .addScalar(10.0)        // Add 10
     .clipMin(0.0);          // Ensure non-negative
-
 // Variance calculation with chaining
-const variance = try NDArray.zeros(&[_]usize{3, 4});
+const variance = try NDArray.zeros(&.{3, 4});
 defer variance.deinit();
-
 _ = variance.scaleShift(1.0 - kappa * dt, kappa * theta * dt)
     .add(stochastic_term)
     .clipMin(0.0);
@@ -148,7 +143,7 @@ fn square(x: f64) callconv(.c) f64 {
 }
 
 pub fn main() !void {
-    const arr = try NDArray.arange(&[_]usize{1, 10}, 1.0, 11.0, 1.0);
+    const arr = try NDArray.arange(&.{1, 10}, 1.0, 11.0, 1.0);
     defer arr.deinit();
     // Apply sqrt to all elements
     _ = arr.mapFn(sqrt);
@@ -178,10 +173,10 @@ may be optimized better by the compiler.
 ## Element-wise Operations
 
 ```zig
-const a = try NDArray.ones(&[_]usize{3, 3});
+const a = try NDArray.ones(&.{3, 3});
 defer a.deinit();
 
-const b = try NDArray.full(&[_]usize{3, 3}, 2.0);
+const b = try NDArray.full(&.{3, 3}, 2.0);
 defer b.deinit();
 
 // Element-wise addition (modifies a in place, returns a for chaining)
@@ -195,9 +190,9 @@ _ = a.addScalar(5.0);
 _ = a.mulScalar(2.0);
 
 // Linear combination: a = alpha*a + beta*b
-const c = try NDArray.full(&[_]usize{3, 3}, 5.0);
+const c = try NDArray.full(&.{3, 3}, 5.0);
 defer c.deinit();
-const d = try NDArray.full(&[_]usize{3, 3}, 3.0);
+const d = try NDArray.full(&.{3, 3}, 3.0);
 defer d.deinit();
 _ = c.axpby(2.0, d, 3.0);  // c = 2*c + 3*d = 2*5 + 3*3 = 19
 
@@ -213,7 +208,7 @@ _ = a.mapFn(sqrt);  // Apply sqrt to all elements
 ## Conditional Operations
 
 ```zig
-const values = try NDArray.arange(&[_]usize{3, 3}, -4.0, 5.0, 1.0);
+const values = try NDArray.arange(&.{3, 3}, -4.0, 5.0, 1.0);
 defer values.deinit();
 
 // Clipping operations (support chaining)
@@ -222,7 +217,7 @@ _ = values.clipMin(0.0)           // Non-negativity constraint
     .clip(0.0, 1.0);               // Normalize to [0, 1]
 
 // Absolute value and sign
-const errors = try NDArray.arange(&[_]usize{2, 3}, -2.0, 4.0, 1.0);
+const errors = try NDArray.arange(&.{2, 3}, -2.0, 4.0, 1.0);
 defer errors.deinit();
 _ = errors.abs();                  // Distance calculations
 _ = errors.sign();                 // Direction indicators (-1, 0, 1)
@@ -231,10 +226,10 @@ _ = errors.sign();                 // Direction indicators (-1, 0, 1)
 ## Comparison and Logical Operations
 
 ```zig
-const a = try NDArray.arange(&[_]usize{2, 3}, 0.0, 6.0, 1.0);
+const a = try NDArray.arange(&.{2, 3}, 0.0, 6.0, 1.0);
 defer a.deinit();
 
-const b = try NDArray.full(&[_]usize{2, 3}, 3.0);
+const b = try NDArray.full(&.{2, 3}, 3.0);
 defer b.deinit();
 
 // Element-wise comparisons (returns 1.0/0.0)
@@ -265,10 +260,10 @@ const combined = try mask1.logicalAnd(mask2);  // 2 < a < 5
 defer combined.deinit();
 
 // NumPy-style where
-const x = try NDArray.full(&[_]usize{2, 3}, 10.0);
+const x = try NDArray.full(&.{2, 3}, 10.0);
 defer x.deinit();
 
-const y = try NDArray.full(&[_]usize{2, 3}, -10.0);
+const y = try NDArray.full(&.{2, 3}, -10.0);
 defer y.deinit();
 
 const result = try NDArray.where(positive, x, y);  // positive ? x : y
@@ -278,14 +273,14 @@ defer result.deinit();
 ## Slice Access
 
 ```zig
-const matrix = try NDArray.arange(&[_]usize{4, 5}, 0.0, 20.0, 1.0);
+const matrix = try NDArray.arange(&.{4, 5}, 0.0, 20.0, 1.0);
 defer matrix.deinit();
 
 // Get pointer to slice (advanced users)
 const row2_ptr = matrix.getSlicePtr(0, 2);  // Pointer to row 2
 
 // Copy slices between arrays
-const dest = try NDArray.zeros(&[_]usize{4, 5});
+const dest = try NDArray.zeros(&.{4, 5});
 defer dest.deinit();
 NDArray.copySlice(matrix, 0, 1, dest, 0, 3);  // Copy row 1 to row 3
 
@@ -297,10 +292,10 @@ const col_size = matrix.getSliceSize(1);  // Elements per column
 ## Matrix Operations
 
 ```zig
-const a = try NDArray.ones(&[_]usize{3, 4});
+const a = try NDArray.ones(&.{3, 4});
 defer a.deinit();
 
-const b = try NDArray.ones(&[_]usize{4, 2});
+const b = try NDArray.ones(&.{4, 2});
 defer b.deinit();
 
 // Matrix multiplication (creates new array)
@@ -314,10 +309,10 @@ c.print("Result", 2);
 
 ```zig
 // Create 3D tensors
-const t1 = try NDArray.ones(&[_]usize{2, 3, 4});
+const t1 = try NDArray.ones(&.{2, 3, 4});
 defer t1.deinit();
 
-const t2 = try NDArray.full(&[_]usize{4, 5}, 2.0);
+const t2 = try NDArray.full(&.{4, 5}, 2.0);
 defer t2.deinit();
 
 // Tensor contraction (dot product along specified axes)
@@ -328,7 +323,7 @@ defer result.deinit();
 ## Array Manipulation
 
 ```zig
-const mat = try NDArray.arange(&[_]usize{3, 4}, 0, 12, 1);
+const mat = try NDArray.arange(&.{3, 4}, 0, 12, 1);
 defer mat.deinit();
 
 // Transpose
@@ -347,13 +342,13 @@ defer copied.deinit();
 ## Stacking and Concatenating
 
 ```zig
-const a = try NDArray.ones(&[_]usize{2, 3});
+const a = try NDArray.ones(&.{2, 3});
 defer a.deinit();
 
-const b = try NDArray.full(&[_]usize{2, 3}, 2.0);
+const b = try NDArray.full(&.{2, 3}, 2.0);
 defer b.deinit();
 
-const c = try NDArray.full(&[_]usize{2, 3}, 3.0);
+const c = try NDArray.full(&.{2, 3}, 3.0);
 defer c.deinit();
 
 // Stack arrays along axis 0 (creates new dimension)
@@ -366,7 +361,7 @@ const concatenated = try ndarray.concat(1, &arrays);
 defer concatenated.deinit();
 
 // Reshape array in-place
-const arr = try NDArray.arange(&[_]usize{2, 6}, 0, 12, 1);
+const arr = try NDArray.arange(&.{2, 6}, 0, 12, 1);
 defer arr.deinit();
 try arr.reshape(&[_]isize{3, 4});  // Now [3,4]
 try arr.reshape(&[_]isize{2, 2, 3});  // Now [2,2,3]
@@ -376,7 +371,7 @@ try arr.reshape(&[_]isize{4, -1});  // Now [4,3] (inferred dimension)
 ## Aggregations
 
 ```zig
-const arr = try NDArray.arange(&[_]usize{3, 4}, 1, 13, 1);
+const arr = try NDArray.arange(&.{3, 4}, 1, 13, 1);
 defer arr.deinit();
 
 // Aggregate to NDArray (requires memory management)
@@ -408,7 +403,7 @@ std.debug.print("Sum: {d}, Mean: {d}, Max: {d}, Min: {d}, Std: {d}\n",
 
 ```zig
 // Save array to file
-const arr = try NDArray.randomUniform(&[_]usize{3, 4}, 0.0, 1.0);
+const arr = try NDArray.randomUniform(&.{3, 4}, 0.0, 1.0);
 defer arr.deinit();
 
 try arr.save("mydata.bin");
@@ -423,10 +418,10 @@ loaded.print("Loaded Array", 4);
 ## Array Metadata
 
 ```zig
-const arr = try NDArray.ones(&[_]usize{3, 4, 5});
+const arr = try NDArray.ones(&.{3, 4, 5});
 defer arr.deinit();
 
 const dims = arr.ndim();        // Returns: 3
 const total = arr.size();       // Returns: 60
-const shape = arr.shape();      // Returns: &[_]usize{3, 4, 5}
+const shape = arr.shape();      // Returns: &.{3, 4, 5}
 ```

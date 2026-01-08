@@ -7,18 +7,18 @@ pub fn main() !void {
     // Test creation functions
     std.debug.print("--- Array Creation Functions ---\n", .{});
     
-    const range = try ndarray.NDArray.arange(&[_]usize{ 1, 10 }, 0.0, 10.0, 1.0);
+    const range = try ndarray.NDArray.arange(&.{ 1, 10 }, 0.0, 10.0, 1.0);
     defer range.deinit();
     range.print("Arange [0, 10, step=1]", 1);
     
-    const linsp = try ndarray.NDArray.linspace(&[_]usize{ 1, 5 }, 0.0, 1.0, 5);
+    const linsp = try ndarray.NDArray.linspace(&.{ 1, 5 }, 0.0, 1.0, 5);
     defer linsp.deinit();
     linsp.print("Linspace [0, 1, 5 points]", 3);
 
     // Test take (slicing)
     std.debug.print("\n--- Take (Slicing) ---\n", .{});
     
-    const mat = try ndarray.NDArray.arange(&[_]usize{ 4, 5 }, 1.0, 21.0, 1.0);
+    const mat = try ndarray.NDArray.arange(&.{ 4, 5 }, 1.0, 21.0, 1.0);
     defer mat.deinit();
     mat.print("Original [4, 5]", 1);
     
@@ -33,10 +33,10 @@ pub fn main() !void {
     // Test tensordot
     std.debug.print("\n--- Tensordot ---\n", .{});
     
-    const t1 = try ndarray.NDArray.ones(&[_]usize{ 2, 3, 4 });
+    const t1 = try ndarray.NDArray.ones(&.{ 2, 3, 4 });
     defer t1.deinit();
     
-    const t2 = try ndarray.NDArray.full(&[_]usize{ 4, 5 }, 2.0);
+    const t2 = try ndarray.NDArray.full(&.{ 4, 5 }, 2.0);
     defer t2.deinit();
     
     // Contract on axis 2 of t1 and axis 0 of t2
@@ -55,13 +55,13 @@ pub fn main() !void {
     // Test stack
     std.debug.print("\n--- Stack Arrays ---\n", .{});
     
-    const s1 = try ndarray.NDArray.ones(&[_]usize{ 2, 3 });
+    const s1 = try ndarray.NDArray.ones(&.{ 2, 3 });
     defer s1.deinit();
     
-    const s2 = try ndarray.NDArray.full(&[_]usize{ 2, 3 }, 2.0);
+    const s2 = try ndarray.NDArray.full(&.{ 2, 3 }, 2.0);
     defer s2.deinit();
     
-    const s3 = try ndarray.NDArray.full(&[_]usize{ 2, 3 }, 3.0);
+    const s3 = try ndarray.NDArray.full(&.{ 2, 3 }, 3.0);
     defer s3.deinit();
     
     const stacked = try ndarray.stack(0, &[_]ndarray.NDArray{ s1, s2, s3 });
@@ -73,10 +73,10 @@ pub fn main() !void {
     // Test concat
     std.debug.print("\n--- Concatenate Arrays ---\n", .{});
     
-    const c1 = try ndarray.NDArray.ones(&[_]usize{ 2, 3 });
+    const c1 = try ndarray.NDArray.ones(&.{ 2, 3 });
     defer c1.deinit();
     
-    const c2 = try ndarray.NDArray.full(&[_]usize{ 2, 3 }, 2.0);
+    const c2 = try ndarray.NDArray.full(&.{ 2, 3 }, 2.0);
     defer c2.deinit();
     
     // Concat along axis 0 (rows)

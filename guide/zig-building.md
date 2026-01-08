@@ -124,7 +124,7 @@ const ndarray = @import("ndarray");
 const NDArray = ndarray.NDArray;
 
 pub fn main() !void {
-    const arr = try NDArray.randomNormal(&[_]usize{100, 100}, 0.0, 1.0);
+    const arr = try NDArray.randomNormal(&.{100, 100}, 0.0, 1.0);
     defer arr.deinit();
     
     _ = arr.mulScalar(2.0).addScalar(10.0);

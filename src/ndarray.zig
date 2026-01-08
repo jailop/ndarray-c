@@ -8,19 +8,25 @@ pub const c = @cImport({
     @cInclude("ndarray.h");
 });
 
-
 pub const NDArray = struct {
     ptr: c.NDArray,
+    c_dims_buffer: [MAX_DIMS + 1]usize = undefined,
+
+    fn zigDimsToCDims(self: *NDArray, dims: []const usize) ![*]usize {
+        if (dims.len > MAX_DIMS) return error.TooManyDimensions;
+        @memcpy(self.c_dims_buffer[0..dims.len], dims);
+        self.c_dims_buffer[dims.len] = 0;
+        return &self.c_dims_buffer;
+    }
 
     /// a new ndarray with specified dimensions
     pub fn init(dims: []const usize) !NDArray {
-        if (dims.len > MAX_DIMS) return error.TooManyDimensions;
-        var c_dims: [MAX_DIMS + 1]usize = undefined;
-        @memcpy(c_dims[0..dims.len], dims);
-        c_dims[dims.len] = 0; // Sentinel
-        const ptr = c.ndarray_new(&c_dims);
+        var arr: NDArray = undefined;
+        const c_dims = try arr.zigDimsToCDims(dims);
+        const ptr = c.ndarray_new(c_dims);
         if (ptr == null) return error.AllocationFailed;
-        return NDArray{ .ptr = ptr };
+        arr.ptr = ptr;
+        return arr;
     }
 
     /// Free the ndarray
@@ -30,105 +36,82 @@ pub const NDArray = struct {
 
     /// array filled with zeros
     pub fn zeros(dims: []const usize) !NDArray {
-        if (dims.len > MAX_DIMS) return error.TooManyDimensions;
-        var c_dims: [MAX_DIMS + 1]usize = undefined;
-        @memcpy(c_dims[0..dims.len], dims);
-        c_dims[dims.len] = 0;
-        const ptr = c.ndarray_new_zeros(&c_dims);
+        var arr: NDArray = undefined;
+        const c_dims = try arr.zigDimsToCDims(dims);
+        const ptr = c.ndarray_new_zeros(c_dims);
         if (ptr == null) return error.AllocationFailed;
-        return NDArray{ .ptr = ptr };
+        arr.ptr = ptr;
+        return arr;
     }
 
     /// array filled with ones
     pub fn ones(dims: []const usize) !NDArray {
-        if (dims.len > MAX_DIMS) return error.TooManyDimensions;
-        var c_dims: [MAX_DIMS + 1]usize = undefined;
-        @memcpy(c_dims[0..dims.len], dims);
-        c_dims[dims.len] = 0;
-        const ptr = c.ndarray_new_ones(&c_dims);
+        var arr: NDArray = undefined;
+        const c_dims = try arr.zigDimsToCDims(dims);
+        const ptr = c.ndarray_new_ones(c_dims);
         if (ptr == null) return error.AllocationFailed;
-        return NDArray{ .ptr = ptr };
+        arr.ptr = ptr;
+        return arr;
     }
 
     /// array filled with a specific value
     pub fn full(dims: []const usize, value: f64) !NDArray {
-        if (dims.len > MAX_DIMS) return error.TooManyDimensions;
-        var c_dims: [MAX_DIMS + 1]usize = undefined;
-        @memcpy(c_dims[0..dims.len], dims);
-        c_dims[dims.len] = 0;
-        const ptr = c.ndarray_new_full(&c_dims, value);
+        var arr: NDArray = undefined;
+        const c_dims = try arr.zigDimsToCDims(dims);
+        const ptr = c.ndarray_new_full(c_dims, value);
         if (ptr == null) return error.AllocationFailed;
-        return NDArray{ .ptr = ptr };
+        arr.ptr = ptr;
+        return arr;
     }
 
     /// array from existing data
     pub fn fromData(dims: []const usize, data: []const f64) !NDArray {
-        if (dims.len > MAX_DIMS) return error.TooManyDimensions;
-        var c_dims: [MAX_DIMS + 1]usize = undefined;
-        
-        @memcpy(c_dims[0..dims.len], dims);
-        c_dims[dims.len] = 0;
-        
-        const ptr = c.ndarray_new_from_data(&c_dims, @constCast(data.ptr));
+        var arr: NDArray = undefined;
+        const c_dims = try arr.zigDimsToCDims(dims);
+        const ptr = c.ndarray_new_from_data(c_dims, @constCast(data.ptr));
         if (ptr == null) return error.AllocationFailed;
-        
-        return NDArray{ .ptr = ptr };
+        arr.ptr = ptr;
+        return arr;
     }
 
     /// array with random uniform values
     pub fn randomUniform(dims: []const usize, low: f64, high: f64) !NDArray {
-        if (dims.len > MAX_DIMS) return error.TooManyDimensions;
-        var c_dims: [MAX_DIMS + 1]usize = undefined;
-        
-        @memcpy(c_dims[0..dims.len], dims);
-        c_dims[dims.len] = 0;
-        
-        const ptr = c.ndarray_new_randunif(&c_dims, low, high);
+        var arr: NDArray = undefined;
+        const c_dims = try arr.zigDimsToCDims(dims);
+        const ptr = c.ndarray_new_randunif(c_dims, low, high);
         if (ptr == null) return error.AllocationFailed;
-        
-        return NDArray{ .ptr = ptr };
+        arr.ptr = ptr;
+        return arr;
     }
 
     /// array with random normal values
     pub fn randomNormal(dims: []const usize, mean: f64, stddev: f64) !NDArray {
-        if (dims.len > MAX_DIMS) return error.TooManyDimensions;
-        var c_dims: [MAX_DIMS + 1]usize = undefined;
-        
-        @memcpy(c_dims[0..dims.len], dims);
-        c_dims[dims.len] = 0;
-        
-        const ptr = c.ndarray_new_randnorm(&c_dims, mean, stddev);
+        var arr: NDArray = undefined;
+        const c_dims = try arr.zigDimsToCDims(dims);
+        const ptr = c.ndarray_new_randnorm(c_dims, mean, stddev);
         if (ptr == null) return error.AllocationFailed;
-        
-        return NDArray{ .ptr = ptr };
+        arr.ptr = ptr;
+        return arr;
     }
 
     /// array with evenly spaced values
     pub fn arange(dims: []const usize, start: f64, stop: f64, step: f64) !NDArray {
-        if (dims.len > MAX_DIMS) return error.TooManyDimensions;
-        var c_dims: [MAX_DIMS + 1]usize = undefined;
-        
-        @memcpy(c_dims[0..dims.len], dims);
-        c_dims[dims.len] = 0;
-        
-        const ptr = c.ndarray_new_arange(&c_dims, start, stop, step);
+        var arr: NDArray = undefined;
+        const c_dims = try arr.zigDimsToCDims(dims);
+        const ptr = c.ndarray_new_arange(c_dims, start, stop, step);
         if (ptr == null) return error.AllocationFailed;
-        
-        return NDArray{ .ptr = ptr };
+        arr.ptr = ptr;
+        return arr;
     }
 
     /// array with linearly spaced values
     pub fn linspace(dims: []const usize, start: f64, stop: f64, num: usize) !NDArray {
-        if (dims.len > MAX_DIMS) return error.TooManyDimensions;
-        var c_dims: [MAX_DIMS + 1]usize = undefined;
-        
-        @memcpy(c_dims[0..dims.len], dims);
-        c_dims[dims.len] = 0;
-        
-        const ptr = c.ndarray_new_linspace(&c_dims, start, stop, num);
+        var arr: NDArray = undefined;
+        const c_dims = try arr.zigDimsToCDims(dims);
+        const ptr = c.ndarray_new_linspace(c_dims, start, stop, num);
         if (ptr == null) return error.AllocationFailed;
-        
-        return NDArray{ .ptr = ptr };
+        arr.ptr = ptr;
+        return arr;
     }
 
     /// a copy of the array
@@ -364,13 +347,10 @@ pub const NDArray = struct {
         if (axes_a.len > MAX_DIMS or axes_b.len > MAX_DIMS) return error.TooManyDimensions;
         var c_axes_a: [MAX_DIMS + 1]i32 = undefined;
         var c_axes_b: [MAX_DIMS + 1]i32 = undefined;
-        
         @memcpy(c_axes_a[0..axes_a.len], axes_a);
         c_axes_a[axes_a.len] = -1; // Sentinel
-        
         @memcpy(c_axes_b[0..axes_b.len], axes_b);
         c_axes_b[axes_b.len] = -1; // Sentinel
-        
         const ptr = c.ndarray_new_tensordot(self.ptr, other.ptr, &c_axes_a, &c_axes_b);
         if (ptr == null) return error.TensordotFailed;
         return NDArray{ .ptr = ptr };
@@ -486,153 +466,153 @@ pub fn concat(axis: i32, arrays: []const NDArray) !NDArray {
 }
 
 test "init and deinit" {
-    const arr = try NDArray.init(&[_]usize{ 2, 3 });
+    const arr = try NDArray.init(&.{ 2, 3 });
     defer arr.deinit();
     try std.testing.expect(arr.ndim() == 2);
 }
 
 test "zeros" {
-    const arr = try NDArray.zeros(&[_]usize{ 2, 3 });
+    const arr = try NDArray.zeros(&.{ 2, 3 });
     defer arr.deinit();
-    try std.testing.expectEqual(@as(f64, 0.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 0.0), arr.get(&.{ 0, 0 }));
 }
 
 test "ones" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 3 });
+    const arr = try NDArray.ones(&.{ 2, 3 });
     defer arr.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), arr.get(&[_]usize{ 1, 2 }));
+    try std.testing.expectEqual(@as(f64, 1.0), arr.get(&.{ 1, 2 }));
 }
 
 test "full" {
-    const arr = try NDArray.full(&[_]usize{ 2, 2 }, 5.5);
+    const arr = try NDArray.full(&.{ 2, 2 }, 5.5);
     defer arr.deinit();
-    try std.testing.expectEqual(@as(f64, 5.5), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 5.5), arr.get(&.{ 0, 0 }));
 }
 
 test "fromData" {
     const data = [_]f64{ 1.0, 2.0, 3.0, 4.0 };
-    const arr = try NDArray.fromData(&[_]usize{ 2, 2 }, &data);
+    const arr = try NDArray.fromData(&.{ 2, 2 }, &data);
     defer arr.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), arr.get(&[_]usize{ 0, 0 }));
-    try std.testing.expectEqual(@as(f64, 4.0), arr.get(&[_]usize{ 1, 1 }));
+    try std.testing.expectEqual(@as(f64, 1.0), arr.get(&.{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 4.0), arr.get(&.{ 1, 1 }));
 }
 
 test "randomUniform" {
-    const arr = try NDArray.randomUniform(&[_]usize{ 2, 3 }, 0.0, 1.0);
+    const arr = try NDArray.randomUniform(&.{ 2, 3 }, 0.0, 1.0);
     defer arr.deinit();
-    const val = arr.get(&[_]usize{ 0, 0 });
+    const val = arr.get(&.{ 0, 0 });
     try std.testing.expect(val >= 0.0 and val <= 1.0);
 }
 
 test "randomNormal" {
-    const arr = try NDArray.randomNormal(&[_]usize{ 2, 3 }, 0.0, 1.0);
+    const arr = try NDArray.randomNormal(&.{ 2, 3 }, 0.0, 1.0);
     defer arr.deinit();
     try std.testing.expect(arr.ndim() == 2);
 }
 
 test "arange" {
-    const arr = try NDArray.arange(&[_]usize{ 2, 3 }, 0.0, 6.0, 1.0);
+    const arr = try NDArray.arange(&.{ 2, 3 }, 0.0, 6.0, 1.0);
     defer arr.deinit();
-    try std.testing.expectEqual(@as(f64, 0.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 0.0), arr.get(&.{ 0, 0 }));
 }
 
 test "linspace" {
-    const arr = try NDArray.linspace(&[_]usize{ 2, 3 }, 0.0, 5.0, 6);
+    const arr = try NDArray.linspace(&.{ 2, 3 }, 0.0, 5.0, 6);
     defer arr.deinit();
-    try std.testing.expectEqual(@as(f64, 0.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 0.0), arr.get(&.{ 0, 0 }));
 }
 
 test "copy" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 2 });
+    const arr = try NDArray.ones(&.{ 2, 2 });
     defer arr.deinit();
     const copy = try arr.copy();
     defer copy.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), copy.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), copy.get(&.{ 0, 0 }));
 }
 
 test "get and set" {
-    const arr = try NDArray.zeros(&[_]usize{ 2, 2 });
+    const arr = try NDArray.zeros(&.{ 2, 2 });
     defer arr.deinit();
-    arr.set(&[_]usize{ 1, 1 }, 7.5);
-    try std.testing.expectEqual(@as(f64, 7.5), arr.get(&[_]usize{ 1, 1 }));
+    arr.set(&.{ 1, 1 }, 7.5);
+    try std.testing.expectEqual(@as(f64, 7.5), arr.get(&.{ 1, 1 }));
 }
 
 test "setSlice" {
-    const arr = try NDArray.zeros(&[_]usize{ 2, 3 });
+    const arr = try NDArray.zeros(&.{ 2, 3 });
     defer arr.deinit();
     const values = [_]f64{ 1.0, 2.0, 3.0 };
     arr.setSlice(0, 0, &values);
-    try std.testing.expectEqual(@as(f64, 1.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), arr.get(&.{ 0, 0 }));
 }
 
 test "fillSlice" {
-    const arr = try NDArray.zeros(&[_]usize{ 2, 3 });
+    const arr = try NDArray.zeros(&.{ 2, 3 });
     defer arr.deinit();
     arr.fillSlice(0, 1, 9.0);
-    try std.testing.expectEqual(@as(f64, 9.0), arr.get(&[_]usize{ 1, 0 }));
+    try std.testing.expectEqual(@as(f64, 9.0), arr.get(&.{ 1, 0 }));
 }
 
 test "print" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 2 });
+    const arr = try NDArray.ones(&.{ 2, 2 });
     defer arr.deinit();
     arr.print(null, 2);
 }
 
 test "add" {
-    const a = try NDArray.ones(&[_]usize{ 2, 2 });
+    const a = try NDArray.ones(&.{ 2, 2 });
     defer a.deinit();
-    const b = try NDArray.ones(&[_]usize{ 2, 2 });
+    const b = try NDArray.ones(&.{ 2, 2 });
     defer b.deinit();
     _ = a.add(b);
-    try std.testing.expectEqual(@as(f64, 2.0), a.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 2.0), a.get(&.{ 0, 0 }));
 }
 
 test "mul" {
-    const a = try NDArray.full(&[_]usize{ 2, 2 }, 3.0);
+    const a = try NDArray.full(&.{ 2, 2 }, 3.0);
     defer a.deinit();
-    const b = try NDArray.full(&[_]usize{ 2, 2 }, 2.0);
+    const b = try NDArray.full(&.{ 2, 2 }, 2.0);
     defer b.deinit();
     _ = a.mul(b);
-    try std.testing.expectEqual(@as(f64, 6.0), a.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 6.0), a.get(&.{ 0, 0 }));
 }
 
 test "addScalar" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 2 });
+    const arr = try NDArray.ones(&.{ 2, 2 });
     defer arr.deinit();
     _ = arr.addScalar(5.0);
-    try std.testing.expectEqual(@as(f64, 6.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 6.0), arr.get(&.{ 0, 0 }));
 }
 
 test "mulScalar" {
-    const arr = try NDArray.full(&[_]usize{ 2, 2 }, 3.0);
+    const arr = try NDArray.full(&.{ 2, 2 }, 3.0);
     defer arr.deinit();
     _ = arr.mulScalar(2.0);
-    try std.testing.expectEqual(@as(f64, 6.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 6.0), arr.get(&.{ 0, 0 }));
 }
 
 test "axpby" {
-    const a = try NDArray.full(&[_]usize{ 2, 2 }, 2.0);
+    const a = try NDArray.full(&.{ 2, 2 }, 2.0);
     defer a.deinit();
-    const b = try NDArray.full(&[_]usize{ 2, 2 }, 3.0);
+    const b = try NDArray.full(&.{ 2, 2 }, 3.0);
     defer b.deinit();
     _ = a.axpby(2.0, b, 3.0);
-    try std.testing.expectEqual(@as(f64, 13.0), a.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 13.0), a.get(&.{ 0, 0 }));
 }
 
 test "scaleShift" {
-    const arr = try NDArray.full(&[_]usize{ 2, 2 }, 2.0);
+    const arr = try NDArray.full(&.{ 2, 2 }, 2.0);
     defer arr.deinit();
     _ = arr.scaleShift(3.0, 1.0);
-    try std.testing.expectEqual(@as(f64, 7.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 7.0), arr.get(&.{ 0, 0 }));
 }
 
 test "mulScaled" {
-    const a = try NDArray.full(&[_]usize{ 2, 2 }, 2.0);
+    const a = try NDArray.full(&.{ 2, 2 }, 2.0);
     defer a.deinit();
-    const b = try NDArray.full(&[_]usize{ 2, 2 }, 3.0);
+    const b = try NDArray.full(&.{ 2, 2 }, 3.0);
     defer b.deinit();
     _ = a.mulScaled(b, 2.0);
-    try std.testing.expectEqual(@as(f64, 12.0), a.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 12.0), a.get(&.{ 0, 0 }));
 }
 
 fn testFunc(x: f64) callconv(.c) f64 {
@@ -640,209 +620,209 @@ fn testFunc(x: f64) callconv(.c) f64 {
 }
 
 test "mapFn" {
-    const arr = try NDArray.full(&[_]usize{ 2, 2 }, 3.0);
+    const arr = try NDArray.full(&.{ 2, 2 }, 3.0);
     defer arr.deinit();
     _ = arr.mapFn(&testFunc);
-    try std.testing.expectEqual(@as(f64, 6.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 6.0), arr.get(&.{ 0, 0 }));
 }
 
 test "mapMul" {
-    const a = try NDArray.full(&[_]usize{ 2, 2 }, 3.0);
+    const a = try NDArray.full(&.{ 2, 2 }, 3.0);
     defer a.deinit();
-    const b = try NDArray.full(&[_]usize{ 2, 2 }, 2.0);
+    const b = try NDArray.full(&.{ 2, 2 }, 2.0);
     defer b.deinit();
     a.mapMul(&testFunc, b, 1.0);
-    try std.testing.expectEqual(@as(f64, 12.0), a.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 12.0), a.get(&.{ 0, 0 }));
 }
 
 test "mulAdd" {
-    const a = try NDArray.full(&[_]usize{ 2, 2 }, 2.0);
+    const a = try NDArray.full(&.{ 2, 2 }, 2.0);
     defer a.deinit();
-    const b = try NDArray.full(&[_]usize{ 2, 2 }, 3.0);
+    const b = try NDArray.full(&.{ 2, 2 }, 3.0);
     defer b.deinit();
-    const dest = try NDArray.full(&[_]usize{ 2, 2 }, 1.0);
+    const dest = try NDArray.full(&.{ 2, 2 }, 1.0);
     defer dest.deinit();
     a.mulAdd(b, dest, 1.0, 1.0);
-    try std.testing.expectEqual(@as(f64, 7.0), dest.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 7.0), dest.get(&.{ 0, 0 }));
 }
 
 test "gemv" {
-    const a = try NDArray.ones(&[_]usize{ 2, 3 });
+    const a = try NDArray.ones(&.{ 2, 3 });
     defer a.deinit();
-    const x = try NDArray.ones(&[_]usize{ 3, 1 });
+    const x = try NDArray.ones(&.{ 3, 1 });
     defer x.deinit();
-    const y = try NDArray.zeros(&[_]usize{ 2, 1 });
+    const y = try NDArray.zeros(&.{ 2, 1 });
     defer y.deinit();
     a.gemv(x, 1.0, 0.0, y);
-    try std.testing.expectEqual(@as(f64, 3.0), y.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 3.0), y.get(&.{ 0, 0 }));
 }
 
 test "clipMin" {
-    const arr = try NDArray.full(&[_]usize{ 2, 2 }, 1.0);
+    const arr = try NDArray.full(&.{ 2, 2 }, 1.0);
     defer arr.deinit();
     _ = arr.clipMin(2.0);
-    try std.testing.expectEqual(@as(f64, 2.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 2.0), arr.get(&.{ 0, 0 }));
 }
 
 test "clipMax" {
-    const arr = try NDArray.full(&[_]usize{ 2, 2 }, 5.0);
+    const arr = try NDArray.full(&.{ 2, 2 }, 5.0);
     defer arr.deinit();
     _ = arr.clipMax(3.0);
-    try std.testing.expectEqual(@as(f64, 3.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 3.0), arr.get(&.{ 0, 0 }));
 }
 
 test "clip" {
-    const arr = try NDArray.full(&[_]usize{ 2, 2 }, 5.0);
+    const arr = try NDArray.full(&.{ 2, 2 }, 5.0);
     defer arr.deinit();
     arr.clip(2.0, 3.0);
-    try std.testing.expectEqual(@as(f64, 3.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 3.0), arr.get(&.{ 0, 0 }));
 }
 
 test "abs" {
-    const arr = try NDArray.full(&[_]usize{ 2, 2 }, -5.0);
+    const arr = try NDArray.full(&.{ 2, 2 }, -5.0);
     defer arr.deinit();
     arr.abs();
-    try std.testing.expectEqual(@as(f64, 5.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 5.0), arr.get(&.{ 0, 0 }));
 }
 
 test "sign" {
-    const arr = try NDArray.full(&[_]usize{ 2, 2 }, -5.0);
+    const arr = try NDArray.full(&.{ 2, 2 }, -5.0);
     defer arr.deinit();
     arr.sign();
-    try std.testing.expectEqual(@as(f64, -1.0), arr.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, -1.0), arr.get(&.{ 0, 0 }));
 }
 
 test "getSlicePtr" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 3 });
+    const arr = try NDArray.ones(&.{ 2, 3 });
     defer arr.deinit();
     const ptr = arr.getSlicePtr(0, 0);
     try std.testing.expectEqual(@as(f64, 1.0), ptr[0]);
 }
 
 test "copySlice" {
-    const src = try NDArray.ones(&[_]usize{ 2, 3 });
+    const src = try NDArray.ones(&.{ 2, 3 });
     defer src.deinit();
-    const dst = try NDArray.zeros(&[_]usize{ 2, 3 });
+    const dst = try NDArray.zeros(&.{ 2, 3 });
     defer dst.deinit();
     NDArray.copySlice(src, 0, 0, dst, 0, 1);
-    try std.testing.expectEqual(@as(f64, 1.0), dst.get(&[_]usize{ 1, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), dst.get(&.{ 1, 0 }));
 }
 
 test "getSliceSize" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 3 });
+    const arr = try NDArray.ones(&.{ 2, 3 });
     defer arr.deinit();
     const size = arr.getSliceSize(0);
     try std.testing.expectEqual(@as(usize, 3), size);
 }
 
 test "equal" {
-    const a = try NDArray.ones(&[_]usize{ 2, 2 });
+    const a = try NDArray.ones(&.{ 2, 2 });
     defer a.deinit();
-    const b = try NDArray.ones(&[_]usize{ 2, 2 });
+    const b = try NDArray.ones(&.{ 2, 2 });
     defer b.deinit();
     const result = try a.equal(b);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), result.get(&.{ 0, 0 }));
 }
 
 test "less" {
-    const a = try NDArray.ones(&[_]usize{ 2, 2 });
+    const a = try NDArray.ones(&.{ 2, 2 });
     defer a.deinit();
-    const b = try NDArray.full(&[_]usize{ 2, 2 }, 2.0);
+    const b = try NDArray.full(&.{ 2, 2 }, 2.0);
     defer b.deinit();
     const result = try a.less(b);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), result.get(&.{ 0, 0 }));
 }
 
 test "greater" {
-    const a = try NDArray.full(&[_]usize{ 2, 2 }, 2.0);
+    const a = try NDArray.full(&.{ 2, 2 }, 2.0);
     defer a.deinit();
-    const b = try NDArray.ones(&[_]usize{ 2, 2 });
+    const b = try NDArray.ones(&.{ 2, 2 });
     defer b.deinit();
     const result = try a.greater(b);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), result.get(&.{ 0, 0 }));
 }
 
 test "equalScalar" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 2 });
+    const arr = try NDArray.ones(&.{ 2, 2 });
     defer arr.deinit();
     const result = try arr.equalScalar(1.0);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), result.get(&.{ 0, 0 }));
 }
 
 test "lessScalar" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 2 });
+    const arr = try NDArray.ones(&.{ 2, 2 });
     defer arr.deinit();
     const result = try arr.lessScalar(2.0);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), result.get(&.{ 0, 0 }));
 }
 
 test "greaterScalar" {
-    const arr = try NDArray.full(&[_]usize{ 2, 2 }, 2.0);
+    const arr = try NDArray.full(&.{ 2, 2 }, 2.0);
     defer arr.deinit();
     const result = try arr.greaterScalar(1.0);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), result.get(&.{ 0, 0 }));
 }
 
 test "logicalAnd" {
-    const a = try NDArray.ones(&[_]usize{ 2, 2 });
+    const a = try NDArray.ones(&.{ 2, 2 });
     defer a.deinit();
-    const b = try NDArray.ones(&[_]usize{ 2, 2 });
+    const b = try NDArray.ones(&.{ 2, 2 });
     defer b.deinit();
     const result = try a.logicalAnd(b);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), result.get(&.{ 0, 0 }));
 }
 
 test "logicalOr" {
-    const a = try NDArray.zeros(&[_]usize{ 2, 2 });
+    const a = try NDArray.zeros(&.{ 2, 2 });
     defer a.deinit();
-    const b = try NDArray.ones(&[_]usize{ 2, 2 });
+    const b = try NDArray.ones(&.{ 2, 2 });
     defer b.deinit();
     const result = try a.logicalOr(b);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), result.get(&.{ 0, 0 }));
 }
 
 test "logicalNot" {
-    const arr = try NDArray.zeros(&[_]usize{ 2, 2 });
+    const arr = try NDArray.zeros(&.{ 2, 2 });
     defer arr.deinit();
     const result = try arr.logicalNot();
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 1.0), result.get(&.{ 0, 0 }));
 }
 
 test "where" {
-    const condition = try NDArray.ones(&[_]usize{ 2, 2 });
+    const condition = try NDArray.ones(&.{ 2, 2 });
     defer condition.deinit();
-    const x = try NDArray.full(&[_]usize{ 2, 2 }, 10.0);
+    const x = try NDArray.full(&.{ 2, 2 }, 10.0);
     defer x.deinit();
-    const y = try NDArray.full(&[_]usize{ 2, 2 }, 20.0);
+    const y = try NDArray.full(&.{ 2, 2 }, 20.0);
     defer y.deinit();
     const result = try NDArray.where(condition, x, y);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 10.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 10.0), result.get(&.{ 0, 0 }));
 }
 
 test "matmul" {
-    const a = try NDArray.ones(&[_]usize{ 2, 3 });
+    const a = try NDArray.ones(&.{ 2, 3 });
     defer a.deinit();
-    const b = try NDArray.ones(&[_]usize{ 3, 2 });
+    const b = try NDArray.ones(&.{ 3, 2 });
     defer b.deinit();
     const result = try a.matmul(b);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 3.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 3.0), result.get(&.{ 0, 0 }));
 }
 
 test "tensordot" {
-    const a = try NDArray.ones(&[_]usize{ 2, 3, 4 });
+    const a = try NDArray.ones(&.{ 2, 3, 4 });
     defer a.deinit();
-    const b = try NDArray.ones(&[_]usize{ 4, 5 });
+    const b = try NDArray.ones(&.{ 4, 5 });
     defer b.deinit();
     const axes_a = [_]i32{2};
     const axes_b = [_]i32{0};
@@ -852,22 +832,22 @@ test "tensordot" {
 }
 
 test "transpose" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 3 });
+    const arr = try NDArray.ones(&.{ 2, 3 });
     defer arr.deinit();
     const result = try arr.transpose();
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 1.0), result.get(&[_]usize{ 2, 1 }));
+    try std.testing.expectEqual(@as(f64, 1.0), result.get(&.{ 2, 1 }));
 }
 
 test "reshape" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 6 });
+    const arr = try NDArray.ones(&.{ 2, 6 });
     defer arr.deinit();
     try arr.reshape(&[_]isize{ 3, 4 });
-    try std.testing.expectEqual(@as(f64, 1.0), arr.get(&[_]usize{ 2, 3 }));
+    try std.testing.expectEqual(@as(f64, 1.0), arr.get(&.{ 2, 3 }));
 }
 
 test "take" {
-    const arr = try NDArray.ones(&[_]usize{ 3, 4 });
+    const arr = try NDArray.ones(&.{ 3, 4 });
     defer arr.deinit();
     const result = try arr.take(0, 0, 2);
     defer result.deinit();
@@ -875,16 +855,16 @@ test "take" {
 }
 
 test "save and load" {
-    const arr = try NDArray.full(&[_]usize{ 2, 2 }, 42.0);
+    const arr = try NDArray.full(&.{ 2, 2 }, 42.0);
     defer arr.deinit();
     try arr.save("test_zig_saveload.bin");
     const loaded = try NDArray.load("test_zig_saveload.bin");
     defer loaded.deinit();
-    try std.testing.expectEqual(@as(f64, 42.0), loaded.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 42.0), loaded.get(&.{ 0, 0 }));
 }
 
 test "ndim and shape" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 3, 4 });
+    const arr = try NDArray.ones(&.{ 2, 3, 4 });
     defer arr.deinit();
     try std.testing.expectEqual(@as(usize, 3), arr.ndim());
     const allocator = std.testing.allocator;
@@ -896,24 +876,24 @@ test "ndim and shape" {
 }
 
 test "aggregate sum" {
-    const arr = try NDArray.ones(&[_]usize{ 2, 3 });
+    const arr = try NDArray.ones(&.{ 2, 3 });
     defer arr.deinit();
     const result = try aggregate(arr, 0, AggrType.sum);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 2.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 2.0), result.get(&.{ 0, 0 }));
 }
 
 test "aggregate mean" {
-    const arr = try NDArray.full(&[_]usize{ 2, 3 }, 4.0);
+    const arr = try NDArray.full(&.{ 2, 3 }, 4.0);
     defer arr.deinit();
     const result = try aggregate(arr, 1, AggrType.mean);
     defer result.deinit();
-    try std.testing.expectEqual(@as(f64, 4.0), result.get(&[_]usize{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 4.0), result.get(&.{ 0, 0 }));
 }
 
 test "scalar aggregate sum" {
     const data = [_]f64{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-    const arr = try NDArray.fromData(&[_]usize{ 3, 4 }, &data);
+    const arr = try NDArray.fromData(&.{ 3, 4 }, &data);
     defer arr.deinit();
     const result = scalarAggregate(arr, AggrType.sum);
     try std.testing.expectEqual(@as(f64, 78.0), result);
@@ -921,7 +901,7 @@ test "scalar aggregate sum" {
 
 test "scalar aggregate mean" {
     const data = [_]f64{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-    const arr = try NDArray.fromData(&[_]usize{ 3, 4 }, &data);
+    const arr = try NDArray.fromData(&.{ 3, 4 }, &data);
     defer arr.deinit();
     const result = scalarAggregate(arr, AggrType.mean);
     try std.testing.expectEqual(@as(f64, 6.5), result);
@@ -929,7 +909,7 @@ test "scalar aggregate mean" {
 
 test "scalar aggregate max" {
     const data = [_]f64{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-    const arr = try NDArray.fromData(&[_]usize{ 3, 4 }, &data);
+    const arr = try NDArray.fromData(&.{ 3, 4 }, &data);
     defer arr.deinit();
     const result = scalarAggregate(arr, AggrType.max);
     try std.testing.expectEqual(@as(f64, 12.0), result);
@@ -937,7 +917,7 @@ test "scalar aggregate max" {
 
 test "scalar aggregate min" {
     const data = [_]f64{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-    const arr = try NDArray.fromData(&[_]usize{ 3, 4 }, &data);
+    const arr = try NDArray.fromData(&.{ 3, 4 }, &data);
     defer arr.deinit();
     const result = scalarAggregate(arr, AggrType.min);
     try std.testing.expectEqual(@as(f64, 1.0), result);
@@ -945,14 +925,14 @@ test "scalar aggregate min" {
 
 test "scalar aggregate std" {
     const data = [_]f64{ 2, 4, 4, 4, 5, 5, 5, 7, 9, 9 };
-    const arr = try NDArray.fromData(&[_]usize{ 2, 5 }, &data);
+    const arr = try NDArray.fromData(&.{ 2, 5 }, &data);
     defer arr.deinit();
     const result = scalarAggregate(arr, AggrType.std);
     try std.testing.expectApproxEqRel(@as(f64, 2.1540659228538015), result, 1e-10);
 }
 
 test "scalar aggregate consistency" {
-    const arr = try NDArray.ones(&[_]usize{ 10, 10 });
+    const arr = try NDArray.ones(&.{ 10, 10 });
     defer arr.deinit();
     
     // Compare scalar aggregate with array aggregate
@@ -960,13 +940,13 @@ test "scalar aggregate consistency" {
     defer result_array.deinit();
     const result_scalar = scalarAggregate(arr, AggrType.sum);
     
-    try std.testing.expectEqual(result_array.get(&[_]usize{ 0, 0 }), result_scalar);
+    try std.testing.expectEqual(result_array.get(&.{ 0, 0 }), result_scalar);
 }
 
 test "stack" {
-    const a = try NDArray.ones(&[_]usize{ 2, 3 });
+    const a = try NDArray.ones(&.{ 2, 3 });
     defer a.deinit();
-    const b = try NDArray.ones(&[_]usize{ 2, 3 });
+    const b = try NDArray.ones(&.{ 2, 3 });
     defer b.deinit();
     const arrays = [_]NDArray{ a, b };
     const result = try stack(0, &arrays);
@@ -975,9 +955,9 @@ test "stack" {
 }
 
 test "concat" {
-    const a = try NDArray.ones(&[_]usize{ 2, 3 });
+    const a = try NDArray.ones(&.{ 2, 3 });
     defer a.deinit();
-    const b = try NDArray.ones(&[_]usize{ 2, 3 });
+    const b = try NDArray.ones(&.{ 2, 3 });
     defer b.deinit();
     const arrays = [_]NDArray{ a, b };
     const result = try concat(0, &arrays);

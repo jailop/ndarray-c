@@ -60,9 +60,9 @@ const NDArray = ndarray.NDArray;
 
 pub fn main() !void {
     // Create arrays
-    const a = try NDArray.ones(&[_]usize{2, 3});
+    const a = try NDArray.ones(&.{2, 3});
     defer a.deinit();
-    const b = try NDArray.full(&[_]usize{2, 3}, 2.0);
+    const b = try NDArray.full(&.{2, 3}, 2.0);
     defer b.deinit();
     // Operations
     _ = a.add(b);  // a = a + b
