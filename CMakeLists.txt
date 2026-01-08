@@ -16,6 +16,13 @@ endif()
 
 project(ndarray VERSION 1.0.0 LANGUAGES C)
 
+# Enable Fortran if available (needed for OpenBLAS with Fortran OpenMP on some systems)
+include(CheckLanguage)
+check_language(Fortran)
+if(CMAKE_Fortran_COMPILER)
+    enable_language(Fortran)
+endif()
+
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
