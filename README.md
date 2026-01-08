@@ -5,6 +5,9 @@ A numpy-like ndarray library for C, with Zig bindings.
 - Multi-dimensional arrays (ndim >= 2)
 - OpenMP parallelization
 - BLAS-optimized operations
+ 
+[Design Considerations](guide/design.md)  
+[API Reference](https://jailop.github.io/ndarray-c/)
 
 ## Disclaimers
 
@@ -24,7 +27,6 @@ A numpy-like ndarray library for C, with Zig bindings.
 
 ## For C Users
 
-- [Design Considerations](guide/design.md)
 - [Usage Guide](guide/usage.md)
 - [Building](guide/building.md)
 - [Advanced Topics](guide/advanced.md)
