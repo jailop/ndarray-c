@@ -22,12 +22,11 @@ A numpy-like ndarray library for C, with Zig bindings.
 - This is a project for learning.
 - The API can change at any moment.
 - It is not intended for production use.
-- Feedback is welcome
+- Feedback is welcomed
 
-## Documentation
+**Pending decisions**:
 
-- [API Documentation](https://jailop.github.io/ndarray-c/)
-- [Source Code](https://github.com/jailop/ndarray-c)
+- It has not decided the error management approach. At this moment, only asserts are applied.
 
 ## For C Users
 
