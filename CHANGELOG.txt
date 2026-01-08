@@ -36,3 +36,4 @@
 - README divided in multiple files
 - README - new section on nesting functions
 - Tests for nested functions added
+- License added: BSD 3-clause
