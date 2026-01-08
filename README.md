@@ -13,6 +13,10 @@ A numpy-like ndarray library for C, with Zig bindings.
 - It is not intended for production use.
 - Feedback is welcome
 
+**Pending decisions**:
+
+- It has not decided the error management approach. At this moment, only asserts are applied.
+
 ## Design Considerations
 
 - The priority is a clean and simple API over performance
