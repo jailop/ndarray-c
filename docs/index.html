@@ -132,8 +132,6 @@
             </ul>
         </div>
 
-        <h2>API Documentation</h2>
-        
         <div class="api-links">
             <div class="api-card">
                 <h3>C API Reference</h3>
@@ -166,20 +164,14 @@ int main() {
 const NDArray = ndarray.NDArray;
 
 pub fn main() !void {
-    const a = try NDArray.ones(&.{2, 3});
+    const a = try NDArray.initOnes(&.{2, 3});
     defer a.deinit();
     _ = a.addScalar(5.0);
     a.print("Result", 2);
 }</code></pre>
 
-        <div class="footer">
-            <p>
-                <strong>Note:</strong> This is a learning project. The API may change at any time. 
-                Not intended for production use.
-            </p>
             <p>
                 <a href="https://github.com/jailop/ndarray-c">GitHub Repository</a> | 
-                <a href="https://github.com/jailop/ndarray-c/issues">Report Issues</a> | 
                 BSD 3-Clause License
             </p>
         </div>

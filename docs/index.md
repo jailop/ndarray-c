@@ -395,7 +395,3 @@ printf("Dimensions: %d\n", arr->ndim);
 ## License
 
 BSD 3-Clause License. See [LICENSE](../LICENSE) file for details.
-
-## Contributing
-
-Contributions welcome! Please submit pull requests or open issues on GitHub.
