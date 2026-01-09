@@ -13,6 +13,12 @@ Documentation:
 - [Zig Building](guide/zig-building.md)
 - [API Reference](https://jailop.github.io/ndarray-c/)  
 
+To add this library to your zig project:
+
+```sh
+zig fetch --save "git+https://github.com/jailop/ndarray-c#main"
+```
+
 This library has also bidings for Nim:
 
 - [Nim Bindings](https://github.com/jailop/ndarray-nim)
