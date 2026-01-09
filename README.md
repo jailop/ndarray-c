@@ -6,6 +6,11 @@ A numpy-like ndarray library for C, with Zig bindings.
 - OpenMP parallelization
 - BLAS-optimized operations
 
+Dependencies:
+
+- OpenMP
+- OpenBLAS
+
 Documentation:
 
 - [Design Considerations](guide/design.md)  
