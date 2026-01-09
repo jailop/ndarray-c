@@ -64,7 +64,7 @@ int ndarray_save(NDArray arr, const char *filename) {
     return 0;
 }
 
-NDArray ndarray_load(const char *filename) {
+NDArray ndarray_new_load(const char *filename) {
     assert(filename != NULL && "filename cannot be NULL");
     
     FILE *fp = fopen(filename, "rb");

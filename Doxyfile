@@ -7,7 +7,7 @@ PROJECT_BRIEF          = "A NumPy-like ndarray library for C"
 OUTPUT_DIRECTORY       = docs
 
 # Input settings
-INPUT                  = src/ndarray.h src/ndarray.c README.md
+INPUT                  = src/ndarray.h src/ README.md
 FILE_PATTERNS          = *.h *.c *.md
 RECURSIVE              = NO
 USE_MDFILE_AS_MAINPAGE = README.md
@@ -38,7 +38,7 @@ WARN_NO_PARAMDOC       = YES
 
 # Output formats
 GENERATE_HTML          = YES
-HTML_OUTPUT            = html
+HTML_OUTPUT            = c-api
 GENERATE_LATEX         = NO
 GENERATE_MAN           = NO
 GENERATE_RTF           = NO

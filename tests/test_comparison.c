@@ -71,7 +71,7 @@ void test_ndarray_scalar_comparison(void) {
     ndarray_free_all(NDA_LIST(A, eq, lt, gt));
 }
 
-void test_ndarray_logical_and_or(void) {
+void test_ndarray_new_logical_and_or(void) {
     size_t dims[] = {2, 2, 0};
     NDArray A = ndarray_new(dims);
     NDArray B = ndarray_new(dims);
@@ -81,13 +81,13 @@ void test_ndarray_logical_and_or(void) {
     A->data[2] = 0.0; B->data[2] = 1.0;
     A->data[3] = 0.0; B->data[3] = 0.0;
     
-    NDArray and_result = ndarray_logical_and(A, B);
+    NDArray and_result = ndarray_new_logical_and(A, B);
     CU_ASSERT_DOUBLE_EQUAL(and_result->data[0], 1.0, EPSILON);  // T && T
     CU_ASSERT_DOUBLE_EQUAL(and_result->data[1], 0.0, EPSILON);  // T && F
     CU_ASSERT_DOUBLE_EQUAL(and_result->data[2], 0.0, EPSILON);  // F && T
     CU_ASSERT_DOUBLE_EQUAL(and_result->data[3], 0.0, EPSILON);  // F && F
     
-    NDArray or_result = ndarray_logical_or(A, B);
+    NDArray or_result = ndarray_new_logical_or(A, B);
     CU_ASSERT_DOUBLE_EQUAL(or_result->data[0], 1.0, EPSILON);  // T || T
     CU_ASSERT_DOUBLE_EQUAL(or_result->data[1], 1.0, EPSILON);  // T || F
     CU_ASSERT_DOUBLE_EQUAL(or_result->data[2], 1.0, EPSILON);  // F || T
@@ -96,7 +96,7 @@ void test_ndarray_logical_and_or(void) {
     ndarray_free_all(NDA_LIST(A, B, and_result, or_result));
 }
 
-void test_ndarray_logical_not(void) {
+void test_ndarray_new_logical_not(void) {
     size_t dims[] = {2, 2, 0};
     NDArray A = ndarray_new(dims);
     
@@ -105,7 +105,7 @@ void test_ndarray_logical_not(void) {
     A->data[2] = 5.0;
     A->data[3] = 0.0;
     
-    NDArray result = ndarray_logical_not(A);
+    NDArray result = ndarray_new_logical_not(A);
     
     CU_ASSERT_DOUBLE_EQUAL(result->data[0], 0.0, EPSILON);  // !T
     CU_ASSERT_DOUBLE_EQUAL(result->data[1], 1.0, EPSILON);  // !F
@@ -115,7 +115,7 @@ void test_ndarray_logical_not(void) {
     ndarray_free_all(NDA_LIST(A, result));
 }
 
-void test_ndarray_where(void) {
+void test_ndarray_new_where(void) {
     size_t dims[] = {2, 3, 0};
     NDArray condition = ndarray_new(dims);
     NDArray x = ndarray_new_full(dims, 10.0);
@@ -128,7 +128,7 @@ void test_ndarray_where(void) {
     condition->data[4] = 1.0;  // true
     condition->data[5] = 0.0;  // false
     
-    NDArray result = ndarray_where(condition, x, y);
+    NDArray result = ndarray_new_where(condition, x, y);
     
     CU_ASSERT_DOUBLE_EQUAL(result->data[0], 10.0, EPSILON);  // from x
     CU_ASSERT_DOUBLE_EQUAL(result->data[1], 20.0, EPSILON);  // from y
@@ -145,7 +145,7 @@ void register_comparison_tests(CU_pSuite suite) {
     CU_add_test(suite, "test equal", test_ndarray_equal);
     CU_add_test(suite, "test less greater", test_ndarray_less_greater);
     CU_add_test(suite, "test scalar comparison", test_ndarray_scalar_comparison);
-    CU_add_test(suite, "test logical and or", test_ndarray_logical_and_or);
-    CU_add_test(suite, "test logical not", test_ndarray_logical_not);
-    CU_add_test(suite, "test where", test_ndarray_where);
+    CU_add_test(suite, "test logical and or", test_ndarray_new_logical_and_or);
+    CU_add_test(suite, "test logical not", test_ndarray_new_logical_not);
+    CU_add_test(suite, "test where", test_ndarray_new_where);
 }

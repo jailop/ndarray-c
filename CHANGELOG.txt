@@ -40,6 +40,14 @@
 - Support for compiling in Windows added via CMakefile
 - new function: `ndarray_scalar_aggr`
 
-2.3.4
+0.3.0
 
-- zig bindings refactored
+- zig: all functions that creates a new NDArray are prefixed with init,
+  ex. initArange(...). In that way, it is easy to remember that it
+  requires a deinit and also that they can not be chained.
+- ndaray_logical... functions have been renamed to
+  ndarray_new_logical... Also ndarray_where has been renamed to
+  ndarray_new_where to be clear that they are allocating memory that
+  must be deallocated.
+- Comments in code improved to include examples.
+- Site documentation improved

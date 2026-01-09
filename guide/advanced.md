@@ -77,41 +77,5 @@ make CFLAGS="-O3 -fprofile-generate -std=c99 -fopenmp"
 After installing the library, compile your program:
 
 ```bash
-# Using installed library (CMake install or Makefile install)
-gcc -fopenmp -o myprogram myprogram.c -I/usr/local/include -L/usr/local/lib -lndarray -lopenblas -lm
-
-# On macOS with Homebrew
-gcc-15 -fopenmp -o myprogram myprogram.c \
-    -I/usr/local/include \
-    -I/opt/homebrew/opt/libomp/include \
-    -I/opt/homebrew/opt/openblas/include \
-    -L/usr/local/lib \
-    -L/opt/homebrew/opt/libomp/lib \
-    -L/opt/homebrew/opt/openblas/lib \
-    -lndarray -lopenblas -lgomp -lm
-
-# Or link directly with source files (no installation needed)
-gcc -fopenmp -o myprogram myprogram.c -Isrc src/ndarray_*.c -lopenblas -lm
-```
-
-### Using with CMake
-
-Create a `CMakeLists.txt`:
-
-```cmake
-cmake_minimum_required(VERSION 3.15)
-project(MyProject C)
-
-find_package(ndarray REQUIRED)
-find_package(OpenMP REQUIRED)
-
-add_executable(myprogram myprogram.c)
-target_link_libraries(myprogram PRIVATE ndarray::ndarray OpenMP::OpenMP_C)
-```
-
-Then build:
-```bash
-mkdir build && cd build
-cmake ..
-cmake --build .
+gcc -o myprogram myprogram.c -lndarray -lm
 ```

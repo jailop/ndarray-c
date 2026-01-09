@@ -44,7 +44,17 @@ benchmark:
 	@$(BENCHDIR)/run_benchmark.sh
 
 docs:
+	@echo "Generating C documentation with Doxygen..."
 	@doxygen Doxyfile
+	@echo "C documentation generated in docs/c-api/"
+	@if command -v zig >/dev/null 2>&1; then \
+		echo "Generating Zig documentation..."; \
+		mkdir -p docs/zig-api; \
+		zig build-lib -femit-docs=docs/zig-api -fno-emit-bin src/ndarray.zig 2>/dev/null || echo "Zig documentation generation skipped (may need dependencies)"; \
+	else \
+		echo "Zig not found, skipping Zig documentation"; \
+	fi
+	@echo "Documentation generated successfully"
 
 install: lib
 	install -d $(DESTDIR)$(LIBDIR)

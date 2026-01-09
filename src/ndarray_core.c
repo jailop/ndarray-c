@@ -18,7 +18,7 @@ NDArray ndarray_new(const size_t* dims) {
 #ifndef NDEBUG
     assert(ndim >= 2 && "ndarray must have at least 2 dimensions");
 #endif
-    NDArray t = (NDArray) malloc(sizeof(_NDArray));
+    NDArray t = (NDArray) malloc(sizeof(NDArray_));
     t->ndim = ndim;
     t->dims = (size_t*) malloc(sizeof(size_t) * ndim);
     for (size_t i = 0; i < ndim; ++i) {
@@ -65,7 +65,7 @@ double ndarray_get(const NDArray t, const size_t* pos) {
 NDArray ndarray_new_copy(const NDArray t) {
     assert(t != NULL && "ndarray cannot be NULL");
     assert(t->ndim >= 2 && "ndarray must have at least 2 dimensions");
-    NDArray copy = (NDArray) malloc(sizeof(_NDArray));
+    NDArray copy = (NDArray) malloc(sizeof(NDArray_));
     copy->ndim = t->ndim;
     copy->dims = (size_t*) malloc(sizeof(size_t) * t->ndim);
     memcpy(copy->dims, t->dims, sizeof(size_t) * t->ndim);

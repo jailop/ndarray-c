@@ -8,11 +8,9 @@ Requirements:
 
 ### Platform-Specific Notes
 
-Windows: This library uses C99 features (VLAs) that require GCC or Clang. MSVC is not supported. Use MinGW-w64 or MSYS2 with GCC. See [Windows build instructions](#windows-build-with-vcpkg) below.
-
-macOS: GCC is recommended over Clang for better OpenMP support. CMake will auto-detect Homebrew installations.
-
-Linux: Standard GCC with OpenMP works out of the box.
+Windows: This library uses C99 features (VLAs) that require GCC or
+Clang. MSVC is not supported. Use MinGW-w64 or MSYS2 with GCC. See
+[Windows build instructions](#windows-build-with-vcpkg) below.
 
 ### Build System Options
 
@@ -192,16 +190,3 @@ cmake --build build --config Release
 # Run example
 .\build\example.exe
 ```
-
-**Features on Windows:**
-- ✅ Full C99 VLA support (GCC)
-- ✅ OpenMP 4.5 (GCC 15.2.0+)
-- ✅ OpenBLAS via vcpkg
-- ✅ All library features working
-- ⚠️ Random number generation: Uses portable `rand()` fallback on Windows since `drand48_r()` is glibc-specific and not available in MinGW. Random functions work correctly but parallel random generation is disabled for thread-safety. For production use requiring high-quality parallel random numbers, consider using Linux/macOS or implementing a Windows-specific thread-safe RNG.
-
-See [WINDOWS_BUILD.md](../WINDOWS_BUILD.md) for detailed Windows build instructions.
-
-
----
-[← Usage](usage.md) | [Back to Main](../README.md) | [Advanced →](advanced.md)
