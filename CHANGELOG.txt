@@ -54,7 +54,8 @@
 
 0.3.1 - 2026-01-09
 
-- new_randpoisson function was added.
+- new_randpoisson function added
 - zig: one external buffer to convert dimensions zig <-> c
 - order in copy slice changed. now destination is first
-- gemv renamed to matvec_mul
+- gemv funcion removed
+- zig to c dims buffer size set in 64

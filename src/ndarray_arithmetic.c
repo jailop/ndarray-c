@@ -182,6 +182,7 @@ NDArray ndarray_mul_add(const NDArray A, const NDArray B, const NDArray C,
     return C;
 }
 
+/*
 NDArray ndarray_matvec_mul(const NDArray y, const NDArray A, const NDArray x,
                            double alpha, double beta) {
     assert(y != NULL && A != NULL && x != NULL 
@@ -207,6 +208,7 @@ NDArray ndarray_matvec_mul(const NDArray y, const NDArray A, const NDArray x,
                 x->data, 1, beta, y->data, 1);
     return y;
 }
+*/
 
 NDArray ndarray_clip_min(const NDArray A, double min_val) {
     assert(A != NULL && "ndarray cannot be NULL");

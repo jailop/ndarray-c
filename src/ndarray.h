@@ -343,21 +343,18 @@ double* ndarray_get_slice_ptr(const NDArray arr, int axis, size_t index);
  * @param src Source ndarray.
  * @param src_axis Axis in source.
  * @param src_idx Index along source axis.
- * @return NDA_SUCCESS on success, or an error code on failure.
+ * @return handler of the destination array (for chaining)
  * 
  * Example:
  * 
  * ```c
  * NDArray A = ndarray_new(NDA_DIMS(3, 4));
  * NDArray B = ndarray_new(NDA_DIMS(3, 4));
- * int err = ndarray_copy_slice(B, 0, 2, A, 0, 0);  // Copy row 0 from A to row 2 of B
- * if (err != NDA_SUCCESS) {
- *     // Handle error
- * }
+ * ndarray_copy_slice(B, 0, 2, A, 0, 0);  // Copy row 0 from A to row 2 of B
  * ```
  */
-int ndarray_copy_slice(const NDArray dst, int dst_axis, size_t dst_idx,
-                       const NDArray src, int src_axis, size_t src_idx);
+NDArray ndarray_copy_slice(const NDArray dst, int dst_axis, size_t dst_idx,
+                           const NDArray src, int src_axis, size_t src_idx);
 
 /**
  * Get the size of a slice along an axis.
@@ -852,8 +849,8 @@ NDArray ndarray_mul_add(const NDArray A, const NDArray B, const NDArray C,
  * ndarray_free_all(NDA_LIST(A, x, y));
  * ```
  */
-NDArray ndarray_matvec_mul(const NDArray y, const NDArray A, const NDArray x,
-                           double alpha, double beta);
+// NDArray ndarray_matvec_mul(const NDArray y, const NDArray A, const NDArray x,
+//                            double alpha, double beta);
 
 /**
  * Clip values below a minimum threshold: A = max(A, min_val)

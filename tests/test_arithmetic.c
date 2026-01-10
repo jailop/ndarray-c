@@ -337,6 +337,7 @@ void test_ndarray_mul_add_replace(void) {
     ndarray_free_all(NDA_LIST(A, B, C));
 }
 
+/*
 void test_ndarray_gemv_basic(void) {
     // A: 3x4 matrix, x: 4x1 vector, y: 3x1 vector
     size_t dims_a[] = {3, 4, 0};
@@ -356,7 +357,9 @@ void test_ndarray_gemv_basic(void) {
     
     ndarray_free_all(NDA_LIST(A, x, y));
 }
+*/
 
+/*
 void test_ndarray_gemv_accumulate(void) {
     // A: 2x3 matrix, x: 3x1 vector, y: 2x1 vector
     size_t dims_a[] = {2, 3, 0};
@@ -375,7 +378,9 @@ void test_ndarray_gemv_accumulate(void) {
     
     ndarray_free_all(NDA_LIST(A, x, y));
 }
+*/
 
+/*
 void test_ndarray_gemv_scaled(void) {
     // Test with alpha and beta != 1
     size_t dims_a[] = {2, 2, 0};
@@ -400,6 +405,7 @@ void test_ndarray_gemv_scaled(void) {
     
     ndarray_free_all(NDA_LIST(A, x, y));
 }
+*/
 
 /* Register tests for this module */
 void register_arithmetic_tests(CU_pSuite suite) {
@@ -424,7 +430,7 @@ void register_arithmetic_tests(CU_pSuite suite) {
     CU_add_test(suite, "test mul add basic", test_ndarray_mul_add_basic);
     CU_add_test(suite, "test mul add accumulate", test_ndarray_mul_add_accumulate);
     CU_add_test(suite, "test mul add replace", test_ndarray_mul_add_replace);
-    CU_add_test(suite, "test gemv basic", test_ndarray_gemv_basic);
-    CU_add_test(suite, "test gemv accumulate", test_ndarray_gemv_accumulate);
-    CU_add_test(suite, "test gemv scaled", test_ndarray_gemv_scaled);
+    // CU_add_test(suite, "test gemv basic", test_ndarray_gemv_basic);
+    // CU_add_test(suite, "test gemv accumulate", test_ndarray_gemv_accumulate);
+    // CU_add_test(suite, "test gemv scaled", test_ndarray_gemv_scaled);
 }

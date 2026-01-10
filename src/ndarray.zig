@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const MAX_DIMS = 16;
+const MAX_DIMS = 64;
 const MAX_ARRAYS = 64;
 
 pub const c = @cImport({
@@ -665,9 +665,9 @@ pub const NDArray = struct {
     /// defer y.deinit();
     /// a.matvecMul(y, x, 1.0, 0.0); // y = A * x
     /// ```
-    pub fn matvecMul(self: NDArray, y: NDArray, x: NDArray, alpha: f64, beta: f64) NDArray {
-        return NDArray{ .ptr = c.ndarray_matvec_mul(y.ptr, self.ptr, x.ptr, alpha, beta) };
-    }
+    // pub fn matvecMul(self: NDArray, y: NDArray, x: NDArray, alpha: f64, beta: f64) NDArray {
+    //     return NDArray{ .ptr = c.ndarray_matvec_mul(y.ptr, self.ptr, x.ptr, alpha, beta) };
+    // }
 
     /// Clips values below minimum threshold (modifies self in place).
     /// 
@@ -794,10 +794,11 @@ pub const NDArray = struct {
     /// defer a.deinit();
     /// var b = try NDArray.init(&.{3, 4});
     /// defer b.deinit();
-    /// NDArray.copySlice(a, 0, 0, b, 0, 2); // Copy row 0 from a to row 2 of b
+    /// b.copySlice(0, 0, a, 0, 2); // Copy row 0 from a to row 2 of b
     /// ```
-    pub fn copySlice(dst: NDArray, dst_axis: i32, dst_idx: usize, src: NDArray, src_axis: i32, src_idx: usize) i32 {
-        return c.ndarray_copy_slice(dst.ptr, dst_axis, dst_idx, src.ptr, src_axis, src_idx);
+    pub fn copySlice(self: NDArray, self_axis: i32, self_idx: usize, src: NDArray, src_axis: i32, src_idx: usize) NDArray {
+        const result = c.ndarray_copy_slice(self.ptr, self_axis, self_idx, src.ptr, src_axis, src_idx);
+        return NDArray{ .ptr = result };
     }
 
     /// Gets the size of a slice along an axis.
@@ -1580,16 +1581,16 @@ test "mulAdd" {
     try std.testing.expectEqual(@as(f64, 7.0), dest.get(&.{ 0, 0 }));
 }
 
-test "matvecMul" {
-    const a = try NDArray.initOnes(&.{ 2, 3 });
-    defer a.deinit();
-    const x = try NDArray.initOnes(&.{ 3, 1 });
-    defer x.deinit();
-    const y = try NDArray.initZeros(&.{ 2, 1 });
-    defer y.deinit();
-    _ = a.matvecMul(y, x, 1.0, 0.0);
-    try std.testing.expectEqual(@as(f64, 3.0), y.get(&.{ 0, 0 }));
-}
+// test "matvecMul" {
+//     const a = try NDArray.initOnes(&.{ 2, 3 });
+//     defer a.deinit();
+//     const x = try NDArray.initOnes(&.{ 3, 1 });
+//     defer x.deinit();
+//     const y = try NDArray.initZeros(&.{ 2, 1 });
+//     defer y.deinit();
+//     _ = a.matvecMul(y, x, 1.0, 0.0);
+//     try std.testing.expectEqual(@as(f64, 3.0), y.get(&.{ 0, 0 }));
+// }
 
 test "clipMin" {
     const arr = try NDArray.initFull(&.{ 2, 2 }, 1.0);
@@ -1638,7 +1639,8 @@ test "copySlice" {
     defer src.deinit();
     const dst = try NDArray.initZeros(&.{ 2, 3 });
     defer dst.deinit();
-    NDArray.copySlice(src, 0, 0, dst, 0, 1);
+    const result = dst.copySlice(0, 1, src, 0, 0);
+    try std.testing.expect(result.ptr == dst.ptr);
     try std.testing.expectEqual(@as(f64, 1.0), dst.get(&.{ 1, 0 }));
 }
 
