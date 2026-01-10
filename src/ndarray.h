@@ -9,6 +9,15 @@
  */
 
 /**
+ * Error codes for ndarray operations.
+ */
+#define NDA_SUCCESS           0   /**< Operation completed successfully */
+#define NDA_ERROR_NULL        -1  /**< NULL pointer argument */
+#define NDA_ERROR_AXIS        -2  /**< Axis out of range */
+#define NDA_ERROR_INDEX       -3  /**< Index out of bounds */
+#define NDA_ERROR_SIZE        -4  /**< Size mismatch */
+
+/**
  * An structure to represent and operate over
  * multi-dimensional arrays of doubles.
  * 
@@ -328,24 +337,27 @@ double* ndarray_get_slice_ptr(const NDArray arr, int axis, size_t index);
  * Copies data from a slice in the source array to a slice in the destination.
  * The slice sizes must match.
  * 
- * @param src Source ndarray.
- * @param src_axis Axis in source.
- * @param src_idx Index along source axis.
  * @param dst Destination ndarray.
  * @param dst_axis Axis in destination.
  * @param dst_idx Index along destination axis.
+ * @param src Source ndarray.
+ * @param src_axis Axis in source.
+ * @param src_idx Index along source axis.
+ * @return NDA_SUCCESS on success, or an error code on failure.
  * 
  * Example:
  * 
  * ```c
  * NDArray A = ndarray_new(NDA_DIMS(3, 4));
  * NDArray B = ndarray_new(NDA_DIMS(3, 4));
- * ndarray_copy_slice(A, 0, 0, B, 0, 2);  // Copy row 0 from A to row 2 of B
- * ndarray_copy_slice(A, 1, 1, B, 1, 3);  // Copy column 1 from A to column 3 of B
+ * int err = ndarray_copy_slice(B, 0, 2, A, 0, 0);  // Copy row 0 from A to row 2 of B
+ * if (err != NDA_SUCCESS) {
+ *     // Handle error
+ * }
  * ```
  */
-void ndarray_copy_slice(const NDArray src, int src_axis, size_t src_idx,
-                        const NDArray dst, int dst_axis, size_t dst_idx);
+int ndarray_copy_slice(const NDArray dst, int dst_axis, size_t dst_idx,
+                       const NDArray src, int src_axis, size_t src_idx);
 
 /**
  * Get the size of a slice along an axis.
@@ -818,17 +830,17 @@ NDArray ndarray_mul_add(const NDArray A, const NDArray B, const NDArray C,
                         double alpha, double beta);
 
 /**
- * General matrix-vector multiply: y = alpha * A * x + beta * y
+ * Matrix-vector multiply with accumulation: y = alpha * A * x + beta * y
  * 
- * Computes matrix-vector product using optimized BLAS dgemv.
+ * Computes a linear combination of matrix-vector product and vector using optimized BLAS dgemv.
  * A must be 2D, x and y must be vectors (one dimension = 1).
  * 
+ * @param y The output vector (modified in place).
  * @param A The matrix (2D ndarray).
  * @param x The input vector (column [n,1] or row [1,n]).
  * @param alpha Scaling factor for A*x.
  * @param beta Scaling factor for existing y values.
- * @param y The output vector (modified in place).
- * @return A handle to the modified ndarray y.
+ * @return A handle to the modified ndarray y for chaining.
  * 
  * Example:
  * 
@@ -836,12 +848,12 @@ NDArray ndarray_mul_add(const NDArray A, const NDArray B, const NDArray C,
  * NDArray A = ndarray_new(NDA_DIMS(3, 4));
  * NDArray x = ndarray_new(NDA_DIMS(4, 1));
  * NDArray y = ndarray_new(NDA_DIMS(3, 1));
- * ndarray_gemv(A, x, 1.0, 0.0, y);  // y = A * x
+ * ndarray_matvec_mul(y, A, x, 1.0, 0.0);  // y = A * x
  * ndarray_free_all(NDA_LIST(A, x, y));
  * ```
  */
-NDArray ndarray_gemv(const NDArray A, const NDArray x, double alpha, 
-                  double beta, const NDArray y);
+NDArray ndarray_matvec_mul(const NDArray y, const NDArray A, const NDArray x,
+                           double alpha, double beta);
 
 /**
  * Clip values below a minimum threshold: A = max(A, min_val)

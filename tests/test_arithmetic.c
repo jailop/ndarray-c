@@ -348,7 +348,7 @@ void test_ndarray_gemv_basic(void) {
     NDArray y = ndarray_new_zeros(dims_y);
     
     // y = 1.0 * A * x + 0.0 * y = A * [2,2,2,2]^T = [8,8,8]^T
-    ndarray_gemv(A, x, 1.0, 0.0, y);
+    ndarray_matvec_mul(y, A, x, 1.0, 0.0);
     
     for (size_t i = 0; i < 3; ++i) {
         CU_ASSERT_DOUBLE_EQUAL(y->data[i], 8.0, EPSILON);
@@ -368,7 +368,7 @@ void test_ndarray_gemv_accumulate(void) {
     NDArray y = ndarray_new_full(dims_y, 5.0);
     
     // y = 1.0 * A * x + 1.0 * y = [3,3]^T + [5,5]^T = [8,8]^T
-    ndarray_gemv(A, x, 1.0, 1.0, y);
+    ndarray_matvec_mul(y, A, x, 1.0, 1.0);
     
     CU_ASSERT_DOUBLE_EQUAL(y->data[0], 8.0, EPSILON);
     CU_ASSERT_DOUBLE_EQUAL(y->data[1], 8.0, EPSILON);
@@ -393,7 +393,7 @@ void test_ndarray_gemv_scaled(void) {
     
     // y = 2.0 * A * x + 0.5 * y
     // A*x = [3, 7]^T, result = 2*[3,7] + 0.5*[10,10] = [6,14] + [5,5] = [11,19]
-    ndarray_gemv(A, x, 2.0, 0.5, y);
+    ndarray_matvec_mul(y, A, x, 2.0, 0.5);
     
     CU_ASSERT_DOUBLE_EQUAL(y->data[0], 11.0, EPSILON);
     CU_ASSERT_DOUBLE_EQUAL(y->data[1], 19.0, EPSILON);

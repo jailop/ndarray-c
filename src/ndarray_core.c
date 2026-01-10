@@ -174,22 +174,35 @@ double* ndarray_get_slice_ptr(const NDArray arr, int axis, size_t index) {
     return &arr->data[offset];
 }
 
-void ndarray_copy_slice(const NDArray src, int src_axis, size_t src_idx,
-                        const NDArray dst, int dst_axis, size_t dst_idx) {
-    assert(src != NULL && dst != NULL && "ndarrays cannot be NULL");
-    assert(src_axis >= 0 && src_axis < (int)src->ndim && "src_axis out of range");
-    assert(dst_axis >= 0 && dst_axis < (int)dst->ndim && "dst_axis out of range");
-    assert(src_idx < src->dims[src_axis] && "src_idx exceeds dimension size");
-    assert(dst_idx < dst->dims[dst_axis] && "dst_idx exceeds dimension size");
+int ndarray_copy_slice(const NDArray dst, int dst_axis, size_t dst_idx,
+                       const NDArray src, int src_axis, size_t src_idx) {
+    if (dst == NULL || src == NULL) {
+        return NDA_ERROR_NULL;
+    }
+    if (dst_axis < 0 || dst_axis >= (int)dst->ndim) {
+        return NDA_ERROR_AXIS;
+    }
+    if (src_axis < 0 || src_axis >= (int)src->ndim) {
+        return NDA_ERROR_AXIS;
+    }
+    if (dst_idx >= dst->dims[dst_axis]) {
+        return NDA_ERROR_INDEX;
+    }
+    if (src_idx >= src->dims[src_axis]) {
+        return NDA_ERROR_INDEX;
+    }
     // Calculate slice sizes
-    size_t src_slice_size = ndarray_get_slice_size(src, src_axis);
     size_t dst_slice_size = ndarray_get_slice_size(dst, dst_axis);
-    assert(src_slice_size == dst_slice_size && "slice sizes must match");
+    size_t src_slice_size = ndarray_get_slice_size(src, src_axis);
+    if (dst_slice_size != src_slice_size) {
+        return NDA_ERROR_SIZE;
+    }
     // Get pointers to the slices
-    double* src_ptr = ndarray_get_slice_ptr(src, src_axis, src_idx);
     double* dst_ptr = ndarray_get_slice_ptr(dst, dst_axis, dst_idx);
+    double* src_ptr = ndarray_get_slice_ptr(src, src_axis, src_idx);
     // Copy the data
-    memcpy(dst_ptr, src_ptr, src_slice_size * sizeof(double));
+    memcpy(dst_ptr, src_ptr, dst_slice_size * sizeof(double));
+    return NDA_SUCCESS;
 }
 
 size_t ndarray_get_slice_size(const NDArray arr, int axis) {
