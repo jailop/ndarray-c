@@ -7,8 +7,40 @@
 
 #include <time.h>
 #include <stdlib.h>
+#include <math.h>
 #include "ndarray_internal.h"
 
+
+/**
+ * Generate a Poisson random number using Knuth's algorithm
+ */
+#if defined(_GNU_SOURCE) && !defined(_WIN32)
+static inline double knuth_poisson(struct drand48_data *rng_state,
+        double lambda) {
+    double L = exp(-lambda);
+    int k = 0;
+    double p = 1.0;
+    do {
+        k++;
+        double u;
+        drand48_r(rng_state, &u);
+        p *= u;
+    } while (p > L);
+    return k - 1;
+}
+#else
+static inline double knuth_poisson_simple(double lambda) {
+    double L = exp(-lambda);
+    int k = 0;
+    double p = 1.0;
+    do {
+        k++;
+        double u = ((double)rand() / RAND_MAX);
+        p *= u;
+    } while (p > L);
+    return k - 1;
+}
+#endif
 
 /**
  * Generate a Gaussian random number using Box-Muller transform
@@ -121,5 +153,43 @@ NDArray ndarray_new_randunif(const size_t *dims, double low, double high) {
     }
 #endif
     
+    return t;
+}
+
+NDArray ndarray_new_randpoisson(const size_t *dims, double lambda) {
+    NDArray t = ndarray_new(dims);
+    size_t size = ndarray_size(t);
+#if defined(_GNU_SOURCE) && !defined(_WIN32)
+    if (size >= OMP_THRESHOLD) {
+        OMP_PRAGMA(omp parallel)
+        {
+#ifdef _OPENMP
+            struct drand48_data rng_state;
+            srand48_r(time(NULL) ^ (omp_get_thread_num() << 16), &rng_state);
+            OMP_PRAGMA(omp for)
+            for (size_t i = 0; i < size; ++i) {
+                t->data[i] = knuth_poisson(&rng_state, lambda);
+            }
+#else
+            struct drand48_data rng_state;
+            srand48_r(time(NULL), &rng_state);
+            for (size_t i = 0; i < size; ++i) {
+                t->data[i] = knuth_poisson(&rng_state, lambda);
+            }
+#endif
+        }
+    } else {
+        struct drand48_data rng_state;
+        srand48_r(time(NULL), &rng_state);
+        for (size_t i = 0; i < size; ++i) {
+            t->data[i] = knuth_poisson(&rng_state, lambda);
+        }
+    }
+#else
+    srand((unsigned int)time(NULL));
+    for (size_t i = 0; i < size; ++i) {
+        t->data[i] = knuth_poisson_simple(lambda);
+    }
+#endif
     return t;
 }

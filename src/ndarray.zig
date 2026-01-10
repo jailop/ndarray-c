@@ -225,6 +225,30 @@ pub const NDArray = struct {
         return arr;
     }
 
+    /// Creates a new ndarray with random poisson-distributed values.
+    ///
+    /// Values follow a Poisson distribution with lambda parameter.
+    ///
+    /// **Parameters:**
+    /// - `dims`: Slice of dimension sizes (must have at least 2 elements)
+    /// - `lambda`: mean of the distribution
+    ///
+    /// **Returns:** NDArray with random poisson-distributed values or error
+    ///
+    /// **Example:**
+    /// ```zig
+    /// const arr = try NDArray.initRandomPoisson(&.{3, 4}, 5.0);
+    /// defer arr.deinit();
+    /// ```
+    pub fn initRandomPoisson(dims: []const usize, lambda: f64) !NDArray {
+        var arr: NDArray = undefined;
+        const c_dims = try arr.zigDimsToCDims(dims);
+        const ptr = c.ndarray_new_randpoisson(c_dims, lambda);
+        if (ptr == null) return error.AllocationFailed;
+        arr.ptr = ptr;
+        return arr;
+    }
+
     /// Creates a new ndarray with evenly spaced values in a range.
     /// 
     /// Values are generated sequentially: start, start+step, start+2*step, ...
@@ -1414,6 +1438,12 @@ test "randomUniform" {
 
 test "randomNormal" {
     const arr = try NDArray.initRandomNormal(&.{ 2, 3 }, 0.0, 1.0);
+    defer arr.deinit();
+    try std.testing.expect(arr.ndim() == 2);
+}
+
+test "randomPoisson" {
+    const arr = try NDArray.initRandomPoisson(&.{ 2, 3 }, 5.0);
     defer arr.deinit();
     try std.testing.expect(arr.ndim() == 2);
 }

@@ -51,3 +51,7 @@
   must be deallocated.
 - Comments in code improved to include examples.
 - Site documentation improved
+
+0.3.1 - 2026-01-09
+
+- new_randpoisson function was added.

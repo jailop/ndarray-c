@@ -182,8 +182,31 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
-    c_test.addCSourceFile(.{
-        .file = b.path("tests/test_ndarray.c"),
+    
+    // Add all test source files
+    const test_files = &[_][]const u8{
+        "tests/test_main.c",
+        "tests/test_common.c",
+        "tests/test_creation.c",
+        "tests/test_operations.c",
+        "tests/test_arithmetic.c",
+        "tests/test_matmul.c",
+        "tests/test_tensordot.c",
+        "tests/test_stack.c",
+        "tests/test_concat.c",
+        "tests/test_take.c",
+        "tests/test_transpose.c",
+        "tests/test_reshape.c",
+        "tests/test_aggregation.c",
+        "tests/test_conditional.c",
+        "tests/test_slice.c",
+        "tests/test_comparison.c",
+        "tests/test_randquality.c",
+        "tests/test_chaining.c",
+    };
+    
+    c_test.addCSourceFiles(.{
+        .files = test_files,
         .flags = c_flags,
     });
     configureCompileStep(c_test, b, homebrew_prefix);

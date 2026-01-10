@@ -570,6 +570,27 @@ NDArray ndarray_new_randnorm(const size_t *dims, double mean, double stddev);
 NDArray ndarray_new_randunif(const size_t *dims, double low, double high);
 
 /**
+ * Creates a new ndarray with random values from a Poisson distribution.
+ * 
+ * Uses Knuth's algorithm to generate Poisson-distributed random integers.
+ * The Poisson distribution models the number of events occurring in a fixed
+ * interval when events occur at a constant average rate (lambda).
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param lambda The expected number of events (rate parameter, must be > 0).
+ * @return A handle to the newly created ndarray with Poisson random values.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_randpoisson(NDA_DIMS(3, 4), 5.0);
+ * // Random counts with average of 5 events per interval
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray ndarray_new_randpoisson(const size_t *dims, double lambda);
+
+/**
  * Adds two ndarrays element-wise.
  * 
  * The result is stored in the first ndarray (A).
