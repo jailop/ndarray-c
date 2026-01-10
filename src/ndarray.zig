@@ -797,8 +797,8 @@ pub const NDArray = struct {
     /// b.copySlice(0, 0, a, 0, 2); // Copy row 0 from a to row 2 of b
     /// ```
     pub fn copySlice(self: NDArray, self_axis: i32, self_idx: usize, src: NDArray, src_axis: i32, src_idx: usize) NDArray {
-        const result = c.ndarray_copy_slice(self.ptr, self_axis, self_idx, src.ptr, src_axis, src_idx);
-        return NDArray{ .ptr = result };
+        _ = c.ndarray_copy_slice(self.ptr, self_axis, self_idx, src.ptr, src_axis, src_idx);
+        return self;
     }
 
     /// Gets the size of a slice along an axis.
