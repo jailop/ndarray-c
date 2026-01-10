@@ -55,3 +55,4 @@
 0.3.1 - 2026-01-09
 
 - new_randpoisson function was added.
+- zig: one external buffer to convert dimensions zig <-> c
