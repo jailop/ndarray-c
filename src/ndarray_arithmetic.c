@@ -182,9 +182,10 @@ NDArray ndarray_mul_add(const NDArray A, const NDArray B, const NDArray C,
     return C;
 }
 
-NDArray ndarray_gemv(const NDArray A, const NDArray x, double alpha, 
-                  double beta, const NDArray y) {
-    assert(A != NULL && x != NULL && y != NULL 
+/*
+NDArray ndarray_matvec_mul(const NDArray y, const NDArray A, const NDArray x,
+                           double alpha, double beta) {
+    assert(y != NULL && A != NULL && x != NULL 
            && "ndarrays cannot be NULL");
     assert(A->ndim == 2 && "A must be a 2D matrix");
     assert(x->ndim == 2 && "x must be a 2D vector");
@@ -205,8 +206,9 @@ NDArray ndarray_gemv(const NDArray A, const NDArray x, double alpha,
     cblas_dgemv(CblasRowMajor, CblasNoTrans, 
                 m, n, alpha, A->data, n, 
                 x->data, 1, beta, y->data, 1);
-    return A;
+    return y;
 }
+*/
 
 NDArray ndarray_clip_min(const NDArray A, double min_val) {
     assert(A != NULL && "ndarray cannot be NULL");

@@ -1,7 +1,3 @@
-/**
- * Array printing functions
- */
-
 #include "ndarray_internal.h"
 
 static void print_recursive_helper(NDArray arr, size_t *indices, int precision,
@@ -57,19 +53,14 @@ static void print_recursive_helper(NDArray arr, size_t *indices, int precision,
 
 void ndarray_print(NDArray arr, const char *name, int precision) {
     assert(arr != NULL && "ndarray cannot be NULL");
-    
     if (precision < 0) precision = 4;
-    
-    // Get terminal width
     int term_width = 80; // Default fallback
-    
 #ifndef _WIN32
     struct winsize w;
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1 && w.ws_col > 0) {
         term_width = w.ws_col;
     }
 #else
-    // On Windows, try to get console width
     #ifdef _MSC_VER
         #include <windows.h>
         CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -78,8 +69,6 @@ void ndarray_print(NDArray arr, const char *name, int precision) {
         }
     #endif
 #endif
-    
-    // Print header
     if (name != NULL) {
         printf("Array '%s' [", name);
     } else {
@@ -89,23 +78,18 @@ void ndarray_print(NDArray arr, const char *name, int precision) {
         printf("%zu%s", arr->dims[i], i < arr->ndim - 1 ? ", " : "");
     }
     printf("]:\n");
-    
     if (arr->ndim == 2) {
         // 2D: Pretty matrix format with smart truncation
         size_t rows = arr->dims[0];
         size_t cols = arr->dims[1];
-        
         int elem_width = precision + 6;
         int available_width = term_width - 6; // Account for brackets and spaces
         size_t max_cols = available_width / (elem_width + 1);
-        
         // Decide how many rows/cols to show
         size_t show_rows_head = 3, show_rows_tail = 3;
         size_t show_cols_head = 3, show_cols_tail = 3;
-        
         int truncate_rows = (rows > show_rows_head + show_rows_tail + 1);
         int truncate_cols = (cols > max_cols);
-        
         if (truncate_cols && max_cols > 6) {
             show_cols_head = max_cols / 2;
             show_cols_tail = max_cols - show_cols_head;
@@ -113,7 +97,6 @@ void ndarray_print(NDArray arr, const char *name, int precision) {
             show_cols_head = cols;
             show_cols_tail = 0;
         }
-        
         printf("[");
         for (size_t i = 0; i < rows; ++i) {
             if (truncate_rows && i == show_rows_head) {

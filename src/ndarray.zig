@@ -1,16 +1,23 @@
 const std = @import("std");
 
-/// Maximum number of dimensions supported
-const MAX_DIMS = 16;
-
-/// Maximum number of arrays that can be stacked or concatenated
+const MAX_DIMS = 64;
 const MAX_ARRAYS = 64;
 
-/// C bindings for the ndarray library
 pub const c = @cImport({
     @cInclude("stddef.h");
     @cInclude("ndarray.h");
 });
+
+threadlocal var c_dims_buffer: [MAX_DIMS + 1]usize = undefined;
+
+/// Convert Zig dimensions to C dimensions.
+/// Appends a 0 sentinel at the end as required by C API.
+fn zigDimsToCDims(dims: []const usize) ![*]usize {
+    if (dims.len > MAX_DIMS) return error.TooManyDimensions;
+    @memcpy(c_dims_buffer[0..dims.len], dims);
+    c_dims_buffer[dims.len] = 0;
+    return &c_dims_buffer;
+}
 
 /// Aggregation types for reduction operations.
 /// 
@@ -37,17 +44,6 @@ pub const AggrType = enum(c_int) {
 pub const NDArray = struct {
     /// Pointer to the underlying C ndarray structure
     ptr: c.NDArray,
-    /// Buffer for converting Zig dimensions to C dimensions
-    c_dims_buffer: [MAX_DIMS + 1]usize = undefined,
-
-    /// Convert Zig dimensions to C dimensions.
-    /// Appends a 0 sentinel at the end as required by C API.
-    fn zigDimsToCDims(self: *NDArray, dims: []const usize) ![*]usize {
-        if (dims.len > MAX_DIMS) return error.TooManyDimensions;
-        @memcpy(self.c_dims_buffer[0..dims.len], dims);
-        self.c_dims_buffer[dims.len] = 0;
-        return &self.c_dims_buffer;
-    }
 
     /// Creates a new ndarray with specified dimensions.
     /// 
@@ -66,7 +62,7 @@ pub const NDArray = struct {
     /// ```
     pub fn init(dims: []const usize) !NDArray {
         var arr: NDArray = undefined;
-        const c_dims = try arr.zigDimsToCDims(dims);
+        const c_dims = try zigDimsToCDims(dims);
         const ptr = c.ndarray_new(c_dims);
         if (ptr == null) return error.AllocationFailed;
         arr.ptr = ptr;
@@ -100,7 +96,7 @@ pub const NDArray = struct {
     /// ```
     pub fn initZeros(dims: []const usize) !NDArray {
         var arr: NDArray = undefined;
-        const c_dims = try arr.zigDimsToCDims(dims);
+        const c_dims = try zigDimsToCDims(dims);
         const ptr = c.ndarray_new_zeros(c_dims);
         if (ptr == null) return error.AllocationFailed;
         arr.ptr = ptr;
@@ -121,7 +117,7 @@ pub const NDArray = struct {
     /// ```
     pub fn initOnes(dims: []const usize) !NDArray {
         var arr: NDArray = undefined;
-        const c_dims = try arr.zigDimsToCDims(dims);
+        const c_dims = try zigDimsToCDims(dims);
         const ptr = c.ndarray_new_ones(c_dims);
         if (ptr == null) return error.AllocationFailed;
         arr.ptr = ptr;
@@ -143,7 +139,7 @@ pub const NDArray = struct {
     /// ```
     pub fn initFull(dims: []const usize, value: f64) !NDArray {
         var arr: NDArray = undefined;
-        const c_dims = try arr.zigDimsToCDims(dims);
+        const c_dims = try zigDimsToCDims(dims);
         const ptr = c.ndarray_new_full(c_dims, value);
         if (ptr == null) return error.AllocationFailed;
         arr.ptr = ptr;
@@ -168,7 +164,7 @@ pub const NDArray = struct {
     /// ```
     pub fn initFromData(dims: []const usize, data: []const f64) !NDArray {
         var arr: NDArray = undefined;
-        const c_dims = try arr.zigDimsToCDims(dims);
+        const c_dims = try zigDimsToCDims(dims);
         const ptr = c.ndarray_new_from_data(c_dims, @constCast(data.ptr));
         if (ptr == null) return error.AllocationFailed;
         arr.ptr = ptr;
@@ -193,7 +189,7 @@ pub const NDArray = struct {
     /// ```
     pub fn initRandomUniform(dims: []const usize, low: f64, high: f64) !NDArray {
         var arr: NDArray = undefined;
-        const c_dims = try arr.zigDimsToCDims(dims);
+        const c_dims = try zigDimsToCDims(dims);
         const ptr = c.ndarray_new_randunif(c_dims, low, high);
         if (ptr == null) return error.AllocationFailed;
         arr.ptr = ptr;
@@ -218,7 +214,7 @@ pub const NDArray = struct {
     /// ```
     pub fn initRandomNormal(dims: []const usize, mean: f64, stddev: f64) !NDArray {
         var arr: NDArray = undefined;
-        const c_dims = try arr.zigDimsToCDims(dims);
+        const c_dims = try zigDimsToCDims(dims);
         const ptr = c.ndarray_new_randnorm(c_dims, mean, stddev);
         if (ptr == null) return error.AllocationFailed;
         arr.ptr = ptr;
@@ -242,7 +238,7 @@ pub const NDArray = struct {
     /// ```
     pub fn initRandomPoisson(dims: []const usize, lambda: f64) !NDArray {
         var arr: NDArray = undefined;
-        const c_dims = try arr.zigDimsToCDims(dims);
+        const c_dims = try zigDimsToCDims(dims);
         const ptr = c.ndarray_new_randpoisson(c_dims, lambda);
         if (ptr == null) return error.AllocationFailed;
         arr.ptr = ptr;
@@ -269,7 +265,7 @@ pub const NDArray = struct {
     /// ```
     pub fn initArange(dims: []const usize, start: f64, stop: f64, step: f64) !NDArray {
         var arr: NDArray = undefined;
-        const c_dims = try arr.zigDimsToCDims(dims);
+        const c_dims = try zigDimsToCDims(dims);
         const ptr = c.ndarray_new_arange(c_dims, start, stop, step);
         if (ptr == null) return error.AllocationFailed;
         arr.ptr = ptr;
@@ -295,7 +291,7 @@ pub const NDArray = struct {
     /// ```
     pub fn initLinspace(dims: []const usize, start: f64, stop: f64, num: usize) !NDArray {
         var arr: NDArray = undefined;
-        const c_dims = try arr.zigDimsToCDims(dims);
+        const c_dims = try zigDimsToCDims(dims);
         const ptr = c.ndarray_new_linspace(c_dims, start, stop, num);
         if (ptr == null) return error.AllocationFailed;
         arr.ptr = ptr;
@@ -667,11 +663,11 @@ pub const NDArray = struct {
     /// defer x.deinit();
     /// var y = try NDArray.init(&.{3, 1});
     /// defer y.deinit();
-    /// a.gemv(x, 1.0, 0.0, y); // y = A * x
+    /// a.matvecMul(y, x, 1.0, 0.0); // y = A * x
     /// ```
-    pub fn gemv(self: NDArray, x: NDArray, alpha: f64, beta: f64, y: NDArray) void {
-        _ = c.ndarray_gemv(self.ptr, x.ptr, alpha, beta, y.ptr);
-    }
+    // pub fn matvecMul(self: NDArray, y: NDArray, x: NDArray, alpha: f64, beta: f64) NDArray {
+    //     return NDArray{ .ptr = c.ndarray_matvec_mul(y.ptr, self.ptr, x.ptr, alpha, beta) };
+    // }
 
     /// Clips values below minimum threshold (modifies self in place).
     /// 
@@ -798,10 +794,11 @@ pub const NDArray = struct {
     /// defer a.deinit();
     /// var b = try NDArray.init(&.{3, 4});
     /// defer b.deinit();
-    /// NDArray.copySlice(a, 0, 0, b, 0, 2); // Copy row 0 from a to row 2 of b
+    /// b.copySlice(0, 0, a, 0, 2); // Copy row 0 from a to row 2 of b
     /// ```
-    pub fn copySlice(src: NDArray, src_axis: i32, src_idx: usize, dst: NDArray, dst_axis: i32, dst_idx: usize) void {
-        c.ndarray_copy_slice(src.ptr, src_axis, src_idx, dst.ptr, dst_axis, dst_idx);
+    pub fn copySlice(self: NDArray, self_axis: i32, self_idx: usize, src: NDArray, src_axis: i32, src_idx: usize) NDArray {
+        _ = c.ndarray_copy_slice(self.ptr, self_axis, self_idx, src.ptr, src_axis, src_idx);
+        return self;
     }
 
     /// Gets the size of a slice along an axis.
@@ -1584,16 +1581,16 @@ test "mulAdd" {
     try std.testing.expectEqual(@as(f64, 7.0), dest.get(&.{ 0, 0 }));
 }
 
-test "gemv" {
-    const a = try NDArray.initOnes(&.{ 2, 3 });
-    defer a.deinit();
-    const x = try NDArray.initOnes(&.{ 3, 1 });
-    defer x.deinit();
-    const y = try NDArray.initZeros(&.{ 2, 1 });
-    defer y.deinit();
-    a.gemv(x, 1.0, 0.0, y);
-    try std.testing.expectEqual(@as(f64, 3.0), y.get(&.{ 0, 0 }));
-}
+// test "matvecMul" {
+//     const a = try NDArray.initOnes(&.{ 2, 3 });
+//     defer a.deinit();
+//     const x = try NDArray.initOnes(&.{ 3, 1 });
+//     defer x.deinit();
+//     const y = try NDArray.initZeros(&.{ 2, 1 });
+//     defer y.deinit();
+//     _ = a.matvecMul(y, x, 1.0, 0.0);
+//     try std.testing.expectEqual(@as(f64, 3.0), y.get(&.{ 0, 0 }));
+// }
 
 test "clipMin" {
     const arr = try NDArray.initFull(&.{ 2, 2 }, 1.0);
@@ -1642,7 +1639,8 @@ test "copySlice" {
     defer src.deinit();
     const dst = try NDArray.initZeros(&.{ 2, 3 });
     defer dst.deinit();
-    NDArray.copySlice(src, 0, 0, dst, 0, 1);
+    const result = dst.copySlice(0, 1, src, 0, 0);
+    try std.testing.expect(result.ptr == dst.ptr);
     try std.testing.expectEqual(@as(f64, 1.0), dst.get(&.{ 1, 0 }));
 }
 

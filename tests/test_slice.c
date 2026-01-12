@@ -24,7 +24,8 @@ void test_ndarray_copy_slice_2d(void) {
     NDArray B = ndarray_new_zeros(dims);
     
     // Copy row 1 from A to row 2 of B
-    ndarray_copy_slice(A, 0, 1, B, 0, 2);
+    NDArray result = ndarray_copy_slice(B, 0, 2, A, 0, 1);
+    CU_ASSERT_PTR_EQUAL(result, B);
     
     CU_ASSERT_DOUBLE_EQUAL(B->data[8], 4.0, EPSILON);
     CU_ASSERT_DOUBLE_EQUAL(B->data[9], 5.0, EPSILON);

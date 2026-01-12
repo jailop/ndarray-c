@@ -1,5 +1,5 @@
 LIB_NAME = ndarray
-VERSION = 1.0.0
+VERSION = 0.3.1
 LIB_STATIC = lib$(LIB_NAME).a
 LIB_SHARED = lib$(LIB_NAME).so.$(VERSION)
 LIB_SHARED_MAJOR = lib$(LIB_NAME).so.1

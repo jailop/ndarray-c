@@ -1,6 +1,6 @@
 .{
     .name = .ndarray,
-    .version = "0.1.2",
+    .version = "0.3.1",
     .fingerprint = 0xb2aebc208c4e53a9,
     .minimum_zig_version = "0.15.0",
     .paths = .{
