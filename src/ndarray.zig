@@ -358,6 +358,7 @@ pub const NDArray = struct {
     /// 
     /// For 2D: axis=0 sets a row, axis=1 sets a column.
     /// For higher dimensions: sets the hyperplane perpendicular to the axis.
+    /// Returns self for method chaining.
     /// 
     /// **Parameters:**
     /// - `axis`: The axis along which to set the slice
@@ -369,16 +370,18 @@ pub const NDArray = struct {
     /// const arr = try NDArray.init(&.{3, 4});
     /// defer arr.deinit();
     /// const row_data = [_]f64{1.0, 2.0, 3.0, 4.0};
-    /// arr.setSlice(0, 0, &row_data);
+    /// _ = arr.setSlice(0, 0, &row_data);
     /// ```
-    pub fn setSlice(self: NDArray, axis: i32, index: usize, values: []const f64) void {
-        c.ndarray_set_slice(self.ptr, axis, index, values.ptr);
+    pub fn setSlice(self: NDArray, axis: i32, index: usize, values: []const f64) NDArray {
+        _ = c.ndarray_set_slice(self.ptr, axis, index, values.ptr);
+        return self;
     }
 
     /// Fills a slice with a scalar value at a specific index on an axis.
     /// 
     /// For 2D: axis=0 fills a row, axis=1 fills a column.
     /// For higher dimensions: fills the hyperplane perpendicular to the axis.
+    /// Returns self for method chaining.
     /// 
     /// **Parameters:**
     /// - `axis`: The axis along which to fill the slice
@@ -389,10 +392,11 @@ pub const NDArray = struct {
     /// ```zig
     /// const arr = try NDArray.init(&.{3, 4});
     /// defer arr.deinit();
-    /// arr.fillSlice(0, 1, 5.0); // Fill second row with 5.0
+    /// _ = arr.fillSlice(0, 1, 5.0); // Fill second row with 5.0
     /// ```
-    pub fn fillSlice(self: NDArray, axis: i32, index: usize, value: f64) void {
-        c.ndarray_fill_slice(self.ptr, axis, index, value);
+    pub fn fillSlice(self: NDArray, axis: i32, index: usize, value: f64) NDArray {
+        _ = c.ndarray_fill_slice(self.ptr, axis, index, value);
+        return self;
     }
 
     /// Prints the array to stdout.
@@ -779,14 +783,14 @@ pub const NDArray = struct {
     /// Copies a slice from one array to another.
     /// 
     /// The slice sizes must match.
+    /// Returns self (destination) for method chaining.
     /// 
     /// **Parameters:**
+    /// - `self_axis`: Axis in destination (self)
+    /// - `self_idx`: Index along destination axis
     /// - `src`: Source array
     /// - `src_axis`: Axis in source
     /// - `src_idx`: Index along source axis
-    /// - `dst`: Destination array
-    /// - `dst_axis`: Axis in destination
-    /// - `dst_idx`: Index along destination axis
     /// 
     /// **Example:**
     /// ```zig
@@ -794,7 +798,7 @@ pub const NDArray = struct {
     /// defer a.deinit();
     /// var b = try NDArray.init(&.{3, 4});
     /// defer b.deinit();
-    /// b.copySlice(0, 0, a, 0, 2); // Copy row 0 from a to row 2 of b
+    /// _ = b.copySlice(0, 2, a, 0, 0); // Copy row 0 from a to row 2 of b
     /// ```
     pub fn copySlice(self: NDArray, self_axis: i32, self_idx: usize, src: NDArray, src_axis: i32, src_idx: usize) NDArray {
         _ = c.ndarray_copy_slice(self.ptr, self_axis, self_idx, src.ptr, src_axis, src_idx);
@@ -1476,15 +1480,32 @@ test "setSlice" {
     const arr = try NDArray.initZeros(&.{ 2, 3 });
     defer arr.deinit();
     const values = [_]f64{ 1.0, 2.0, 3.0 };
-    arr.setSlice(0, 0, &values);
+    _ = arr.setSlice(0, 0, &values);
     try std.testing.expectEqual(@as(f64, 1.0), arr.get(&.{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 2.0), arr.get(&.{ 0, 1 }));
+    try std.testing.expectEqual(@as(f64, 3.0), arr.get(&.{ 0, 2 }));
 }
 
 test "fillSlice" {
     const arr = try NDArray.initZeros(&.{ 2, 3 });
     defer arr.deinit();
-    arr.fillSlice(0, 1, 9.0);
+    _ = arr.fillSlice(0, 1, 9.0);
     try std.testing.expectEqual(@as(f64, 9.0), arr.get(&.{ 1, 0 }));
+    try std.testing.expectEqual(@as(f64, 9.0), arr.get(&.{ 1, 1 }));
+    try std.testing.expectEqual(@as(f64, 9.0), arr.get(&.{ 1, 2 }));
+}
+
+test "setSlice and fillSlice chaining" {
+    const arr = try NDArray.initZeros(&.{ 3, 4 });
+    defer arr.deinit();
+    const row_data = [_]f64{ 1.0, 2.0, 3.0, 4.0 };
+    _ = arr.setSlice(0, 0, &row_data).fillSlice(0, 1, 5.0);
+    // Check first row was set
+    try std.testing.expectEqual(@as(f64, 1.0), arr.get(&.{ 0, 0 }));
+    try std.testing.expectEqual(@as(f64, 4.0), arr.get(&.{ 0, 3 }));
+    // Check second row was filled
+    try std.testing.expectEqual(@as(f64, 5.0), arr.get(&.{ 1, 0 }));
+    try std.testing.expectEqual(@as(f64, 5.0), arr.get(&.{ 1, 3 }));
 }
 
 test "print" {

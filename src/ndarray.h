@@ -275,6 +275,7 @@ double ndarray_get(const NDArray t, const size_t* pos);
  * @param axis The axis along which to set the slice (0 to ndim-1).
  * @param index The index along the axis where to set values.
  * @param values Array of values to set (size must match the slice size).
+ * @return handler of the array (for chaining)
  * 
  * Example:
  * 
@@ -284,7 +285,7 @@ double ndarray_get(const NDArray t, const size_t* pos);
  * ndarray_set_slice(arr, 0, 0, row_data);  // Set first row
  * ```
  */
-void ndarray_set_slice(const NDArray arr, int axis, size_t index,
+NDArray ndarray_set_slice(const NDArray arr, int axis, size_t index,
         const double* values);
 
 /**
@@ -297,6 +298,7 @@ void ndarray_set_slice(const NDArray arr, int axis, size_t index,
  * @param axis The axis along which to fill the slice (0 to ndim-1).
  * @param index The index along the axis where to fill.
  * @param value The scalar value to fill with.
+ * @return handler of the array (for chaining)
  * 
  * Example:
  * 
@@ -306,7 +308,7 @@ void ndarray_set_slice(const NDArray arr, int axis, size_t index,
  * ndarray_fill_slice(arr, 1, 2, 0.0);  // Fill third column with 0.0
  * ```
  */
-void ndarray_fill_slice(const NDArray arr, int axis, size_t index,
+NDArray ndarray_fill_slice(const NDArray arr, int axis, size_t index,
         double value);
 
 /**

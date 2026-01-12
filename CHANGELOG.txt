@@ -59,3 +59,7 @@
 - order in copy slice changed. now destination is first
 - gemv funcion removed
 - zig to c dims buffer size set in 64
+
+0.3.2 - 2026-01-12
+
+- set_slice and fill_slice enabled for chaining

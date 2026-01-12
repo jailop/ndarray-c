@@ -193,6 +193,35 @@ void test_ndarray_copy_3d(void) {
     ndarray_free(copy);
 }
 
+void test_ndarray_slice_chaining(void) {
+    size_t dims[] = {3, 4, 0};
+    NDArray arr = ndarray_new_zeros(dims);
+    
+    // Test chaining: set first row, then fill second row
+    double row_data[] = {1.0, 2.0, 3.0, 4.0};
+    ndarray_fill_slice(
+        ndarray_set_slice(arr, 0, 0, row_data),
+        0, 1, 5.0
+    );
+    
+    // Check first row was set
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 0)), 1.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 1)), 2.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 2)), 3.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(0, 3)), 4.0, EPSILON);
+    
+    // Check second row was filled
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 0)), 5.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 1)), 5.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 2)), 5.0, EPSILON);
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(1, 3)), 5.0, EPSILON);
+    
+    // Check third row is still zero
+    CU_ASSERT_DOUBLE_EQUAL(ndarray_get(arr, NDA_POS(2, 0)), 0.0, EPSILON);
+    
+    ndarray_free(arr);
+}
+
 /* Register tests for this module */
 void register_operations_tests(CU_pSuite suite) {
     CU_add_test(suite, "test get set 2d", test_ndarray_get_set_2d);
@@ -204,6 +233,7 @@ void register_operations_tests(CU_pSuite suite) {
     CU_add_test(suite, "test fill slice 2d row", test_ndarray_fill_slice_2d_row);
     CU_add_test(suite, "test fill slice 2d col", test_ndarray_fill_slice_2d_col);
     CU_add_test(suite, "test fill slice 4d", test_ndarray_fill_slice_4d);
+    CU_add_test(suite, "test slice chaining", test_ndarray_slice_chaining);
     CU_add_test(suite, "test copy 2d", test_ndarray_copy_2d);
     CU_add_test(suite, "test copy 3d", test_ndarray_copy_3d);
 }
