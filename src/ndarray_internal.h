@@ -85,6 +85,16 @@ void ndarray_convert_complex64_to_double(const void *src, double *dst);
 void ndarray_convert_float32_to_float64(float src, double *dst);
 void ndarray_convert_float64_to_float32(double src, float *dst);
 
+// Complex utility functions
+NDArray ndarray_new_real_part(const NDArray arr);
+NDArray ndarray_new_imag_part(const NDArray arr);
+NDArray ndarray_new_conjugate(const NDArray arr);
+NDArray ndarray_new_magnitude(const NDArray arr);
+NDArray ndarray_new_phase(const NDArray arr);
+
+// Type conversion utilities  
+NDArray ndarray_convert_type(const NDArray arr, NDAType target_type);
+
 // BLAS dispatch helpers
 void ndarray_blas_axpy(size_t n, double alpha, const NDArray X, const NDArray Y, NDArray result);
 void ndarray_blas_scal(size_t n, double alpha, const NDArray X);

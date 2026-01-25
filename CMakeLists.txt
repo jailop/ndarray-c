@@ -1,5 +1,18 @@
 cmake_minimum_required(VERSION 3.15)
 
+project(ndarray VERSION 0.4.0 LANGUAGES C)
+
+# Enable Fortran if available (needed for OpenBLAS with Fortran OpenMP on some systems)
+include(CheckLanguage)
+check_language(Fortran)
+if(CMAKE_Fortran_COMPILER)
+    enable_language(Fortran)
+endif()
+
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+# Enhanced compiler detection with complex support
 if(APPLE AND NOT DEFINED CMAKE_C_COMPILER)
     find_program(GCC_COMPILER 
         NAMES gcc-15 gcc-14 gcc-13 gcc-12 gcc-11 gcc
@@ -14,23 +27,178 @@ if(APPLE AND NOT DEFINED CMAKE_C_COMPILER)
     endif()
 endif()
 
-project(ndarray VERSION 0.4.0 LANGUAGES C)
+# Enhanced complex number feature detection
+include(CheckCSourceCompiles)
+include(CheckCSourceRuns)
 
-# Enable Fortran if available (needed for OpenBLAS with Fortran OpenMP on some systems)
-include(CheckLanguage)
-check_language(Fortran)
-if(CMAKE_Fortran_COMPILER)
-    enable_language(Fortran)
-endif()
+# Check for complex.h availability (for complex number support)
+check_c_source_compiles("
+    #include <complex.h>
+    int main() { 
+        double complex z = 1.0 + 2.0*I;
+        return 0; 
+    }
+" COMPLEX_SUPPORT_COMPILED)
+set(COMPLEX_SUPPORT_COMPILED ${COMPLEX_SUPPORT_COMPILED})
 
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+# Check for C99 complex arithmetic support
+check_c_source_compiles("
+    #include <complex.h>
+    int main() { 
+        double complex a = 1.0 + 2.0*I;
+        double complex b = 3.0 + 4.0*I;
+        double complex c = a * b;
+        return 0; 
+    }
+" C99_COMPLEX_SUPPORT_COMPILED)
+set(C99_COMPLEX_SUPPORT_COMPILED ${C99_COMPLEX_SUPPORT_COMPILED})
+
+# Check for _Complex macro support
+check_c_source_compiles("
+    #include <complex.h>
+    int main() { 
+        _Complex z = 1.0 + 2.0*_Complex_I;
+        return 0; 
+    }
+" UNDERSCORE_COMPLEX_SUPPORT_COMPILED)
+set(UNDERSCORE_COMPLEX_SUPPORT_COMPILED ${UNDERSCORE_COMPLEX_SUPPORT_COMPILED})
+
+# Check for complex math functions (double precision)
+check_c_source_compiles("
+    #include <complex.h>
+    int main() { 
+        double complex z = 1.0 + 2.0*I;
+        double complex result = cexp(z);
+        result = clog(z);
+        result = csqrt(z);
+        result = csin(z);
+        result = ccos(z);
+        result = ctan(z);
+        return 0; 
+    }
+" COMPLEX_DOUBLE_MATH_AVAILABLE)
+set(COMPLEX_DOUBLE_MATH_AVAILABLE ${COMPLEX_DOUBLE_MATH_AVAILABLE})
+
+# Check for complex math functions (single precision)
+check_c_source_compiles("
+    #include <complex.h>
+    int main() { 
+        float complex z = 1.0f + 2.0f*I;
+        float complex result = cexpf(z);
+        result = clogf(z);
+        result = csqrtf(z);
+        result = csinf(z);
+        result = ccosf(z);
+        result = ctanf(z);
+        return 0; 
+    }
+" COMPLEX_FLOAT_MATH_AVAILABLE)
+set(COMPLEX_FLOAT_MATH_AVAILABLE ${COMPLEX_FLOAT_MATH_AVAILABLE})
+
+# Check for complex I/O support
+check_c_source_compiles("
+    #include <complex.h>
+    #include <stdio.h>
+    int main() { 
+        double complex z = 1.0 + 2.0*I;
+        printf(\"%f + %fi\\n\", creal(z), cimag(z));
+        return 0; 
+    }
+" COMPLEX_IO_SUPPORT_COMPILED)
+set(COMPLEX_IO_SUPPORT_COMPILED ${COMPLEX_IO_SUPPORT_COMPILED})
+
+# Check for complex literal macros (CMPLX, CMPLXF)
+check_c_source_compiles("
+    #include <complex.h>
+    int main() { 
+        double complex z1 = CMPLX(1.0, 2.0);
+        float complex z2 = CMPLXF(1.0f, 2.0f);
+        return 0; 
+    }
+" COMPLEX_LITERAL_MACROS_AVAILABLE)
+set(COMPLEX_LITERAL_MACROS_AVAILABLE ${COMPLEX_LITERAL_MACROS_AVAILABLE})
+
+# Check for C11 _Generic complex support
+check_c_source_compiles("
+    #include <complex.h>
+    int main() { 
+        double complex z = 1.0 + 2.0*I;
+        _Generic(z, double complex: 1, float complex: 2, default: 3);
+        return 0; 
+    }
+" GENERIC_COMPLEX_SUPPORT_COMPILED)
+set(GENERIC_COMPLEX_SUPPORT_COMPILED ${GENERIC_COMPLEX_SUPPORT_COMPILED})
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(BUILD_STATIC_LIBS "Build static libraries" ON)
 option(BUILD_EXAMPLES "Build example programs" ON)
 option(BUILD_TESTS "Build C test suite (requires CUnit)" ON)
 option(BUILD_BENCHMARKS "Build benchmark programs" ON)
+
+# Type system and complex number options
+option(ENABLE_COMPLEX_SUPPORT "Enable complex number support" ON)
+option(ENABLE_FLOAT32_SUPPORT "Enable single-precision float support" ON)
+option(ENABLE_ALL_TYPES "Enable all supported types (real32, real64, complex32, complex64)" ON)
+option(STRICT_TYPE_CHECKING "Enable strict type checking for array operations" OFF)
+option(ENABLE_TYPE_CONVERSION_WARNINGS "Enable warnings for implicit type conversions" ON)
+
+# Performance and optimization options
+option(ENABLE_SIMD_OPTIMIZATIONS "Enable SIMD optimizations for vector operations" ON)
+option(ENABLE_FAST_MATH "Enable fast-math optimizations (may affect precision)" ON)
+option(ENABLE_COMPLEX_FAST_MATH "Enable complex-specific fast math optimizations" ON)
+
+# Compatibility options
+option(BACKWARDS_COMPATIBLE_DEFAULTS "Make library backwards compatible by default" ON)
+option(ENABLE_DEPRECATED_WARNINGS "Enable deprecation warnings for old-style usage" OFF)
+
+# Conditional compilation checks
+if(NOT ENABLE_COMPLEX_SUPPORT)
+    if(NOT COMPLEX_SUPPORT_COMPILED)
+        message(STATUS "Complex support disabled by configuration")
+    else()
+        message(FATAL_ERROR "ENABLE_COMPLEX_SUPPORT=OFF but complex support is available and required for full functionality")
+    endif()
+endif()
+
+if(NOT ENABLE_FLOAT32_SUPPORT AND NOT BACKWARDS_COMPATIBLE_DEFAULTS)
+    message(FATAL_ERROR "Float32 support cannot be disabled when backwards compatibility is off")
+endif()
+
+# Set compile definitions based on options
+if(ENABLE_COMPLEX_SUPPORT AND COMPLEX_SUPPORT_COMPILED)
+    add_compile_definitions(ENABLE_COMPLEX_SUPPORT)
+endif()
+
+if(ENABLE_FLOAT32_SUPPORT)
+    add_compile_definitions(ENABLE_FLOAT32_SUPPORT)
+endif()
+
+if(ENABLE_ALL_TYPES)
+    add_compile_definitions(ENABLE_ALL_TYPES)
+endif()
+
+if(STRICT_TYPE_CHECKING)
+    add_compile_definitions(STRICT_TYPE_CHECKING)
+endif()
+
+if(ENABLE_TYPE_CONVERSION_WARNINGS)
+    add_compile_definitions(ENABLE_TYPE_CONVERSION_WARNINGS)
+endif()
+
+if(NOT ENABLE_COMPLEX_FAST_MATH OR NOT ENABLE_FAST_MATH)
+    # Remove fast-math flags if disabled
+    if(NOT MSVC)
+        string(REPLACE "-ffast-math" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    endif()
+endif()
+
+if(BACKWARDS_COMPATIBLE_DEFAULTS)
+    add_compile_definitions(BACKWARDS_COMPATIBLE_DEFAULTS)
+endif()
+
+if(ENABLE_DEPRECATED_WARNINGS)
+    add_compile_definitions(ENABLE_DEPRECATED_WARNINGS)
+endif()
 
 # Compiler-specific flags
 if(MSVC)
@@ -42,6 +210,68 @@ else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -pedantic")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+    endif()
+    
+    # Complex number optimization flags
+    if(COMPLEX_SUPPORT_COMPILED)
+        # Enable complex number optimizations
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fcx-limited-range")
+        message(STATUS "Enabled complex number optimizations")
+    endif()
+    
+    # SIMD optimizations for different types
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+        # Enable SIMD for better performance on different data types
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -msse3 -mssse3")
+        
+        # Check for AVX support
+        include(CheckCSourceCompiles)
+        check_c_source_compiles("
+            #include <immintrin.h>
+            int main() { 
+                __m256d v = _mm256_setzero_pd(); 
+                return 0; 
+            }
+        " HAVE_AVX)
+        if(HAVE_AVX)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx")
+            message(STATUS "Enabled AVX optimizations")
+        endif()
+        
+        # Check for AVX2 support  
+        check_c_source_compiles("
+            #include <immintrin.h>
+            int main() { 
+                __m256i v = _mm256_setzero_si256(); 
+                return 0; 
+            }
+        " HAVE_AVX2)
+        if(HAVE_AVX2)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2")
+            message(STATUS "Enabled AVX2 optimizations")
+        endif()
+        
+        # Check for FMA support
+        check_c_source_compiles("
+            #include <immintrin.h>
+            int main() { 
+                __m256d a = _mm256_setzero_pd();
+                __m256d b = _mm256_setzero_pd(); 
+                __m256d c = _mm256_fmadd_pd(a, b, a);
+                return 0; 
+            }
+        " HAVE_FMA)
+        if(HAVE_FMA)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfma")
+            message(STATUS "Enabled FMA optimizations")
+        endif()
+    endif()
+    
+    # Type-specific optimization flags
+    if(HAVE_FLOAT_BLAS OR COMPLEX_BLAS_FOUND)
+        # Flags that help with float32/float64 and complex operations
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffast-math")
+        message(STATUS "Enabled fast-math optimizations for floating point operations")
     endif()
 endif()
 
@@ -92,7 +322,81 @@ else()
     endif()
 endif()
 
-# BLAS/OpenBLAS Configuration
+# Enhanced BLAS/OpenBLAS Configuration with Complex Support
+
+# First check if main BLAS library supports complex functions
+# Test for complex BLAS function availability
+include(CheckCSourceRuns)
+set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
+if(OPENBLAS_INCLUDE_DIR)
+    set(CMAKE_REQUIRED_INCLUDES ${OPENBLAS_INCLUDE_DIR})
+endif()
+
+# Test for double complex BLAS (z) functions
+check_c_source_runs("
+    #include <cblas.h>
+    int main() { 
+        double a[] = {1.0, 2.0, 3.0, 4.0};
+        double b[] = {1.0, 0.0, 0.0, 1.0};
+        double c[] = {0.0, 0.0, 0.0, 0.0};
+        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 1, 1, 1, 
+                   (void*)a, (void*)b, 1.0, (void*)c, 0.0);
+        return 0; 
+    }
+" HAVE_COMPLEX_DOUBLE_BLAS)
+
+# Test for single complex BLAS (c) functions
+check_c_source_runs("
+    #include <cblas.h>
+    int main() { 
+        float a[] = {1.0, 2.0, 3.0, 4.0};
+        float b[] = {1.0, 0.0, 0.0, 1.0};
+        float c[] = {0.0, 0.0, 0.0, 0.0};
+        cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 1, 1, 1, 
+                   (void*)a, (void*)b, 1.0f, (void*)c, 0.0f);
+        return 0; 
+    }
+" HAVE_COMPLEX_FLOAT_BLAS)
+
+# Reset required flags
+set(CMAKE_REQUIRED_LIBRARIES)
+set(CMAKE_REQUIRED_INCLUDES)
+
+set(COMPLEX_BLAS_FOUND FALSE)
+set(COMPLEX_BLAS_TYPE "none")
+
+if(HAVE_COMPLEX_DOUBLE_BLAS AND HAVE_COMPLEX_FLOAT_BLAS)
+    set(COMPLEX_BLAS_FOUND TRUE)
+    set(COMPLEX_BLAS_TYPE "both")
+    message(STATUS "Found full Complex BLAS support (both float32 and float64)")
+elseif(HAVE_COMPLEX_DOUBLE_BLAS)
+    set(COMPLEX_BLAS_FOUND TRUE)
+    set(COMPLEX_BLAS_TYPE "double")
+    message(STATUS "Found Complex BLAS support (float64 only)")
+elseif(HAVE_COMPLEX_FLOAT_BLAS)
+    set(COMPLEX_BLAS_FOUND TRUE)
+    set(COMPLEX_BLAS_TYPE "float")
+    message(STATUS "Found Complex BLAS support (float32 only)")
+else()
+    message(WARNING "Complex BLAS functions not detected - complex support may be limited")
+endif()
+
+# Test for real BLAS functions (float32)
+check_c_source_runs("
+    #include <cblas.h>
+    int main() { 
+        float a[] = {1.0, 2.0, 3.0, 4.0};
+        float b[] = {1.0, 0.0, 0.0, 1.0};
+        float c[] = {0.0, 0.0, 0.0, 0.0};
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 1, 1, 1, 
+                   a, b, 1.0f, c, 0.0f);
+        return 0; 
+    }
+" HAVE_FLOAT_BLAS)
+
+if(NOT HAVE_FLOAT_BLAS)
+    message(WARNING "Float BLAS functions not detected - float32 support may be limited")
+endif()
 # First try to use vcpkg or system-provided packages
 find_package(OpenBLAS QUIET)
 if(OpenBLAS_FOUND)
@@ -214,6 +518,40 @@ if(BUILD_STATIC_LIBS)
     # Link libraries
     target_link_libraries(ndarray_static PUBLIC ${BLAS_LIBRARIES})
     
+    # Add complex BLAS libraries if available
+    if(COMPLEX_BLAS_FOUND AND ENABLE_COMPLEX_SUPPORT)
+        target_compile_definitions(ndarray_static PUBLIC HAVE_COMPLEX_BLAS)
+        if(COMPLEX_BLAS_TYPE STREQUAL "both" OR COMPLEX_BLAS_TYPE STREQUAL "double")
+            target_compile_definitions(ndarray_static PUBLIC HAVE_COMPLEX_DOUBLE_BLAS)
+        endif()
+        if(COMPLEX_BLAS_TYPE STREQUAL "both" OR COMPLEX_BLAS_TYPE STREQUAL "float")
+            target_compile_definitions(ndarray_static PUBLIC HAVE_COMPLEX_FLOAT_BLAS)
+        endif()
+    endif()
+    
+    if(HAVE_FLOAT_BLAS AND ENABLE_FLOAT32_SUPPORT)
+        target_compile_definitions(ndarray_static PUBLIC HAVE_FLOAT_BLAS)
+    endif()
+    
+    # Complex math support definitions
+    if(COMPLEX_DOUBLE_MATH_AVAILABLE AND ENABLE_COMPLEX_SUPPORT)
+        target_compile_definitions(ndarray_static PUBLIC COMPLEX_DOUBLE_MATH_AVAILABLE)
+    endif()
+    
+    if(COMPLEX_FLOAT_MATH_AVAILABLE AND ENABLE_COMPLEX_SUPPORT)
+        target_compile_definitions(ndarray_static PUBLIC COMPLEX_FLOAT_MATH_AVAILABLE)
+    endif()
+    
+    # Complex I/O support
+    if(COMPLEX_IO_SUPPORT_COMPILED)
+        target_compile_definitions(ndarray_static PUBLIC COMPLEX_IO_SUPPORT_COMPILED)
+    endif()
+    
+    # Complex literal macros
+    if(COMPLEX_LITERAL_MACROS_AVAILABLE)
+        target_compile_definitions(ndarray_static PUBLIC COMPLEX_LITERAL_MACROS_AVAILABLE)
+    endif()
+    
     # Link math library on Unix-like systems
     if(UNIX AND NOT APPLE)
         target_link_libraries(ndarray_static PUBLIC m)
@@ -239,6 +577,40 @@ if(BUILD_SHARED_LIBS)
     
     # Link libraries
     target_link_libraries(ndarray_shared PUBLIC ${BLAS_LIBRARIES})
+    
+    # Add complex BLAS libraries if available
+    if(COMPLEX_BLAS_FOUND AND ENABLE_COMPLEX_SUPPORT)
+        target_compile_definitions(ndarray_shared PUBLIC HAVE_COMPLEX_BLAS)
+        if(COMPLEX_BLAS_TYPE STREQUAL "both" OR COMPLEX_BLAS_TYPE STREQUAL "double")
+            target_compile_definitions(ndarray_shared PUBLIC HAVE_COMPLEX_DOUBLE_BLAS)
+        endif()
+        if(COMPLEX_BLAS_TYPE STREQUAL "both" OR COMPLEX_BLAS_TYPE STREQUAL "float")
+            target_compile_definitions(ndarray_shared PUBLIC HAVE_COMPLEX_FLOAT_BLAS)
+        endif()
+    endif()
+    
+    if(HAVE_FLOAT_BLAS AND ENABLE_FLOAT32_SUPPORT)
+        target_compile_definitions(ndarray_shared PUBLIC HAVE_FLOAT_BLAS)
+    endif()
+    
+    # Complex math support definitions
+    if(COMPLEX_DOUBLE_MATH_AVAILABLE AND ENABLE_COMPLEX_SUPPORT)
+        target_compile_definitions(ndarray_shared PUBLIC COMPLEX_DOUBLE_MATH_AVAILABLE)
+    endif()
+    
+    if(COMPLEX_FLOAT_MATH_AVAILABLE AND ENABLE_COMPLEX_SUPPORT)
+        target_compile_definitions(ndarray_shared PUBLIC COMPLEX_FLOAT_MATH_AVAILABLE)
+    endif()
+    
+    # Complex I/O support
+    if(COMPLEX_IO_SUPPORT_COMPILED)
+        target_compile_definitions(ndarray_shared PUBLIC COMPLEX_IO_SUPPORT_COMPILED)
+    endif()
+    
+    # Complex literal macros
+    if(COMPLEX_LITERAL_MACROS_AVAILABLE)
+        target_compile_definitions(ndarray_shared PUBLIC COMPLEX_LITERAL_MACROS_AVAILABLE)
+    endif()
     
     # Link math library on Unix-like systems
     if(UNIX AND NOT APPLE)
@@ -416,8 +788,32 @@ message(STATUS "Build static libs:  ${BUILD_STATIC_LIBS}")
 message(STATUS "Build examples:     ${BUILD_EXAMPLES}")
 message(STATUS "Build tests:        ${BUILD_TESTS}")
 message(STATUS "Build benchmarks:   ${BUILD_BENCHMARKS}")
+
+# Feature summary
+message(STATUS "")
+message(STATUS "=== Feature Summary ===")
 if(OpenMP_C_FOUND)
     message(STATUS "OpenMP version:     ${OpenMP_C_VERSION}")
 endif()
 message(STATUS "BLAS libraries:     ${BLAS_LIBRARIES}")
+message(STATUS "Complex support:    ${ENABLE_COMPLEX_SUPPORT}")
+if(COMPLEX_BLAS_FOUND)
+    message(STATUS "  Complex BLAS type: ${COMPLEX_BLAS_TYPE}")
+endif()
+message(STATUS "Float32 support:    ${ENABLE_FLOAT32_SUPPORT}")
+message(STATUS "All types enabled:  ${ENABLE_ALL_TYPES}")
+message(STATUS "Strict type checking: ${STRICT_TYPE_CHECKING}")
+message(STATUS "Backwards compatible: ${BACKWARDS_COMPATIBLE_DEFAULTS}")
+message(STATUS "")
+
+# Complex math capabilities
+if(ENABLE_COMPLEX_SUPPORT)
+    message(STATUS "Complex math capabilities:")
+    message(STATUS "  C99 complex:      ${C99_COMPLEX_SUPPORT_COMPILED}")
+    message(STATUS "  Double precision: ${COMPLEX_DOUBLE_MATH_AVAILABLE}")
+    message(STATUS "  Single precision: ${COMPLEX_FLOAT_MATH_AVAILABLE}")
+    message(STATUS "  Complex I/O:      ${COMPLEX_IO_SUPPORT_COMPILED}")
+    message(STATUS "  Literal macros:   ${COMPLEX_LITERAL_MACROS_AVAILABLE}")
+endif()
+
 message(STATUS "Install prefix:     ${CMAKE_INSTALL_PREFIX}")

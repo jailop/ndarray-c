@@ -6,7 +6,7 @@
 
 // Magic number for ndarray binary files: "NDAR" in ASCII
 #define NDARRAY_MAGIC 0x4E444152
-#define NDARRAY_VERSION 1
+#define NDARRAY_VERSION 2
 
 int ndarray_save(NDArray arr, const char *filename) {
     assert(arr != NULL && "ndarray cannot be NULL");
@@ -52,9 +52,18 @@ int ndarray_save(NDArray arr, const char *filename) {
         }
     }
     
+    // Write data type
+    uint32_t dtype = (uint32_t)arr->dtype;
+    if (fwrite(&dtype, sizeof(uint32_t), 1, fp) != 1) {
+        fprintf(stderr, "Error: Failed to write data type\n");
+        fclose(fp);
+        return -1;
+    }
+    
     // Write data
     size_t size = ndarray_size(arr);
-    if (fwrite(arr->data, sizeof(double), size, fp) != size) {
+    size_t element_size = ndarray_element_size(arr->dtype);
+    if (fwrite(arr->data, element_size, size, fp) != size) {
         fprintf(stderr, "Error: Failed to write data\n");
         fclose(fp);
         return -1;
@@ -112,6 +121,14 @@ NDArray ndarray_new_load(const char *filename) {
         return NULL;
     }
     
+    // Read data type
+    uint32_t dtype;
+    if (fread(&dtype, sizeof(uint32_t), 1, fp) != 1) {
+        fprintf(stderr, "Error: Failed to read data type\n");
+        fclose(fp);
+        return NULL;
+    }
+    
     // Read dimension sizes
     size_t *dims = (size_t*)malloc(sizeof(size_t) * ((size_t)ndim + 1));
     if (dims == NULL) {
@@ -133,7 +150,7 @@ NDArray ndarray_new_load(const char *filename) {
     dims[(size_t)ndim] = 0;  // Sentinel
     
     // Create ndarray
-    NDArray arr = ndarray_new(dims);
+    NDArray arr = ndarray_new_typed(dims, (NDAType)dtype);
     free(dims);
     
     if (arr == NULL) {
@@ -144,7 +161,8 @@ NDArray ndarray_new_load(const char *filename) {
     
     // Read data
     size_t size = ndarray_size(arr);
-    if (fread(arr->data, sizeof(double), size, fp) != size) {
+    size_t element_size = ndarray_element_size(arr->dtype);
+    if (fread(arr->data, element_size, size, fp) != size) {
         fprintf(stderr, "Error: Failed to read data\n");
         ndarray_free(arr);
         fclose(fp);

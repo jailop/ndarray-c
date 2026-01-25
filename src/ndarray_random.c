@@ -193,3 +193,23 @@ NDArray ndarray_new_randpoisson(const size_t *dims, double lambda) {
 #endif
     return t;
 }
+
+NDArray ndarray_new_randnorm_typed(const size_t *dims, NDAType dtype, double mean, double stddev) {
+    NDArray t = ndarray_new_typed(dims, dtype);
+    size_t size = ndarray_size(t);
+    
+    if (dtype == NDA_REAL64) {
+        double *data = (double*)t->data;
+        for (size_t i = 0; i < size; ++i) {
+            data[i] = mean + 0.0;  // Simplified for now
+        }
+    } else if (dtype == NDA_COMPLEX64) {
+        double complex *data = (double complex*)t->data;
+        for (size_t i = 0; i < size; ++i) {
+            data[i] = mean + 0.0 * I;  // Simplified for now
+        }
+    }
+    // TODO: Add other types and proper random generation
+    
+    return t;
+}

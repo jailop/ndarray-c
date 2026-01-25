@@ -2,6 +2,7 @@
 #define _NDARRAY_H
 
 #include <stddef.h>
+#include <complex.h>
 
 /**
  * All ndarrays in this library must have ndim >= 2.
@@ -522,6 +523,77 @@ size_t ndarray_get_slice_size(const NDArray arr, int axis);
 void ndarray_print(const NDArray arr, const char *name, int precision);
 
 /**
+ * Print options for complex arrays.
+ */
+typedef enum {
+    NDA_PRINT_DEFAULT = 0,   /**< Default format: a+bi */
+    NDA_PRINT_MAGNITUDE = 1, /**< Print magnitude only */
+    NDA_PRINT_PHASE = 2,     /**< Print phase only */
+    NDA_PRINT_REAL = 3,      /**< Print real part only */
+    NDA_PRINT_IMAG = 4,      /**< Print imaginary part only */
+    NDA_PRINT_POLAR = 5      /**< Print in polar form (r∠θ) */
+} NDAPrintMode;
+
+/**
+ * Pretty-prints an ndarray with complex formatting options.
+ * 
+ * @param arr The ndarray to print.
+ * @param name Optional name to display (can be NULL).
+ * @param precision Number of decimal places (default 4 if < 0).
+ * @param mode Print mode for complex arrays.
+ */
+void ndarray_print_complex(const NDArray arr, const char *name, int precision, NDAPrintMode mode);
+
+/**
+ * Creates a new ndarray containing the real part of a complex array.
+ * 
+ * @param arr The input complex ndarray.
+ * @return New ndarray with real parts, or NULL if input is not complex.
+ */
+NDArray ndarray_new_real_part(const NDArray arr);
+
+/**
+ * Creates a new ndarray containing the imaginary part of a complex array.
+ * 
+ * @param arr The input complex ndarray.
+ * @return New ndarray with imaginary parts, or NULL if input is not complex.
+ */
+NDArray ndarray_new_imag_part(const NDArray arr);
+
+/**
+ * Creates a new ndarray containing the complex conjugate of a complex array.
+ * 
+ * @param arr The input complex ndarray.
+ * @return New ndarray with conjugates, or NULL if input is not complex.
+ */
+NDArray ndarray_new_conjugate(const NDArray arr);
+
+/**
+ * Creates a new ndarray containing the magnitude of a complex array.
+ * 
+ * @param arr The input complex ndarray.
+ * @return New ndarray with magnitudes, or NULL if input is not complex.
+ */
+NDArray ndarray_new_magnitude(const NDArray arr);
+
+/**
+ * Creates a new ndarray containing the phase of a complex array.
+ * 
+ * @param arr The input complex ndarray.
+ * @return New ndarray with phases in radians, or NULL if input is not complex.
+ */
+NDArray ndarray_new_phase(const NDArray arr);
+
+/**
+ * Converts an ndarray to a different data type.
+ * 
+ * @param arr The input ndarray.
+ * @param target_type The target data type.
+ * @return New ndarray with converted data, or NULL if conversion fails.
+ */
+NDArray ndarray_convert_type(const NDArray arr, NDAType target_type);
+
+/**
  * Creates a copy of the given ndarray.
  * 
  * Allocates a new ndarray with the same dimensions and copies all data.
@@ -635,6 +707,22 @@ NDArray ndarray_new_from_data(const size_t *dims, const double *data);
 NDArray ndarray_new_ones(const size_t *dims);
 
 /**
+ * Creates a new ndarray filled with ones.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param dtype Data type for the array (NDAType).
+ * @return A handle to the newly created ndarray filled with ones.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_ones_typed(NDA_DIMS(3, 4), NDA_REAL32);
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray ndarray_new_ones_typed(const size_t *dims, NDAType dtype);
+
+/**
  * Creates a new ndarray filled with the specified value.
  * 
  * @param dims Array of dimensions, ending with 0.
@@ -649,6 +737,25 @@ NDArray ndarray_new_ones(const size_t *dims);
  * ```
  */
 NDArray ndarray_new_full(const size_t *dims, double value);
+
+/**
+ * Creates a new ndarray filled with the specified value.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param dtype Data type for the array (NDAType).
+ * @param value Pointer to the value to fill the ndarray with (must match dtype).
+ * @return A handle to the newly created ndarray filled with the specified value.
+ * 
+ * Example:
+ * 
+ * ```c
+ * // Complex array filled with 3+4i
+ * double complex val = 3.0 + 4.0*I;
+ * NDArray arr = ndarray_new_full_typed(NDA_DIMS(3, 4), NDA_COMPLEX64, &val);
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray ndarray_new_full_typed(const size_t *dims, NDAType dtype, const void *value);
 
 /**
  * Creates a new ndarray with values in the range [start, stop) with the given step.
@@ -673,6 +780,27 @@ NDArray ndarray_new_arange(const size_t *dims, double start, double stop,
         double step);
 
 /**
+ * Creates a new ndarray with values in the range [start, stop) with the given step.
+ * 
+ * Values are generated sequentially and filled in row-major order.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param dtype Data type for the array (NDAType).
+ * @param start The starting value of the sequence.
+ * @param stop The ending value of the sequence (exclusive).
+ * @param step The step size between values.
+ * @return A handle to the newly created ndarray with the specified range of values.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_arange_typed(NDA_DIMS(2, 5), NDA_REAL32, 0.0, 10.0, 1.0);
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray ndarray_new_arange_typed(const size_t *dims, NDAType dtype, double start, double stop, double step);
+
+/**
  * Creates a new ndarray with linearly spaced values between start and stop.
  * 
  * Values are evenly distributed and filled in row-major order.
@@ -693,6 +821,147 @@ NDArray ndarray_new_arange(const size_t *dims, double start, double stop,
  */
 NDArray ndarray_new_linspace(const size_t *dims, double start, double stop,
         size_t num);
+
+/**
+ * Creates a new ndarray with linearly spaced values between start and stop.
+ * 
+ * Values are evenly distributed and filled in row-major order.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param dtype Data type for the array (NDAType).
+ * @param start The starting value of the sequence.
+ * @param stop The ending value of the sequence (inclusive).
+ * @param num The number of values to generate.
+ * @return A handle to the newly created ndarray with linearly spaced values.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_linspace_typed(NDA_DIMS(2, 5), NDA_COMPLEX64, 0.0, 1.0, 10);
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray ndarray_new_linspace_typed(const size_t *dims, NDAType dtype, double start, double stop, size_t num);
+
+/**
+ * Creates a new ndarray with double precision complex numbers.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @return A handle to the newly created ndarray with NDA_COMPLEX64 type.
+ */
+NDArray ndarray_new_complex64(const size_t *dims);
+
+/**
+ * Creates a new ndarray with single precision complex numbers.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @return A handle to the newly created ndarray with NDA_COMPLEX32 type.
+ */
+NDArray ndarray_new_complex32(const size_t *dims);
+
+/**
+ * Creates a new ndarray filled with complex zeros.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @return A handle to the newly created ndarray filled with 0+0i.
+ */
+NDArray ndarray_new_zeros_complex64(const size_t *dims);
+
+/**
+ * Creates a new ndarray filled with single precision complex zeros.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @return A handle to the newly created ndarray filled with 0+0i.
+ */
+NDArray ndarray_new_zeros_complex32(const size_t *dims);
+
+/**
+ * Creates a new ndarray from double precision complex data.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param data Pointer to the complex data array to copy.
+ * @return A handle to the newly created ndarray.
+ */
+NDArray ndarray_new_from_complex64(const size_t *dims, const void *data);
+
+/**
+ * Creates a new ndarray from single precision complex data.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param data Pointer to the complex data array to copy.
+ * @return A handle to the newly created ndarray.
+ */
+NDArray ndarray_new_from_complex32(const size_t *dims, const void *data);
+
+/**
+ * Creates a new ndarray filled with the specified complex value.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param value The complex value to fill the ndarray with.
+ * @return A handle to the newly created ndarray.
+ */
+NDArray ndarray_new_full_complex64(const size_t *dims, const void *value);
+
+/**
+ * Creates a new ndarray filled with the specified single precision complex value.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param value The complex value to fill the ndarray with.
+ * @return A handle to the newly created ndarray.
+ */
+NDArray ndarray_new_full_complex32(const size_t *dims, const void *value);
+
+/**
+ * Creates a complex64 array from separate real and imaginary parts.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param real Array of real parts (same size as target array).
+ * @param imag Array of imaginary parts (same size as target array).
+ * @return A handle to the newly created complex ndarray.
+ */
+NDArray ndarray_new_complex64_from_parts(const size_t *dims, const double *real, const double *imag);
+
+/**
+ * Creates a complex32 array from separate real and imaginary parts.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param real Array of real parts (same size as target array).
+ * @param imag Array of imaginary parts (same size as target array).
+ * @return A handle to the newly created complex ndarray.
+ */
+NDArray ndarray_new_complex32_from_parts(const size_t *dims, const float *real, const float *imag);
+
+/**
+ * Creates a complex64 array from polar coordinates.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param r Array of magnitudes (same size as target array).
+ * @param theta Array of angles in radians (same size as target array).
+ * @return A handle to the newly created complex ndarray.
+ */
+NDArray ndarray_new_complex64_from_polar(const size_t *dims, const double *r, const double *theta);
+
+/**
+ * Creates a complex32 array from polar coordinates.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param r Array of magnitudes (same size as target array).
+ * @param theta Array of angles in radians (same size as target array).
+ * @return A handle to the newly created complex ndarray.
+ */
+NDArray ndarray_new_complex32_from_polar(const size_t *dims, const float *r, const float *theta);
+
+// Convenience functions for type-specific array creation
+NDArray ndarray_new_zeros_real32(const size_t *dims);
+NDArray ndarray_new_zeros_real64(const size_t *dims);
+NDArray ndarray_new_ones_real32(const size_t *dims);
+NDArray ndarray_new_ones_real64(const size_t *dims);
+NDArray ndarray_new_full_real32(const size_t *dims, float value);
+NDArray ndarray_new_full_real64(const size_t *dims, double value);
+NDArray ndarray_new_arange_real32(const size_t *dims, float start, float stop, float step);
+NDArray ndarray_new_arange_real64(const size_t *dims, double start, double stop, double step);
+NDArray ndarray_new_linspace_real32(const size_t *dims, float start, float stop, size_t num);
+NDArray ndarray_new_linspace_real64(const size_t *dims, double start, double stop, size_t num);
 
 /**
  * Creates a new ndarray with random values normally distributed.
@@ -756,6 +1025,28 @@ NDArray ndarray_new_randunif(const size_t *dims, double low, double high);
  * ```
  */
 NDArray ndarray_new_randpoisson(const size_t *dims, double lambda);
+
+/**
+ * Creates a new ndarray with random values normally distributed with specified type.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param dtype Data type for the array (NDAType).
+ * @param mean The mean of the normal distribution.
+ * @param stddev The standard deviation of the normal distribution.
+ * @return A handle to the newly created ndarray with random values.
+ */
+NDArray ndarray_new_randnorm_typed(const size_t *dims, NDAType dtype, double mean, double stddev);
+
+/**
+ * Creates a new ndarray with random values uniformly distributed with specified type.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param dtype Data type for the array (NDAType).
+ * @param low The lower bound of the uniform distribution (inclusive).
+ * @param high The upper bound of the uniform distribution (exclusive).
+ * @return A handle to the newly created ndarray with random values.
+ */
+NDArray ndarray_new_randunif_typed(const size_t *dims, NDAType dtype, double low, double high);
 
 /**
  * Adds two ndarrays element-wise.
@@ -1841,7 +2132,15 @@ double ndarray_scalar_aggr(const NDArray A, int aggr_type);
  * Saves an ndarray to a binary file.
  * 
  * Creates a binary file with a custom format including magic number,
- * version, dimensions, and data in row-major order.
+ * version, dimensions, data type, and data in row-major order.
+ *
+ * File format:
+ * - Magic number (4 bytes): "NDAR" 
+ * - Version (4 bytes): Currently 2
+ * - Number of dimensions (8 bytes)
+ * - Dimension sizes (8 bytes each)
+ * - Data type (4 bytes): NDAType enum value
+ * - Data (variable length): All elements in row-major order
  *
  * @param arr The ndarray to save.
  * @param filename Path to the output file (use .bin extension).
@@ -1862,12 +2161,20 @@ int ndarray_save(const NDArray arr, const char *filename);
 /**
  * Loads an ndarray from a binary file.
  * 
- * Reads the file format created by ndarray_save().
- * Returns NULL if the file cannot be read or is corrupted.
+ * Reads file format created by ndarray_save().
+ * Returns NULL if file cannot be read or is corrupted.
+ *
+ * File format:
+ * - Magic number (4 bytes): "NDAR" 
+ * - Version (4 bytes): Currently 2
+ * - Number of dimensions (8 bytes)
+ * - Dimension sizes (8 bytes each)
+ * - Data type (4 bytes): NDAType enum value
+ * - Data (variable length): All elements in row-major order
  *
  * @param filename Path to the input file (.bin extension).
  * @return A newly allocated ndarray, or NULL on error.
- *
+ * 
  * Example:
  * 
  * ```c
