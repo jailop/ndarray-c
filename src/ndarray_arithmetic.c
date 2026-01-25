@@ -4,9 +4,9 @@
 
 #include "ndarray_internal.h"
 
-// Forward declarations for BLAS dispatch helpers
-void ndarray_blas_axpy(size_t n, double alpha, const NDArray X, const NDArray Y, NDArray result);
-void ndarray_blas_scal(size_t n, double alpha, const NDArray X);
+// Forward declarations for BLAS dispatch helpers (TODO: Implement in Phase 2)
+// void ndarray_blas_axpy(size_t n, double alpha, const NDArray X, const NDArray Y, NDArray result);
+// void ndarray_blas_scal(size_t n, double alpha, const NDArray X);
 
 NDArray ndarray_add(const NDArray A, const NDArray B) {
     assert(A != NULL && B != NULL && "ndarrays cannot be NULL");
