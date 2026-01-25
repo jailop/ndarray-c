@@ -84,7 +84,6 @@ clean:
 	rm -f $(EXAMPLES) ndarray_test $(OBJ) $(OBJ_SHARED) $(TEST_OBJECTS)
 	rm -f $(LIB_STATIC) $(LIB_SHARED) $(LIB_SHARED_MAJOR) $(LIB_SHARED_BASE)
 	rm -f benchmark_seq benchmark_omp benchmark_*.txt
-	rm -rf docs
 
 
 $(LIB_STATIC): $(OBJ)
