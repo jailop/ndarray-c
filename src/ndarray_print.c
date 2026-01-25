@@ -101,7 +101,7 @@ void ndarray_print(NDArray arr, const char *name, int precision) {
         for (size_t i = 0; i < rows; ++i) {
             if (truncate_rows && i == show_rows_head) {
                 if (i > 0) printf(" ");
-                printf("...\n");
+                printf("\n...\n");
                 i = rows - show_rows_tail - 1;
                 continue;
             }

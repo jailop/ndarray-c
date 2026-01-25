@@ -1,5 +1,5 @@
 LIB_NAME = ndarray
-VERSION = 0.3.1
+VERSION = 0.4.0
 LIB_STATIC = lib$(LIB_NAME).a
 LIB_SHARED = lib$(LIB_NAME).so.$(VERSION)
 LIB_SHARED_MAJOR = lib$(LIB_NAME).so.1
@@ -22,14 +22,16 @@ EXAMPLEDIR = examples
 
 SRCS = $(wildcard $(SRCDIR)/*.c)
 TEST_SOURCES = $(filter-out $(TESTDIR)/test_ndarray.c, $(wildcard $(TESTDIR)/*.c))
+EXAMPLE_SOURCES = $(wildcard $(EXAMPLEDIR)/*.c)
 
 OBJ = $(SRCS:.c=.o)
 OBJ_SHARED = $(SRCS:.c=_shared.o)
 TEST_OBJECTS = $(TEST_SOURCES:.c=.o)
+EXAMPLES = $(EXAMPLE_SOURCES:$(EXAMPLEDIR)/%.c=%)
 
-.PHONY: all clean test benchmark install uninstall lib static shared docs
+.PHONY: all clean test benchmark install uninstall lib static shared docs examples
 
-all: example
+all: examples
 
 lib: static shared
 
@@ -42,6 +44,11 @@ test: ndarray_test
 
 benchmark:
 	@$(BENCHDIR)/run_benchmark.sh
+
+examples: $(EXAMPLES)
+
+$(EXAMPLES): %: $(EXAMPLEDIR)/%.c $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $< $(OBJ) $(LDFLAGS)
 
 docs:
 	@echo "Generating C documentation with Doxygen..."
@@ -74,10 +81,9 @@ uninstall:
 	rm -f $(DESTDIR)$(INCLUDEDIR)/ndarray.h
 
 clean:
-	rm -f example ndarray_test $(OBJ) $(OBJ_SHARED) $(TEST_OBJECTS)
+	rm -f $(EXAMPLES) ndarray_test $(OBJ) $(OBJ_SHARED) $(TEST_OBJECTS)
 	rm -f $(LIB_STATIC) $(LIB_SHARED) $(LIB_SHARED_MAJOR) $(LIB_SHARED_BASE)
 	rm -f benchmark_seq benchmark_omp benchmark_*.txt
-	rm -rf docs
 
 
 $(LIB_STATIC): $(OBJ)
@@ -96,8 +102,9 @@ $(SRCDIR)/%_shared.o: $(SRCDIR)/%.c
 $(TESTDIR)/%.o: $(TESTDIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@ -I$(SRCDIR)
 
-example: $(OBJ) $(EXAMPLEDIR)/example.c
-	$(CC) $(CFLAGS) -o $@ $(EXAMPLEDIR)/example.c $(OBJ) $(LDFLAGS)
+
+
+
 
 ndarray_test: $(TEST_OBJECTS) $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lcunit

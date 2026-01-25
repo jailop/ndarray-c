@@ -58,18 +58,6 @@ NDArray ndarray_mul_scalar(const NDArray A, double scalar) {
     return A;
 }
 
-NDArray ndarray_mapfnc(const NDArray A, double (*func)(double)) {
-    assert(A != NULL && "ndarray cannot be NULL");
-    assert(A->ndim >= 2 && "ndarray must have at least 2 dimensions");
-    assert(func != NULL && "function pointer cannot be NULL");
-    size_t size = ndarray_size(A);
-    OMP_PRAGMA(omp parallel for)
-    for (size_t i = 0; i < size; ++i) {
-        A->data[i] = func(A->data[i]);
-    }
-    return A;
-}
-
 NDArray ndarray_axpby(const NDArray A, double alpha, const NDArray B,
         double beta) {
     assert(A != NULL && B != NULL && "ndarrays cannot be NULL");

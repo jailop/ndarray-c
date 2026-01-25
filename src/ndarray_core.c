@@ -78,7 +78,7 @@ NDArray ndarray_new_copy(const NDArray t) {
     return copy;
 }
 
-void ndarray_set_slice(const NDArray arr, int axis, size_t index, 
+NDArray ndarray_set_slice(const NDArray arr, int axis, size_t index, 
         const double* values) {
     assert(arr != NULL && "ndarray cannot be NULL");
     assert(values != NULL && "values cannot be NULL");
@@ -116,9 +116,10 @@ void ndarray_set_slice(const NDArray arr, int axis, size_t index,
                    after_axis_size * sizeof(double));
         }
     }
+    return arr;
 }
 
-void ndarray_fill_slice(const NDArray arr, int axis, size_t index, double value) {
+NDArray ndarray_fill_slice(const NDArray arr, int axis, size_t index, double value) {
     assert(arr != NULL && "ndarray cannot be NULL");
     assert(axis >= 0 && axis < (int)arr->ndim && "axis out of range");
     assert(index < arr->dims[axis] && "index exceeds dimension size");
@@ -156,6 +157,7 @@ void ndarray_fill_slice(const NDArray arr, int axis, size_t index, double value)
             }
         }
     }
+    return arr;
 }
 
 double* ndarray_get_slice_ptr(const NDArray arr, int axis, size_t index) {
