@@ -11,6 +11,7 @@ const c_source_files = &[_][]const u8{
     "src/ndarray_io.c",
     "src/ndarray_comparison.c",
     "src/ndarray_random.c",
+    "src/ndarray_math.c",
 };
 
 const c_flags = &[_][]const u8{
@@ -101,32 +102,32 @@ fn buildBenchmark(b: *std.Build, name: []const u8, with_openmp: bool, target: st
             .optimize = optimize,
         }),
     });
-    
+
     const bench_flags_base = &[_][]const u8{
         "-std=c99",
         "-O3",
         "-march=native",
     };
-    
+
     const bench_flags_omp = &[_][]const u8{
         "-std=c99",
         "-O3",
         "-march=native",
         "-fopenmp",
     };
-    
+
     const flags = if (with_openmp) bench_flags_omp else bench_flags_base;
-    
+
     bench.addCSourceFile(.{
         .file = b.path("benchmarks/benchmark.c"),
         .flags = flags,
     });
-    
+
     bench.addCSourceFiles(.{
         .files = c_source_files,
         .flags = flags,
     });
-    
+
     bench.addIncludePath(.{ .cwd_relative = "src" });
     bench.linkLibC();
     addHomebrewPaths(bench, b, homebrew_prefix);
@@ -159,6 +160,9 @@ pub fn build(b: *std.Build) void {
     const extended = createExecutable(b, "extended", "examples/extended.zig", target, optimize, ndarray_module, homebrew_prefix);
     addRunStep(b, extended, "run-extended", "Run the extended example");
 
+    const gbmpaths = createExecutable(b, "gbmpaths_zig", "examples/gbmpaths.zig", target, optimize, ndarray_module, homebrew_prefix);
+    addRunStep(b, gbmpaths, "run-gbm", "Run the GBM paths simulation example");
+
     // Test executable (Zig tests)
     const zig_tests = b.addTest(.{
         .name = "ndarray-zig-tests",
@@ -182,7 +186,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
-    
+
     // Add all test source files
     const test_files = &[_][]const u8{
         "tests/test_main.c",
@@ -204,7 +208,7 @@ pub fn build(b: *std.Build) void {
         "tests/test_randquality.c",
         "tests/test_chaining.c",
     };
-    
+
     c_test.addCSourceFiles(.{
         .files = test_files,
         .flags = c_flags,
@@ -223,22 +227,22 @@ pub fn build(b: *std.Build) void {
 
     const bench_seq = buildBenchmark(b, "benchmark_seq", false, target, optimize, homebrew_prefix);
     const bench_omp = buildBenchmark(b, "benchmark_omp", true, target, optimize, homebrew_prefix);
-    
+
     const bench_step = b.step("bench", "Build benchmark executables");
     bench_step.dependOn(&bench_seq.step);
     bench_step.dependOn(&bench_omp.step);
-    
+
     const run_bench_seq = b.addRunArtifact(bench_seq);
     const run_bench_seq_step = b.step("run-bench-seq", "Run sequential benchmark");
     run_bench_seq_step.dependOn(&run_bench_seq.step);
-    
+
     const run_bench_omp = b.addRunArtifact(bench_omp);
     const run_bench_omp_step = b.step("run-bench-omp", "Run OpenMP benchmark");
     run_bench_omp_step.dependOn(&run_bench_omp.step);
 
     const static_lib = buildLibrary(b, "ndarray", target, optimize, .static, null, homebrew_prefix);
-    const dynamic_lib = buildLibrary(b, "ndarray-dynamic", target, optimize, .dynamic, .{ .major = 1, .minor = 0, .patch = 0 }, homebrew_prefix);
-    
+    const dynamic_lib = buildLibrary(b, "ndarray-dynamic", target, optimize, .dynamic, .{ .major = 0, .minor = 4, .patch = 0 }, homebrew_prefix);
+
     _ = static_lib;
     _ = dynamic_lib;
 

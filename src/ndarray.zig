@@ -20,7 +20,7 @@ fn zigDimsToCDims(dims: []const usize) ![*]usize {
 }
 
 /// Aggregation types for reduction operations.
-/// 
+///
 /// Used with `initAggregate` and `scalarAggregate` methods.
 pub const AggrType = enum(c_int) {
     /// Sum of elements
@@ -36,25 +36,25 @@ pub const AggrType = enum(c_int) {
 };
 
 /// Multi-dimensional array of doubles with N-dimensional support.
-/// 
+///
 /// This is a wrapper around the C ndarray library that provides
 /// a Zig-friendly interface. All arrays must have at least 2 dimensions.
-/// 
+///
 /// Memory management: Call `deinit()` when done to free allocated memory.
 pub const NDArray = struct {
     /// Pointer to the underlying C ndarray structure
     ptr: c.NDArray,
 
     /// Creates a new ndarray with specified dimensions.
-    /// 
-    /// All elements are uninitialized. Use `initZeros`, `initOnes`, or 
+    ///
+    /// All elements are uninitialized. Use `initZeros`, `initOnes`, or
     /// `initFull` for initialized arrays.
-    /// 
+    ///
     /// **Parameters:**
     /// - `dims`: Slice of dimension sizes (must have at least 2 elements)
-    /// 
+    ///
     /// **Returns:** NDArray or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.init(&.{3, 4});
@@ -70,9 +70,9 @@ pub const NDArray = struct {
     }
 
     /// Frees the memory allocated for the ndarray.
-    /// 
+    ///
     /// Must be called when done using the array to prevent memory leaks.
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.init(&.{3, 4});
@@ -83,12 +83,12 @@ pub const NDArray = struct {
     }
 
     /// Creates a new ndarray filled with zeros.
-    /// 
+    ///
     /// **Parameters:**
     /// - `dims`: Slice of dimension sizes (must have at least 2 elements)
-    /// 
+    ///
     /// **Returns:** NDArray filled with 0.0 or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initZeros(&.{3, 4});
@@ -104,12 +104,12 @@ pub const NDArray = struct {
     }
 
     /// Creates a new ndarray filled with ones.
-    /// 
+    ///
     /// **Parameters:**
     /// - `dims`: Slice of dimension sizes (must have at least 2 elements)
-    /// 
+    ///
     /// **Returns:** NDArray filled with 1.0 or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initOnes(&.{3, 4});
@@ -125,13 +125,13 @@ pub const NDArray = struct {
     }
 
     /// Creates a new ndarray filled with a specific value.
-    /// 
+    ///
     /// **Parameters:**
     /// - `dims`: Slice of dimension sizes (must have at least 2 elements)
     /// - `value`: The value to fill all elements with
-    /// 
+    ///
     /// **Returns:** NDArray filled with specified value or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initFull(&.{3, 4}, 5.0);
@@ -147,15 +147,15 @@ pub const NDArray = struct {
     }
 
     /// Creates a new ndarray from existing data.
-    /// 
+    ///
     /// The data is copied into the new array.
-    /// 
+    ///
     /// **Parameters:**
     /// - `dims`: Slice of dimension sizes (must have at least 2 elements)
     /// - `data`: Slice of f64 values (size must match product of dimensions)
-    /// 
+    ///
     /// **Returns:** NDArray containing copied data or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const data = [_]f64{1.0, 2.0, 3.0, 4.0};
@@ -172,16 +172,16 @@ pub const NDArray = struct {
     }
 
     /// Creates a new ndarray with random uniform values.
-    /// 
+    ///
     /// Values are uniformly distributed between low (inclusive) and high (exclusive).
-    /// 
+    ///
     /// **Parameters:**
     /// - `dims`: Slice of dimension sizes (must have at least 2 elements)
     /// - `low`: Lower bound (inclusive)
     /// - `high`: Upper bound (exclusive)
-    /// 
+    ///
     /// **Returns:** NDArray with random uniform values or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initRandomUniform(&.{3, 4}, 0.0, 1.0);
@@ -197,16 +197,16 @@ pub const NDArray = struct {
     }
 
     /// Creates a new ndarray with random normal values.
-    /// 
+    ///
     /// Values follow a Gaussian distribution with specified mean and standard deviation.
-    /// 
+    ///
     /// **Parameters:**
     /// - `dims`: Slice of dimension sizes (must have at least 2 elements)
     /// - `mean`: Mean of the distribution
     /// - `stddev`: Standard deviation of the distribution
-    /// 
+    ///
     /// **Returns:** NDArray with random normal values or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initRandomNormal(&.{3, 4}, 0.0, 1.0);
@@ -246,18 +246,18 @@ pub const NDArray = struct {
     }
 
     /// Creates a new ndarray with evenly spaced values in a range.
-    /// 
+    ///
     /// Values are generated sequentially: start, start+step, start+2*step, ...
     /// and filled in row-major order.
-    /// 
+    ///
     /// **Parameters:**
     /// - `dims`: Slice of dimension sizes (must have at least 2 elements)
     /// - `start`: Starting value (inclusive)
     /// - `stop`: Ending value (exclusive)
     /// - `step`: Step size between values
-    /// 
+    ///
     /// **Returns:** NDArray with evenly spaced values or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initArange(&.{2, 5}, 0.0, 10.0, 1.0);
@@ -273,17 +273,17 @@ pub const NDArray = struct {
     }
 
     /// Creates a new ndarray with linearly spaced values.
-    /// 
+    ///
     /// Values are evenly distributed between start and stop (both inclusive).
-    /// 
+    ///
     /// **Parameters:**
     /// - `dims`: Slice of dimension sizes (must have at least 2 elements)
     /// - `start`: Starting value (inclusive)
     /// - `stop`: Ending value (inclusive)
     /// - `num`: Number of values to generate
-    /// 
+    ///
     /// **Returns:** NDArray with linearly spaced values or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initLinspace(&.{2, 5}, 0.0, 1.0, 10);
@@ -299,11 +299,11 @@ pub const NDArray = struct {
     }
 
     /// Creates a copy of the array.
-    /// 
+    ///
     /// Allocates a new array with the same dimensions and copies all data.
-    /// 
+    ///
     /// **Returns:** New NDArray with copied data or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initOnes(&.{3, 4});
@@ -318,12 +318,12 @@ pub const NDArray = struct {
     }
 
     /// Gets the value at the specified position.
-    /// 
+    ///
     /// **Parameters:**
     /// - `pos`: Slice of indices for each dimension
-    /// 
+    ///
     /// **Returns:** The value at the specified position
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initOnes(&.{3, 4});
@@ -337,11 +337,11 @@ pub const NDArray = struct {
     }
 
     /// Sets the value at the specified position.
-    /// 
+    ///
     /// **Parameters:**
     /// - `pos`: Slice of indices for each dimension
     /// - `value`: The value to set
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.init(&.{3, 4});
@@ -355,16 +355,16 @@ pub const NDArray = struct {
     }
 
     /// Sets values along a slice at a specific index on an axis.
-    /// 
+    ///
     /// For 2D: axis=0 sets a row, axis=1 sets a column.
     /// For higher dimensions: sets the hyperplane perpendicular to the axis.
     /// Returns self for method chaining.
-    /// 
+    ///
     /// **Parameters:**
     /// - `axis`: The axis along which to set the slice
     /// - `index`: The index along the axis
     /// - `values`: Slice of values to set (size must match slice size)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.init(&.{3, 4});
@@ -378,16 +378,16 @@ pub const NDArray = struct {
     }
 
     /// Fills a slice with a scalar value at a specific index on an axis.
-    /// 
+    ///
     /// For 2D: axis=0 fills a row, axis=1 fills a column.
     /// For higher dimensions: fills the hyperplane perpendicular to the axis.
     /// Returns self for method chaining.
-    /// 
+    ///
     /// **Parameters:**
     /// - `axis`: The axis along which to fill the slice
     /// - `index`: The index along the axis
     /// - `value`: The scalar value to fill with
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.init(&.{3, 4});
@@ -400,13 +400,13 @@ pub const NDArray = struct {
     }
 
     /// Prints the array to stdout.
-    /// 
+    ///
     /// Automatically formats output based on dimensionality.
-    /// 
+    ///
     /// **Parameters:**
     /// - `name`: Optional name to display (null for no name)
     /// - `precision`: Number of decimal places
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initOnes(&.{3, 4});
@@ -419,15 +419,15 @@ pub const NDArray = struct {
     }
 
     /// Performs element-wise addition (modifies self in place).
-    /// 
+    ///
     /// Computes self = self + other.
     /// Arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `other`: The array to add
-    /// 
+    ///
     /// **Returns:** self (for method chaining)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var a = try NDArray.initOnes(&.{3, 4});
@@ -442,15 +442,15 @@ pub const NDArray = struct {
     }
 
     /// Performs element-wise multiplication (modifies self in place).
-    /// 
+    ///
     /// Computes self = self * other.
     /// Arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `other`: The array to multiply with
-    /// 
+    ///
     /// **Returns:** self (for method chaining)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var a = try NDArray.initFull(&.{3, 4}, 3.0);
@@ -465,14 +465,14 @@ pub const NDArray = struct {
     }
 
     /// Adds a scalar to all elements (modifies self in place).
-    /// 
+    ///
     /// Computes self = self + scalar.
-    /// 
+    ///
     /// **Parameters:**
     /// - `scalar`: The value to add to each element
-    /// 
+    ///
     /// **Returns:** self (for method chaining)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var arr = try NDArray.initOnes(&.{3, 4});
@@ -485,14 +485,14 @@ pub const NDArray = struct {
     }
 
     /// Multiplies all elements by a scalar (modifies self in place).
-    /// 
+    ///
     /// Computes self = self * scalar.
-    /// 
+    ///
     /// **Parameters:**
     /// - `scalar`: The value to multiply each element by
-    /// 
+    ///
     /// **Returns:** self (for method chaining)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var arr = try NDArray.initFull(&.{3, 4}, 2.0);
@@ -505,17 +505,17 @@ pub const NDArray = struct {
     }
 
     /// Linear combination: self = alpha*self + beta*other.
-    /// 
+    ///
     /// Computes a scaled linear combination and stores result in self.
     /// Arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `alpha`: Scaling factor for self
     /// - `other`: The second array
     /// - `beta`: Scaling factor for other
-    /// 
+    ///
     /// **Returns:** self (for method chaining)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var a = try NDArray.initOnes(&.{3, 4});
@@ -530,15 +530,15 @@ pub const NDArray = struct {
     }
 
     /// Scale and shift: self = alpha*self + beta.
-    /// 
+    ///
     /// Efficiently computes an affine transformation.
-    /// 
+    ///
     /// **Parameters:**
     /// - `alpha`: Scaling factor
     /// - `beta`: Shift value
-    /// 
+    ///
     /// **Returns:** self (for method chaining)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var arr = try NDArray.initOnes(&.{3, 4});
@@ -551,16 +551,16 @@ pub const NDArray = struct {
     }
 
     /// Element-wise multiply then scale: self = self * other * scalar.
-    /// 
+    ///
     /// Computes element-wise product then scales.
     /// Arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `other`: The array to multiply with
     /// - `scalar`: Scaling factor
-    /// 
+    ///
     /// **Returns:** self (for method chaining)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var a = try NDArray.initFull(&.{3, 4}, 2.0);
@@ -575,20 +575,20 @@ pub const NDArray = struct {
     }
 
     /// Applies a function to each element in place.
-    /// 
+    ///
     /// Computes self = func(self).
     /// Function must have C calling convention.
-    /// 
+    ///
     /// **Parameters:**
     /// - `func`: Function pointer with signature `fn(f64) f64`
-    /// 
+    ///
     /// **Returns:** self (for method chaining)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const std = @import("std");
     /// fn square(x: f64) callconv(.c) f64 { return x * x; }
-    /// 
+    ///
     /// var arr = try NDArray.initFull(&.{3, 4}, 2.0);
     /// defer arr.deinit();
     /// _ = arr.mapFn(square); // All elements become 4.0
@@ -598,21 +598,276 @@ pub const NDArray = struct {
         return self;
     }
 
+    /// Applies a binary function to each element with a value in place.
+    ///
+    /// Computes self = func(self, v) for each element.
+    /// Function must have C calling convention.
+    ///
+    /// **Parameters:**
+    /// - `func`: Function pointer with signature `fn(f64, f64) f64`
+    /// - `v`: Second argument to pass to the function
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// fn addValue(x: f64, v: f64) callconv(.c) f64 { return x + v; }
+    ///
+    /// var arr = try NDArray.initFull(&.{3, 4}, 2.0);
+    /// defer arr.deinit();
+    /// _ = arr.mapFnPar(addValue, 3.0); // All elements become 5.0
+    /// ```
+    pub fn mapFnPar(self: NDArray, func: *const fn (f64, f64) callconv(.c) f64, v: f64) NDArray {
+        _ = c.ndarray_mapfnc_par(self.ptr, func, v);
+        return self;
+    }
+
+    /// Applies exponential function to each element in place.
+    ///
+    /// Computes self = exp(self) element-wise.
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, 1.0);
+    /// defer arr.deinit();
+    /// _ = arr.exp(); // All elements become e^1 = 2.718...
+    /// ```
+    pub fn exp(self: NDArray) NDArray {
+        _ = c.ndarray_exp(self.ptr);
+        return self;
+    }
+
+    /// Applies natural logarithm to each element in place.
+    ///
+    /// Computes self = log(self) element-wise.
+    /// Elements must be positive.
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, std.math.e);
+    /// defer arr.deinit();
+    /// _ = arr.log(); // All elements become 1.0
+    /// ```
+    pub fn log(self: NDArray) NDArray {
+        _ = c.ndarray_log(self.ptr);
+        return self;
+    }
+
+    /// Applies square root to each element in place.
+    ///
+    /// Computes self = sqrt(self) element-wise.
+    /// Elements must be non-negative.
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, 4.0);
+    /// defer arr.deinit();
+    /// _ = arr.sqrt(); // All elements become 2.0
+    /// ```
+    pub fn sqrt(self: NDArray) NDArray {
+        _ = c.ndarray_sqrt(self.ptr);
+        return self;
+    }
+
+    /// Applies sine to each element in place.
+    ///
+    /// Computes self = sin(self) element-wise.
+    /// Input is in radians.
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, std.math.pi / 2);
+    /// defer arr.deinit();
+    /// _ = arr.sin(); // All elements become 1.0
+    /// ```
+    pub fn sin(self: NDArray) NDArray {
+        _ = c.ndarray_sin(self.ptr);
+        return self;
+    }
+
+    /// Applies cosine to each element in place.
+    ///
+    /// Computes self = cos(self) element-wise.
+    /// Input is in radians.
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, 0.0);
+    /// defer arr.deinit();
+    /// _ = arr.cos(); // All elements become 1.0
+    /// ```
+    pub fn cos(self: NDArray) NDArray {
+        _ = c.ndarray_cos(self.ptr);
+        return self;
+    }
+
+    /// Applies tangent to each element in place.
+    ///
+    /// Computes self = tan(self) element-wise.
+    /// Input is in radians.
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, std.math.pi / 4);
+    /// defer arr.deinit();
+    /// _ = arr.tan(); // All elements become 1.0
+    /// ```
+    pub fn tan(self: NDArray) NDArray {
+        _ = c.ndarray_tan(self.ptr);
+        return self;
+    }
+
+    /// Applies hyperbolic sine to each element in place.
+    ///
+    /// Computes self = sinh(self) element-wise.
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, 1.0);
+    /// defer arr.deinit();
+    /// _ = arr.sinh(); // All elements become sinh(1) ≈ 1.175
+    /// ```
+    pub fn sinh(self: NDArray) NDArray {
+        _ = c.ndarray_sinh(self.ptr);
+        return self;
+    }
+
+    /// Applies hyperbolic cosine to each element in place.
+    ///
+    /// Computes self = cosh(self) element-wise.
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, 0.0);
+    /// defer arr.deinit();
+    /// _ = arr.cosh(); // All elements become 1.0
+    /// ```
+    pub fn cosh(self: NDArray) NDArray {
+        _ = c.ndarray_cosh(self.ptr);
+        return self;
+    }
+
+    /// Applies hyperbolic tangent to each element in place.
+    ///
+    /// Computes self = tanh(self) element-wise.
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, 1.0);
+    /// defer arr.deinit();
+    /// _ = arr.tanh(); // All elements become tanh(1) ≈ 0.762
+    /// ```
+    pub fn tanh(self: NDArray) NDArray {
+        _ = c.ndarray_tanh(self.ptr);
+        return self;
+    }
+
+    /// Applies arc sine to each element in place.
+    ///
+    /// Computes self = asin(self) element-wise.
+    /// Elements must be in range [-1, 1].
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, 1.0);
+    /// defer arr.deinit();
+    /// _ = arr.asin(); // All elements become π/2 ≈ 1.571
+    /// ```
+    pub fn asin(self: NDArray) NDArray {
+        _ = c.ndarray_asin(self.ptr);
+        return self;
+    }
+
+    /// Applies arc cosine to each element in place.
+    ///
+    /// Computes self = acos(self) element-wise.
+    /// Elements must be in range [-1, 1].
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, 1.0);
+    /// defer arr.deinit();
+    /// _ = arr.acos(); // All elements become 0.0
+    /// ```
+    pub fn acos(self: NDArray) NDArray {
+        _ = c.ndarray_acos(self.ptr);
+        return self;
+    }
+
+    /// Applies arc tangent to each element in place.
+    ///
+    /// Computes self = atan(self) element-wise.
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, 1.0);
+    /// defer arr.deinit();
+    /// _ = arr.atan(); // All elements become π/4 ≈ 0.785
+    /// ```
+    pub fn atan(self: NDArray) NDArray {
+        _ = c.ndarray_atan(self.ptr);
+        return self;
+    }
+
+    /// Raises each element to a power in place.
+    ///
+    /// Computes self = self^exponent element-wise.
+    ///
+    /// **Parameters:**
+    /// - `exponent`: The power to raise each element to
+    ///
+    /// **Returns:** self (for method chaining)
+    ///
+    /// **Example:**
+    /// ```zig
+    /// var arr = try NDArray.initFull(&.{3, 4}, 2.0);
+    /// defer arr.deinit();
+    /// _ = arr.pow(3.0); // All elements become 8.0
+    /// ```
+    pub fn pow(self: NDArray, exponent: f64) NDArray {
+        _ = c.ndarray_pow(self.ptr, exponent);
+        return self;
+    }
+
     /// Map function then multiply: self = func(self) * other * alpha.
-    /// 
+    ///
     /// Applies function element-wise to self, then multiplies by other and scales.
     /// Arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `func`: Function pointer with signature `fn(f64) f64`
     /// - `other`: The array to multiply with
     /// - `alpha`: Scaling factor
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const std = @import("std");
     /// fn square(x: f64) callconv(.c) f64 { return x * x; }
-    /// 
+    ///
     /// var a = try NDArray.initFull(&.{3, 4}, 2.0);
     /// defer a.deinit();
     /// const b = try NDArray.initFull(&.{3, 4}, 3.0);
@@ -624,16 +879,16 @@ pub const NDArray = struct {
     }
 
     /// Fused multiply-add: dest = alpha * (self * other) + beta * dest.
-    /// 
+    ///
     /// Element-wise multiply self and other, scale by alpha, add to beta*dest.
     /// All arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `other`: The second source array
     /// - `dest`: The destination array (modified in place)
     /// - `alpha`: Scaling factor for self*other
     /// - `beta`: Scaling factor for existing dest values
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.initFull(&.{3, 4}, 2.0);
@@ -649,16 +904,16 @@ pub const NDArray = struct {
     }
 
     /// Matrix-vector multiply: y = alpha * self * x + beta * y.
-    /// 
+    ///
     /// Computes matrix-vector product using optimized BLAS.
     /// self must be 2D, x and y must be vectors.
-    /// 
+    ///
     /// **Parameters:**
     /// - `x`: Input vector
     /// - `alpha`: Scaling factor for self*x
     /// - `beta`: Scaling factor for existing y values
     /// - `y`: Output vector (modified in place)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.init(&.{3, 4});
@@ -674,14 +929,14 @@ pub const NDArray = struct {
     // }
 
     /// Clips values below minimum threshold (modifies self in place).
-    /// 
+    ///
     /// All elements less than min_val are set to min_val.
-    /// 
+    ///
     /// **Parameters:**
     /// - `min_val`: Minimum value threshold
-    /// 
+    ///
     /// **Returns:** self (for method chaining)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var arr = try NDArray.initRandomUniform(&.{3, 4}, -2.0, 2.0);
@@ -694,14 +949,14 @@ pub const NDArray = struct {
     }
 
     /// Clips values above maximum threshold (modifies self in place).
-    /// 
+    ///
     /// All elements greater than max_val are set to max_val.
-    /// 
+    ///
     /// **Parameters:**
     /// - `max_val`: Maximum value threshold
-    /// 
+    ///
     /// **Returns:** self (for method chaining)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var arr = try NDArray.initRandomUniform(&.{3, 4}, -2.0, 2.0);
@@ -714,13 +969,13 @@ pub const NDArray = struct {
     }
 
     /// Clips values to range [min_val, max_val] (modifies self in place).
-    /// 
+    ///
     /// All elements are constrained to the specified range.
-    /// 
+    ///
     /// **Parameters:**
     /// - `min_val`: Minimum value threshold
     /// - `max_val`: Maximum value threshold
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var arr = try NDArray.initRandomUniform(&.{3, 4}, -2.0, 2.0);
@@ -732,9 +987,9 @@ pub const NDArray = struct {
     }
 
     /// Computes absolute value (modifies self in place).
-    /// 
+    ///
     /// Computes self = |self| element-wise.
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var arr = try NDArray.initRandomUniform(&.{3, 4}, -2.0, 2.0);
@@ -746,9 +1001,9 @@ pub const NDArray = struct {
     }
 
     /// Computes sign function (modifies self in place).
-    /// 
+    ///
     /// Returns -1 for negative values, 0 for zero, +1 for positive values.
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var arr = try NDArray.initRandomUniform(&.{3, 4}, -2.0, 2.0);
@@ -760,15 +1015,15 @@ pub const NDArray = struct {
     }
 
     /// Gets a pointer to a slice along an axis.
-    /// 
+    ///
     /// Returns pointer valid as long as array exists. User must respect bounds.
-    /// 
+    ///
     /// **Parameters:**
     /// - `axis`: The axis along which to get the slice
     /// - `index`: The index along the axis
-    /// 
+    ///
     /// **Returns:** Pointer to the start of the slice data
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.init(&.{3, 4});
@@ -781,17 +1036,17 @@ pub const NDArray = struct {
     }
 
     /// Copies a slice from one array to another.
-    /// 
+    ///
     /// The slice sizes must match.
     /// Returns self (destination) for method chaining.
-    /// 
+    ///
     /// **Parameters:**
     /// - `self_axis`: Axis in destination (self)
     /// - `self_idx`: Index along destination axis
     /// - `src`: Source array
     /// - `src_axis`: Axis in source
     /// - `src_idx`: Index along source axis
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.init(&.{3, 4});
@@ -806,14 +1061,14 @@ pub const NDArray = struct {
     }
 
     /// Gets the size of a slice along an axis.
-    /// 
+    ///
     /// Returns the number of elements in a slice perpendicular to the given axis.
-    /// 
+    ///
     /// **Parameters:**
     /// - `axis`: The axis
-    /// 
+    ///
     /// **Returns:** Number of elements in a slice
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.init(&.{3, 4});
@@ -826,15 +1081,15 @@ pub const NDArray = struct {
     }
 
     /// Creates element-wise equality comparison array.
-    /// 
+    ///
     /// Returns 1.0 where elements are equal, 0.0 otherwise.
     /// Arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `other`: Array to compare with
-    /// 
+    ///
     /// **Returns:** New array with comparison results or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.initOnes(&.{3, 4});
@@ -851,15 +1106,15 @@ pub const NDArray = struct {
     }
 
     /// Creates element-wise less-than comparison array.
-    /// 
+    ///
     /// Returns 1.0 where self < other, 0.0 otherwise.
     /// Arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `other`: Array to compare with
-    /// 
+    ///
     /// **Returns:** New array with comparison results or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.initOnes(&.{3, 4});
@@ -876,15 +1131,15 @@ pub const NDArray = struct {
     }
 
     /// Creates element-wise greater-than comparison array.
-    /// 
+    ///
     /// Returns 1.0 where self > other, 0.0 otherwise.
     /// Arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `other`: Array to compare with
-    /// 
+    ///
     /// **Returns:** New array with comparison results or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.initFull(&.{3, 4}, 2.0);
@@ -901,14 +1156,14 @@ pub const NDArray = struct {
     }
 
     /// Creates scalar equality comparison array.
-    /// 
+    ///
     /// Returns 1.0 where elements equal value, 0.0 otherwise.
-    /// 
+    ///
     /// **Parameters:**
     /// - `value`: Scalar value to compare against
-    /// 
+    ///
     /// **Returns:** New array with comparison results or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initZeros(&.{3, 4});
@@ -923,14 +1178,14 @@ pub const NDArray = struct {
     }
 
     /// Creates scalar less-than comparison array.
-    /// 
+    ///
     /// Returns 1.0 where elements are less than value, 0.0 otherwise.
-    /// 
+    ///
     /// **Parameters:**
     /// - `value`: Scalar value to compare against
-    /// 
+    ///
     /// **Returns:** New array with comparison results or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initRandomUniform(&.{3, 4}, 0.0, 10.0);
@@ -945,14 +1200,14 @@ pub const NDArray = struct {
     }
 
     /// Creates scalar greater-than comparison array.
-    /// 
+    ///
     /// Returns 1.0 where elements are greater than value, 0.0 otherwise.
-    /// 
+    ///
     /// **Parameters:**
     /// - `value`: Scalar value to compare against
-    /// 
+    ///
     /// **Returns:** New array with comparison results or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initRandomUniform(&.{3, 4}, 0.0, 10.0);
@@ -967,15 +1222,15 @@ pub const NDArray = struct {
     }
 
     /// Creates logical AND array.
-    /// 
+    ///
     /// Returns 1.0 where both elements are non-zero, 0.0 otherwise.
     /// Arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `other`: Second array (treated as boolean)
-    /// 
+    ///
     /// **Returns:** New array with logical AND results or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const data = try NDArray.initRandomUniform(&.{3, 4}, 0.0, 10.0);
@@ -994,15 +1249,15 @@ pub const NDArray = struct {
     }
 
     /// Creates logical OR array.
-    /// 
+    ///
     /// Returns 1.0 where at least one element is non-zero, 0.0 otherwise.
     /// Arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `other`: Second array (treated as boolean)
-    /// 
+    ///
     /// **Returns:** New array with logical OR results or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const data = try NDArray.initRandomUniform(&.{3, 4}, 0.0, 10.0);
@@ -1021,11 +1276,11 @@ pub const NDArray = struct {
     }
 
     /// Creates logical NOT array.
-    /// 
+    ///
     /// Returns 1.0 where element is zero, 0.0 where non-zero.
-    /// 
+    ///
     /// **Returns:** New array with logical NOT results or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const data = try NDArray.initZeros(&.{3, 4});
@@ -1042,17 +1297,17 @@ pub const NDArray = struct {
     }
 
     /// Creates ternary selection array: result = condition ? x : y.
-    /// 
+    ///
     /// NumPy-style where function. Selects elements from x or y based on condition.
     /// All arrays must have identical dimensions.
-    /// 
+    ///
     /// **Parameters:**
     /// - `condition`: Boolean array (non-zero = true)
     /// - `x`: Array to select from when condition is true
     /// - `y`: Array to select from when condition is false
-    /// 
+    ///
     /// **Returns:** New array with selected values or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.initRandomUniform(&.{3, 4}, -2.0, 2.0);
@@ -1071,15 +1326,15 @@ pub const NDArray = struct {
     }
 
     /// Creates matrix multiplication result.
-    /// 
+    ///
     /// Operates on the last two dimensions and broadcasts over leading dimensions.
     /// Uses cache-optimized blocked algorithm.
-    /// 
+    ///
     /// **Parameters:**
     /// - `other`: The second array
-    /// 
+    ///
     /// **Returns:** New array with multiplication result or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.init(&.{3, 4});
@@ -1096,17 +1351,17 @@ pub const NDArray = struct {
     }
 
     /// Creates tensor contraction result over specified axes.
-    /// 
+    ///
     /// Contracts specified axes between two tensors using Einstein summation convention.
     /// For standard matrix multiplication, use `initMatmul` which is optimized.
-    /// 
+    ///
     /// **Parameters:**
     /// - `other`: The second tensor
     /// - `axes_a`: Slice of axes from self to contract
     /// - `axes_b`: Slice of axes from other to contract (must match axes_a length)
-    /// 
+    ///
     /// **Returns:** New tensor with contracted dimensions or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.init(&.{2, 3, 4});
@@ -1131,12 +1386,12 @@ pub const NDArray = struct {
     }
 
     /// Creates a transposed copy of the array.
-    /// 
+    ///
     /// For N-dimensional arrays, reverses all axes.
     /// For example, shape [2,3,4] becomes [4,3,2].
-    /// 
+    ///
     /// **Returns:** New transposed array or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.init(&.{2, 3, 4});
@@ -1151,14 +1406,14 @@ pub const NDArray = struct {
     }
 
     /// Reshapes the array in-place to new dimensions.
-    /// 
+    ///
     /// The total number of elements must remain the same.
     /// Data remains in row-major (C-order) layout.
     /// Use -1 for one dimension to automatically infer its size.
-    /// 
+    ///
     /// **Parameters:**
     /// - `new_dims`: Slice of new dimension sizes
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// var arr = try NDArray.init(&.{2, 6});
@@ -1181,16 +1436,16 @@ pub const NDArray = struct {
     }
 
     /// Creates a subregion from the array.
-    /// 
+    ///
     /// Extracts elements from start to end indices (end is exclusive).
-    /// 
+    ///
     /// **Parameters:**
     /// - `axis`: Axis along which to take the subregion
     /// - `start`: Starting index (inclusive)
     /// - `end`: Ending index (exclusive)
-    /// 
+    ///
     /// **Returns:** New array with copied subregion or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.init(&.{4, 5});
@@ -1207,13 +1462,13 @@ pub const NDArray = struct {
     }
 
     /// Saves the array to a binary file.
-    /// 
+    ///
     /// Creates a binary file with custom format including magic number,
     /// version, dimensions, and data in row-major order.
-    /// 
+    ///
     /// **Parameters:**
     /// - `filename`: Path to the output file (use .bin extension)
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initRandomUniform(&.{3, 4}, 0.0, 1.0);
@@ -1226,14 +1481,14 @@ pub const NDArray = struct {
     }
 
     /// Loads an array from a binary file.
-    /// 
+    ///
     /// Reads the file format created by `save()`.
-    /// 
+    ///
     /// **Parameters:**
     /// - `filename`: Path to the input file (.bin extension)
-    /// 
+    ///
     /// **Returns:** New array loaded from file or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initLoad("mydata.bin");
@@ -1247,9 +1502,9 @@ pub const NDArray = struct {
     }
 
     /// Gets the number of dimensions.
-    /// 
+    ///
     /// **Returns:** Number of dimensions
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.init(&.{2, 3, 4});
@@ -1261,15 +1516,15 @@ pub const NDArray = struct {
     }
 
     /// Gets the dimension sizes.
-    /// 
+    ///
     /// Allocates and returns a slice containing the size of each dimension.
     /// Caller is responsible for freeing the returned slice.
-    /// 
+    ///
     /// **Parameters:**
     /// - `allocator`: Allocator to use for the returned slice
-    /// 
+    ///
     /// **Returns:** Slice of dimension sizes or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.init(&.{2, 3, 4});
@@ -1287,16 +1542,16 @@ pub const NDArray = struct {
     }
 
     /// Creates aggregation result over an axis.
-    /// 
+    ///
     /// Result maintains ndim >= 2 constraint by adding dimension of 1 if needed.
     /// Use -1 for axis to aggregate over all axes (returns [1, 1] shape).
-    /// 
+    ///
     /// **Parameters:**
     /// - `axis`: Axis to aggregate over (0 to ndim-1, or -1 for all axes)
     /// - `aggr_type`: Type of aggregation (sum, mean, max, min, std)
-    /// 
+    ///
     /// **Returns:** New array with aggregation result or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.init(&.{3, 4});
@@ -1313,12 +1568,12 @@ pub const NDArray = struct {
     }
 
     /// Aggregates all elements to a scalar value.
-    /// 
+    ///
     /// **Parameters:**
     /// - `aggr_type`: Type of aggregation (sum, mean, max, min, std)
-    /// 
+    ///
     /// **Returns:** Scalar aggregation result
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const arr = try NDArray.initRandomUniform(&.{3, 4}, 0.0, 10.0);
@@ -1332,16 +1587,16 @@ pub const NDArray = struct {
     }
 
     /// Stacks arrays along a new axis.
-    /// 
+    ///
     /// Creates a new dimension at the specified position.
     /// All arrays must have the same shape.
-    /// 
+    ///
     /// **Parameters:**
     /// - `axis`: Position for the new dimension (0 to ndim)
     /// - `arrays`: Slice of arrays to stack
-    /// 
+    ///
     /// **Returns:** New stacked array or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.init(&.{2, 3});
@@ -1367,15 +1622,15 @@ pub const NDArray = struct {
     }
 
     /// Concatenates arrays along an existing axis.
-    /// 
+    ///
     /// All dimensions except the concatenation axis must match.
-    /// 
+    ///
     /// **Parameters:**
     /// - `axis`: Axis along which to concatenate (0 to ndim-1)
     /// - `arrays`: Slice of arrays to concatenate
-    /// 
+    ///
     /// **Returns:** New concatenated array or error
-    /// 
+    ///
     /// **Example:**
     /// ```zig
     /// const a = try NDArray.init(&.{2, 3, 4});
@@ -1575,11 +1830,113 @@ fn testFunc(x: f64) callconv(.c) f64 {
     return x * 2.0;
 }
 
+fn testFuncPar(x: f64, v: f64) callconv(.c) f64 {
+    return x + v;
+}
+
 test "mapFn" {
     const arr = try NDArray.initFull(&.{ 2, 2 }, 3.0);
     defer arr.deinit();
     _ = arr.mapFn(&testFunc);
     try std.testing.expectEqual(@as(f64, 6.0), arr.get(&.{ 0, 0 }));
+}
+
+test "mapFnPar" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, 3.0);
+    defer arr.deinit();
+    _ = arr.mapFnPar(&testFuncPar, 2.0);
+    try std.testing.expectEqual(@as(f64, 5.0), arr.get(&.{ 0, 0 }));
+}
+
+test "exp" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, 1.0);
+    defer arr.deinit();
+    _ = arr.exp();
+    try std.testing.expectApproxEqRel(@as(f64, std.math.e), arr.get(&.{ 0, 0 }), 1e-10);
+}
+
+test "log" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, std.math.e);
+    defer arr.deinit();
+    _ = arr.log();
+    try std.testing.expectApproxEqRel(@as(f64, 1.0), arr.get(&.{ 0, 0 }), 1e-10);
+}
+
+test "sqrt" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, 4.0);
+    defer arr.deinit();
+    _ = arr.sqrt();
+    try std.testing.expectEqual(@as(f64, 2.0), arr.get(&.{ 0, 0 }));
+}
+
+test "sin" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, std.math.pi / 2.0);
+    defer arr.deinit();
+    _ = arr.sin();
+    try std.testing.expectApproxEqRel(@as(f64, 1.0), arr.get(&.{ 0, 0 }), 1e-10);
+}
+
+test "cos" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, 0.0);
+    defer arr.deinit();
+    _ = arr.cos();
+    try std.testing.expectEqual(@as(f64, 1.0), arr.get(&.{ 0, 0 }));
+}
+
+test "tan" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, std.math.pi / 4.0);
+    defer arr.deinit();
+    _ = arr.tan();
+    try std.testing.expectApproxEqRel(@as(f64, 1.0), arr.get(&.{ 0, 0 }), 1e-10);
+}
+
+test "sinh" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, 1.0);
+    defer arr.deinit();
+    _ = arr.sinh();
+    try std.testing.expectApproxEqRel(@as(f64, 1.1752011936438014), arr.get(&.{ 0, 0 }), 1e-10);
+}
+
+test "cosh" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, 0.0);
+    defer arr.deinit();
+    _ = arr.cosh();
+    try std.testing.expectEqual(@as(f64, 1.0), arr.get(&.{ 0, 0 }));
+}
+
+test "tanh" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, 1.0);
+    defer arr.deinit();
+    _ = arr.tanh();
+    try std.testing.expectApproxEqRel(@as(f64, 0.7615941559557649), arr.get(&.{ 0, 0 }), 1e-10);
+}
+
+test "asin" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, 1.0);
+    defer arr.deinit();
+    _ = arr.asin();
+    try std.testing.expectApproxEqRel(@as(f64, std.math.pi / 2.0), arr.get(&.{ 0, 0 }), 1e-10);
+}
+
+test "acos" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, 1.0);
+    defer arr.deinit();
+    _ = arr.acos();
+    try std.testing.expectEqual(@as(f64, 0.0), arr.get(&.{ 0, 0 }));
+}
+
+test "atan" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, 1.0);
+    defer arr.deinit();
+    _ = arr.atan();
+    try std.testing.expectApproxEqRel(@as(f64, std.math.pi / 4.0), arr.get(&.{ 0, 0 }), 1e-10);
+}
+
+test "pow" {
+    const arr = try NDArray.initFull(&.{ 2, 2 }, 2.0);
+    defer arr.deinit();
+    _ = arr.pow(3.0);
+    try std.testing.expectEqual(@as(f64, 8.0), arr.get(&.{ 0, 0 }));
 }
 
 test "mapMul" {

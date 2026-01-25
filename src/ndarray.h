@@ -705,6 +705,294 @@ NDArray ndarray_mul_scalar(const NDArray A, double scalar);
 NDArray ndarray_mapfnc(const NDArray A, double (*func)(double));
 
 /**
+ * Applies a binary function element-wise over the input ndarray with a
+ * constant second argument.
+ * 
+ * This function modifies the input ndarray in place by applying
+ * func(A[i], v) to each element.  Useful for operations like power,
+ * hypot, fmod, etc.
+ * 
+ * @param A The input ndarray (modified in place).
+ * @param func A pointer to the binary function to apply to each element.
+ * @param v The constant second argument to pass to the function.
+ * @return A handle to the same ndarray with the function applied to each element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * #include <math.h>
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), 2.0);
+ * // Compute pow(arr, 3.0) for each element
+ * ndarray_mapfnc_par(arr, pow, 3.0);  // All elements become 8.0
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray ndarray_mapfnc_par(const NDArray A, double (*func)(double, double), double v);
+
+/**
+ * Computes the exponential function element-wise.
+ * 
+ * Returns a new ndarray where each element is exp(x) for the
+ * corresponding element x in A. Uses the standard math library exp()
+ * function.
+ * 
+ * @param A The input ndarray.
+ * @return A new ndarray with exp(A[i]) for each element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), 1.0);
+ * NDArray result = ndarray_exp(arr);  // All elements become e ≈ 2.71828
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_exp(const NDArray A);
+
+/**
+ * Computes the natural logarithm element-wise.
+ * 
+ * Returns a new ndarray where each element is log(x) for the
+ * corresponding element x in A.  Uses the standard math library log()
+ * function.
+ * 
+ * @param A The input ndarray (elements must be positive).
+ * @return A new ndarray with log(A[i]) for each element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), exp(1.0));  // Fill with e
+ * NDArray result = ndarray_log(arr);  // All elements become 1.0
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_log(const NDArray A);
+
+/**
+ * Computes the square root element-wise.
+ * 
+ * Returns a new ndarray where each element is sqrt(x) for the
+ * corresponding element x in A.  Uses the standard math library sqrt()
+ * function.
+ * 
+ * @param A The input ndarray (elements must be non-negative).
+ * @return A new ndarray with sqrt(A[i]) for each element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), 4.0);
+ * NDArray result = ndarray_sqrt(arr);  // All elements become 2.0
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_sqrt(const NDArray A);
+
+/**
+ * Computes the sine function element-wise.
+ * 
+ * Returns a new ndarray where each element is sin(x) for the
+ * corresponding element x in A.  Angles are in radians. Uses the
+ * standard math library sin() function.
+ * 
+ * @param A The input ndarray (angles in radians).
+ * @return A new ndarray with sin(A[i]) for each element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), M_PI / 2.0);  // π/2
+ * NDArray result = ndarray_sin(arr);  // All elements become 1.0
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_sin(const NDArray A);
+
+/**
+ * Computes the cosine function element-wise.
+ * 
+ * Returns a new ndarray where each element is cos(x) for the
+ * corresponding element x in A.  Angles are in radians. Uses the
+ * standard math library cos() function.
+ * 
+ * @param A The input ndarray (angles in radians).
+ * @return A new ndarray with cos(A[i]) for each element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), 0.0);
+ * NDArray result = ndarray_cos(arr);  // All elements become 1.0
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_cos(const NDArray A);
+
+/**
+ * Computes the tangent function element-wise.
+ * 
+ * Returns a new ndarray where each element is tan(x) for the
+ * corresponding element x in A.  Angles are in radians. Uses the
+ * standard math library tan() function.
+ * 
+ * @param A The input ndarray (angles in radians).
+ * @return A new ndarray with tan(A[i]) for each element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), M_PI / 4.0);  // π/4
+ * NDArray result = ndarray_tan(arr);  // All elements become 1.0
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_tan(const NDArray A);
+
+/**
+ * Computes the hyperbolic sine function element-wise.
+ * 
+ * Returns a new ndarray where each element is sinh(x) for the
+ * corresponding element x in A.  Uses the standard math library sinh()
+ * function.
+ * 
+ * @param A The input ndarray.
+ * @return A new ndarray with sinh(A[i]) for each element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), 1.0);
+ * NDArray result = ndarray_sinh(arr);  // All elements become sinh(1) ≈ 1.17520
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_sinh(const NDArray A);
+
+/**
+ * Computes the hyperbolic cosine function element-wise.
+ * 
+ * Returns a new ndarray where each element is cosh(x) for the
+ * corresponding element x in A.  Uses the standard math library cosh()
+ * function.
+ * 
+ * @param A The input ndarray.
+ * @return A new ndarray with cosh(A[i]) for each element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), 1.0);
+ * NDArray result = ndarray_cosh(arr);  // All elements become cosh(1) ≈ 1.54308
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_cosh(const NDArray A);
+
+/**
+ * Computes the hyperbolic tangent function element-wise.
+ * 
+ * Returns a new ndarray where each element is tanh(x) for the
+ * corresponding element x in A.  Uses the standard math library tanh()
+ * function.
+ * 
+ * @param A The input ndarray.
+ * @return A new ndarray with tanh(A[i]) for each element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), 1.0);
+ * NDArray result = ndarray_tanh(arr);  // All elements become tanh(1) ≈ 0.76159
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_tanh(const NDArray A);
+
+/**
+ * Computes the inverse sine function element-wise.
+ * 
+ * Returns a new ndarray where each element is asin(x) for the
+ * corresponding element x in A.  Input elements must be in [-1, 1].
+ * Output is in radians in [-π/2, π/2].  Uses the standard math library
+ * asin() function.
+ * 
+ * @param A The input ndarray (elements must be in [-1, 1]).
+ * @return A new ndarray with asin(A[i]) for each element (radians).
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), 1.0);
+ * NDArray result = ndarray_asin(arr);  // All elements become π/2
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_asin(const NDArray A);
+
+/**
+ * Computes the inverse cosine function element-wise.
+ * 
+ * Returns a new ndarray where each element is acos(x) for the
+ * corresponding element x in A.  Input elements must be in [-1, 1].
+ * Output is in radians in [0, π].  Uses the standard math library
+ * acos() function.
+ * 
+ * @param A The input ndarray (elements must be in [-1, 1]).
+ * @return A new ndarray with acos(A[i]) for each element (radians).
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), 1.0);
+ * NDArray result = ndarray_acos(arr);  // All elements become 0.0
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_acos(const NDArray A);
+
+/**
+ * Computes the inverse tangent function element-wise.
+ * 
+ * Returns a new ndarray where each element is atan(x) for the
+ * corresponding element x in A.  Output is in radians in (-π/2, π/2).
+ * Uses the standard math library atan() function.
+ * 
+ * @param A The input ndarray.
+ * @return A new ndarray with atan(A[i]) for each element (radians).
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), 1.0);
+ * NDArray result = ndarray_atan(arr);  // All elements become π/4
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_atan(const NDArray A);
+
+/**
+ * Computes element-wise exponentiation.
+ * 
+ * Returns a new ndarray where each element is pow(x, exponent) for the
+ * corresponding element x in A.  Uses the standard math library pow()
+ * function.
+ * 
+ * @param A The base ndarray.
+ * @param exponent The exponent value.
+ * @return A new ndarray with pow(A[i], exponent) for each element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_full(NDA_DIMS(3, 4), 2.0);
+ * NDArray result = ndarray_pow(arr, 3.0);  // All elements become 8.0 (2^3)
+ * ndarray_free_all(NDA_LIST(arr, result));
+ * ```
+ */
+NDArray ndarray_pow(const NDArray A, double exponent);
+
+/**
  * Linear combination: A = alpha*A + beta*B
  * 
  * Computes a scaled linear combination of two arrays and stores the result in A.

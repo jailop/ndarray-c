@@ -14,7 +14,7 @@ if(APPLE AND NOT DEFINED CMAKE_C_COMPILER)
     endif()
 endif()
 
-project(ndarray VERSION 1.0.0 LANGUAGES C)
+project(ndarray VERSION 0.4.0 LANGUAGES C)
 
 # Enable Fortran if available (needed for OpenBLAS with Fortran OpenMP on some systems)
 include(CheckLanguage)
@@ -171,6 +171,7 @@ set(NDARRAY_SOURCES
     src/ndarray_io.c
     src/ndarray_comparison.c
     src/ndarray_random.c
+    src/ndarray_math.c
 )
 
 set(NDARRAY_HEADERS

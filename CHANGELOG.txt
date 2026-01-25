@@ -63,3 +63,11 @@
 0.3.2 - 2026-01-12
 
 - set_slice and fill_slice enabled for chaining
+
+0.4.0 - 2026-01-24
+
+- includes support for functions some functions defined in the c math
+  header: exp, log, sqrt, sin, cos, tan, sinh, cosh, tanh, asin, acos,
+  atan, and pow
+- new example added: Geometric Brownian Motion Paths, to simulate stock
+  price evalotion.
