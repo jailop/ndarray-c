@@ -18,6 +18,77 @@ NDArray ndarray_add(const NDArray A, const NDArray B) {
         assert(A->dims[i] == B->dims[i]
                 && "ndarrays must have matching dimensions");
     }
+    size_t size = ndarray_size(A);
+    // Type-aware addition with proper BLAS dispatch
+    NDAType result_type = ndarray_promote_types(A->dtype, B->dtype);
+    size_t result_size = ndarray_element_size(result_type);
+    
+    switch (result_type) {
+        case NDA_REAL64:
+            cblas_daxpy(size, 1.0, A->data, 1, B->data, 1);
+            break;
+        case NDA_REAL32:
+            // Convert both to REAL64, operate, convert back
+            {
+                double* temp_A = malloc(size * sizeof(double));
+                double* temp_B = malloc(size * sizeof(double));
+                if (temp_A && temp_B) {
+                    for (size_t i = 0; i < size; i++) {
+                        temp_A[i] = (double)((float*)A->data)[i];
+                        temp_B[i] = (double)((float*)B->data)[i]);
+                    }
+                    cblas_daxpy(size, 1.0, temp_B, 1, temp_A, 1);
+                    // Convert result back to REAL32
+                    for (size_t i = 0; i < size; i++) {
+                        ((float*)A->data)[i] = (float)temp_A[i];
+                    }
+                    free(temp_A);
+                    free(temp_B);
+                }
+            }
+            break;
+        case NDA_COMPLEX64:
+            cblas_zaxpy(size, 1.0, (double complex*)B->data, 1, (double complex*)A->data, 1);
+            break;
+        case NDA_COMPLEX32:
+            // Convert both to COMPLEX64, operate, convert back
+            {
+                double complex* temp_A = malloc(size * sizeof(double complex));
+                double complex* temp_B = malloc(size * sizeof(double complex));
+                for (size_t i = 0; i < size; i++) {
+                    temp_A[i] = (double complex)((float complex*)A->data)[i]);
+                    temp_B[i] = (double complex)((float complex*)B->data)[i]);
+                }
+                cblas_zaxpy(size, 1.0, temp_B, 1, temp_A, 1);
+                // Convert result back to COMPLEX32
+                for (size_t i = 0; i < size; i++) {
+                    ((float complex*)A->data)[i] = (float complex)temp_A[i];
+                }
+                free(temp_A);
+                free(temp_B);
+            }
+            break;
+        default:
+            // Fallback: convert to REAL64, operate
+            {
+                double* temp_A = malloc(result_size);
+                double* temp_B = malloc(result_size);
+                for (size_t i = 0; i < size; i++) {
+                    temp_A[i] = ndarray_get(A, &(size_t){i, 0});
+                    temp_B[i] = ndarray_get(B, &(size_t){i, 0});
+                }
+                cblas_daxpy(size, 1.0, temp_B, 1, temp_A, 1);
+                // Convert result back to original type
+                for (size_t i = 0; i < size; i++) {
+                    ndarray_set(A, &(size_t){i, 0}, temp_A[i]);
+                }
+                free(temp_A);
+                free(temp_B);
+            }
+            break;
+    }
+    return A;
+}
     
     // Determine result type through promotion
     NDAType result_type = ndarray_promote_types(A->dtype, B->dtype);
