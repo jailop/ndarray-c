@@ -174,6 +174,29 @@ set(NDARRAY_SOURCES
     src/ndarray_math.c
 )
 
+set(NDARRAY_TESTS
+    tests/test_aggregation.c
+    tests/test_arithmetic.c
+    tests/test_chaining.c
+    tests/test_common.c
+    tests/test_common.h
+    tests/test_comparison.c
+    tests/test_concat.c
+    tests/test_conditional.c
+    tests/test_creation.c
+    tests/test_main.c
+    tests/test_matmul.c
+    tests/test_modules.h
+    tests/test_operations.c
+    tests/test_randquality.c
+    tests/test_reshape.c
+    tests/test_slice.c
+    tests/test_stack.c
+    tests/test_take.c
+    tests/test_tensordot.c
+    tests/test_transpose.c
+)
+
 set(NDARRAY_HEADERS
     src/ndarray.h
     src/ndarray_internal.h
@@ -283,7 +306,7 @@ if(BUILD_TESTS)
     
     if(CUNIT_LIBRARY AND CUNIT_INCLUDE_DIR)
         message(STATUS "Found CUnit: ${CUNIT_LIBRARY}")
-        add_executable(ndarray_test tests/test_ndarray.c)
+        add_executable(ndarray_test ${NDARRAY_TESTS})
         target_include_directories(ndarray_test PRIVATE ${CUNIT_INCLUDE_DIR})
         if(TARGET ndarray_static)
             target_link_libraries(ndarray_test PRIVATE ndarray_static ${CUNIT_LIBRARY})
