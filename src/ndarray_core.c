@@ -1,5 +1,101 @@
 #include "ndarray_internal.h"
 
+// Type information table
+static const NDATypeInfo type_info_table[] = {
+    { sizeof(double), "real64", "d", 0 },        // NDA_REAL64
+    { sizeof(double complex), "complex64", "z", 1 },  // NDA_COMPLEX64  
+    { sizeof(float), "real32", "s", 0 },          // NDA_REAL32
+    { sizeof(float complex), "complex32", "c", 1 },   // NDA_COMPLEX32
+};
+
+const NDATypeInfo* ndarray_get_type_info(NDAType dtype) {
+    if (dtype >= 0 && dtype < 4) {
+        return &type_info_table[dtype];
+    }
+    return NULL;
+}
+
+NDAType ndarray_promote_types(NDAType type1, NDAType type2) {
+    // Promote to higher precision or complex type
+    if (type1 == type2) return type1;
+    
+    // Complex always wins over real of same precision
+    if (type1 == NDA_REAL64 && type2 == NDA_COMPLEX64) return NDA_COMPLEX64;
+    if (type1 == NDA_COMPLEX64 && type2 == NDA_REAL64) return NDA_COMPLEX64;
+    if (type1 == NDA_REAL32 && type2 == NDA_COMPLEX32) return NDA_COMPLEX32;
+    if (type1 == NDA_COMPLEX32 && type2 == NDA_REAL32) return NDA_COMPLEX32;
+    
+    // Higher precision wins
+    if (type1 == NDA_REAL64 && type2 == NDA_REAL32) return NDA_REAL64;
+    if (type1 == NDA_REAL32 && type2 == NDA_REAL64) return NDA_REAL64;
+    if (type1 == NDA_COMPLEX64 && type2 == NDA_COMPLEX32) return NDA_COMPLEX64;
+    if (type1 == NDA_COMPLEX32 && type2 == NDA_COMPLEX64) return NDA_COMPLEX64;
+    
+    // Mixed precision: complex always wins with higher precision
+    if ((type1 == NDA_REAL64 && type2 == NDA_COMPLEX32) ||
+        (type1 == NDA_COMPLEX32 && type2 == NDA_REAL64)) {
+        return NDA_COMPLEX64;
+    }
+    if ((type1 == NDA_REAL32 && type2 == NDA_COMPLEX64) ||
+        (type1 == NDA_COMPLEX64 && type2 == NDA_REAL32)) {
+        return NDA_COMPLEX64;
+    }
+    
+    return NDA_REAL64; // fallback
+}
+
+// BLAS dispatch helpers
+void ndarray_blas_axpy(size_t n, double alpha, const NDArray X, const NDArray Y, NDArray result) {
+    const NDATypeInfo* x_info = ndarray_get_type_info(X->dtype);
+    const NDATypeInfo* y_info = ndarray_get_type_info(Y->dtype);
+    
+    if (!x_info || !y_info) return;
+    
+    // For now, require same type
+    if (X->dtype != Y->dtype) return;
+    
+    switch (X->dtype) {
+        case NDA_REAL64:
+            cblas_daxpy(n, alpha, (const double*)X->data, 1, (const double*)Y->data, 1);
+            break;
+        case NDA_REAL32:
+            cblas_saxpy(n, alpha, (const float*)X->data, 1, (const float*)Y->data, 1);
+            break;
+        case NDA_COMPLEX64:
+            cblas_zaxpy(n, alpha, (const double complex*)X->data, 1, (const double complex*)Y->data, 1);
+            break;
+        case NDA_COMPLEX32:
+            cblas_caxpy(n, alpha, (const float complex*)X->data, 1, (const float complex*)Y->data, 1);
+            break;
+    }
+}
+
+void ndarray_blas_scal(size_t n, double alpha, const NDArray X) {
+    const NDATypeInfo* x_info = ndarray_get_type_info(X->dtype);
+    if (!x_info) return;
+    
+    switch (X->dtype) {
+        case NDA_REAL64:
+            cblas_dscal(n, alpha, (double*)X->data, 1);
+            break;
+        case NDA_REAL32:
+            cblas_sscal(n, alpha, (float*)X->data, 1);
+            break;
+        case NDA_COMPLEX64:
+            cblas_zscal(n, alpha, (double complex*)X->data, 1);
+            break;
+        case NDA_COMPLEX32:
+            cblas_cscal(n, alpha, (float complex*)X->data, 1);
+            break;
+    }
+}
+}
+
+size_t ndarray_element_size(NDAType dtype) {
+    const NDATypeInfo* info = ndarray_get_type_info(dtype);
+    return info ? info->element_size : sizeof(double);
+}
+
 size_t ndarray_size(const NDArray t) {
     size_t size = 1;
     for (size_t i = 0; i < t->ndim; ++i) {

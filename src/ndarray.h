@@ -18,17 +18,39 @@
 #define NDA_ERROR_SIZE        -4  /**< Size mismatch */
 
 /**
+ * Data types supported by ndarray library.
+ */
+typedef enum {
+    NDA_REAL64 = 0,     /**< double precision real numbers */
+    NDA_COMPLEX64 = 1,  /**< double precision complex numbers */
+    NDA_REAL32 = 2,     /**< single precision real numbers */
+    NDA_COMPLEX32 = 3,  /**< single precision complex numbers */
+} NDAType;
+
+/**
+ * Type information for each supported data type.
+ */
+typedef struct {
+    size_t element_size;    /**< Size of each element in bytes */
+    const char* type_name;  /**< Human-readable type name */
+    const char* blas_prefix; /**< BLAS function prefix (d, z, c, s, etc.) */
+    int is_complex;         /**< 1 for complex types, 0 for real types */
+} NDATypeInfo;
+
+/**
  * An structure to represent and operate over
- * multi-dimensional arrays of doubles.
+ * multi-dimensional arrays of various numeric types.
  * 
  * This structure contains:
  *
  * - data: pointer to the array elements stored in row-major order
+ * - dtype: data type identifier (NDAType)
  * - dims: array of dimension sizes
  * - ndim: number of dimensions (must be >= 2)
  */
 typedef struct {
-    double *data;
+    void *data;
+    NDAType dtype;
     size_t *dims;
     size_t ndim;
 } NDArray_;
@@ -154,10 +176,28 @@ typedef NDArray_* NDArray;
 #define NDA_ALL_AXES (-1)
 
 /**
- * Creates a new ndarray with the specified dimensions.  The dimensions
+ * Creates a new ndarray with the specified dimensions and data type.  The dimensions
  * are provided as a variable number of arguments, using the last one as
  * a sentinel (0).  `ndim` must be >= 2 (at least two dimensions
  * required).
+ *
+ * @param dims Array of dimensions, ending with 0.
+ * @param dtype Data type for the array (NDAType).
+ * @return A handle to the newly created ndarray, or NULL if ndim < 2.
+ *
+ * Example:
+ *
+ * ```c
+ * NDArray arr = ndarray_new_typed(NDA_DIMS(3, 4), NDA_REAL64);
+ * // ...
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray ndarray_new_typed(const size_t *dims, NDAType dtype);
+
+/**
+ * Creates a new ndarray with the specified dimensions (default: NDA_REAL64).  
+ * Maintains backwards compatibility with existing code.
  *
  * @param dims Array of dimensions, ending with 0.
  * @return A handle to the newly created ndarray, or NULL if ndim < 2.
@@ -236,7 +276,7 @@ size_t ndarray_offset(const NDArray t, const size_t *pos);
  * 
  * @param t The ndarray.
  * @param pos An array of size_t representing the position in each dimension.
- * @param value The value to set.
+ * @param value The value to set (double, will be converted to array type).
  * 
  * Example:
  * 
@@ -249,11 +289,28 @@ size_t ndarray_offset(const NDArray t, const size_t *pos);
 void ndarray_set(const NDArray t, const size_t* pos, double value);
 
 /**
+ * Sets the value at the specified position in the ndarray (type-aware).
+ * 
+ * @param t The ndarray.
+ * @param pos An array of size_t representing the position in each dimension.
+ * @param value Pointer to the value to set (must match array type).
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_typed(NDA_DIMS(3, 4), NDA_COMPLEX64);
+ * double complex val = 5.0 + 2.0*I;
+ * ndarray_set_typed(arr, NDA_POS(0, 0), &val);
+ * ```
+ */
+void ndarray_set_typed(const NDArray t, const size_t* pos, const void* value);
+
+/**
  * Gets the value at the specified position in the ndarray.
  * 
  * @param t The ndarray.
  * @param pos An array of size_t representing the position in each dimension.
- * @return The value at the specified position.
+ * @return The value at the specified position (converted to double).
  * 
  * Example:
  * 
@@ -264,6 +321,23 @@ void ndarray_set(const NDArray t, const size_t* pos, double value);
  * ```
  */
 double ndarray_get(const NDArray t, const size_t* pos);
+
+/**
+ * Gets the value at the specified position in the ndarray (type-aware).
+ * 
+ * @param t The ndarray.
+ * @param pos An array of size_t representing the position in each dimension.
+ * @param value Pointer to store the result (must match array type).
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_typed(NDA_DIMS(3, 4), NDA_COMPLEX64);
+ * double complex val;
+ * ndarray_get_typed(arr, NDA_POS(1, 2), &val);
+ * ```
+ */
+void ndarray_get_typed(const NDArray t, const size_t* pos, void* value);
 
 /**
  * Sets values along a slice of the array at a specific index on an axis.
@@ -287,6 +361,29 @@ double ndarray_get(const NDArray t, const size_t* pos);
  */
 NDArray ndarray_set_slice(const NDArray arr, int axis, size_t index,
         const double* values);
+
+/**
+ * Sets values along a slice of the array at a specific index on an axis (type-aware).
+ * 
+ * For a 2D array: axis=0 sets a row, axis=1 sets a column.
+ * For higher dimensions, sets the hyperplane perpendicular to the axis.
+ * 
+ * @param arr The ndarray to modify.
+ * @param axis The axis along which to set the slice (0 to ndim-1).
+ * @param index The index along the axis where to set values.
+ * @param values Array of values to set (size must match the slice size).
+ * @return handler of the array (for chaining)
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_typed(NDA_DIMS(3, 4), NDA_COMPLEX64);
+ * double complex row_data[] = {1.0+I, 2.0+2*I, 3.0+3*I, 4.0+4*I};
+ * ndarray_set_slice_typed(arr, 0, 0, row_data);  // Set first row
+ * ```
+ */
+NDArray ndarray_set_slice_typed(const NDArray arr, int axis, size_t index,
+        const void* values);
 
 /**
  * Fills a slice of the array with a scalar value at a specific index on an axis.
@@ -320,7 +417,7 @@ NDArray ndarray_fill_slice(const NDArray arr, int axis, size_t index,
  * @param arr The ndarray.
  * @param axis The axis along which to get the slice.
  * @param index The index along the axis.
- * @return Pointer to the start of the slice data.
+ * @return Pointer to the start of the slice data (double* for backwards compatibility).
  * 
  * Example:
  * 
@@ -332,6 +429,27 @@ NDArray ndarray_fill_slice(const NDArray arr, int axis, size_t index,
  * ```
  */
 double* ndarray_get_slice_ptr(const NDArray arr, int axis, size_t index);
+
+/**
+ * Get pointer to a slice along an axis (type-aware).
+ * 
+ * Returns a pointer to the beginning of the slice. User must not access
+ * beyond the slice bounds. Pointer is valid as long as the array exists.
+ * 
+ * @param arr The ndarray.
+ * @param axis The axis along which to get the slice.
+ * @param index The index along the axis.
+ * @return Pointer to the start of the slice data (void* for any type).
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_typed(NDA_DIMS(3, 4), NDA_COMPLEX64);
+ * double complex* row_ptr = ndarray_get_slice_ptr_typed(arr, 0, 1);
+ * row_ptr[0] = 1.0 + 2.0*I;  // Modify first element of row 1
+ * ```
+ */
+void* ndarray_get_slice_ptr_typed(const NDArray arr, int axis, size_t index);
 
 /**
  * Copy a slice from one array to another.
@@ -425,6 +543,23 @@ NDArray ndarray_new_copy(const NDArray t);
  * Creates a new ndarray filled with zeros.
  * 
  * @param dims Array of dimensions, ending with 0.
+ * @param dtype Data type for the array (NDAType).
+ * @return A handle to the newly created ndarray filled with zeros.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new_zeros_typed(NDA_DIMS(3, 4), NDA_REAL32);
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray ndarray_new_zeros_typed(const size_t *dims, NDAType dtype);
+
+/**
+ * Creates a new ndarray filled with zeros (default: NDA_REAL64).
+ * Maintains backwards compatibility with existing code.
+ * 
+ * @param dims Array of dimensions, ending with 0.
  * @return A handle to the newly created ndarray filled with zeros.
  * 
  * Example:
@@ -445,6 +580,31 @@ NDArray ndarray_new_zeros(const size_t *dims);
  * 
  * @param dims Array of dimensions, ending with 0.
  * @param data Pointer to the data array to copy.
+ * @param dtype Data type for the array (NDAType).
+ * @return A handle to the newly created ndarray.
+ * 
+ * Example:
+ * 
+ * ```c
+ * // 2D array: 2x3
+ * double data2d[2][3] = {{1, 2, 3}, {4, 5, 6}};
+ * NDArray a = ndarray_new_from_data_typed(NDA_DIMS(2, 3), (void*)data2d, NDA_REAL64);
+ * 
+ * // 3D array: 2x3x4
+ * double data3d[2][3][4] = {...};
+ * NDArray b = ndarray_new_from_data_typed(NDA_DIMS(2, 3, 4), (void*)data3d, NDA_REAL64);
+ * 
+ * ndarray_free_all(NDA_LIST(a, b));
+ * ```
+ */
+NDArray ndarray_new_from_data_typed(const size_t *dims, const void *data, NDAType dtype);
+
+/**
+ * Creates a new ndarray from existing data (default: NDA_REAL64).
+ * Maintains backwards compatibility with existing code.
+ * 
+ * @param dims Array of dimensions, ending with 0.
+ * @param data Pointer to the data array to copy.
  * @return A handle to the newly created ndarray.
  * 
  * Example:
@@ -453,10 +613,6 @@ NDArray ndarray_new_zeros(const size_t *dims);
  * // 2D array: 2x3
  * double data2d[2][3] = {{1, 2, 3}, {4, 5, 6}};
  * NDArray a = ndarray_new_from_data(NDA_DIMS(2, 3), (double*)data2d);
- * 
- * // 3D array: 2x3x4
- * double data3d[2][3][4] = {...};
- * NDArray b = ndarray_new_from_data(NDA_DIMS(2, 3, 4), (double*)data3d);
  * 
  * ndarray_free_all(NDA_LIST(a, b));
  * ```
