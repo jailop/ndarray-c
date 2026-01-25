@@ -6,22 +6,73 @@ NDArray ndarray_mapfnc(const NDArray A, double (*func)(double)) {
     assert(A->ndim >= 2 && "ndarray must have at least 2 dimensions");
     assert(func != NULL && "function pointer cannot be NULL");
     size_t size = ndarray_size(A);
-    OMP_PRAGMA(omp parallel for)
-    for (size_t i = 0; i < size; ++i) {
-        A->data[i] = func(A->data[i]);
+    
+    // Phase 3: Type-aware mathematical functions
+    switch (A->dtype) {
+        case NDA_REAL64:
+            OMP_PRAGMA(omp parallel for)
+            for (size_t i = 0; i < size; ++i) {
+                double value = ((double*)A->data)[i];
+                ((double*)A->data)[i] = func(value);
+            }
+            break;
+        case NDA_REAL32:
+            OMP_PRAGMA(omp parallel for)
+            for (size_t i = 0; i < size; ++i) {
+                float value = ((float*)A->data)[i];
+                ((float*)A->data)[i] = func(value);
+            }
+            break;
+        case NDA_COMPLEX64:
+            // TODO: Implement complex math functions
+            assert(0 && "Complex math functions not yet implemented");
+            return A;
+        case NDA_COMPLEX32:
+            // TODO: Implement complex math functions
+            assert(0 && "Complex math functions not yet implemented");
+            return A;
+        default:
+            assert(0 && "Unsupported data type for mathematical operations");
+            return A;
     }
     return A;
 }
-
 
 NDArray ndarray_mapfnc_par(const NDArray A, double (*func)(double, double), double v) {
     assert(A != NULL && "ndarray cannot be NULL");
     assert(A->ndim >= 2 && "ndarray must have at least 2 dimensions");
     assert(func != NULL && "function pointer cannot be NULL");
     size_t size = ndarray_size(A);
-    OMP_PRAGMA(omp parallel for)
-    for (size_t i = 0; i < size; ++i) {
-        A->data[i] = func(A->data[i], v);
+    
+    // Phase 3: Type-aware mathematical functions
+    switch (A->dtype) {
+        case NDA_REAL64:
+            OMP_PRAGMA(omp parallel for)
+            for (size_t i = 0; i < size; ++i) {
+                double value = ((double*)A->data)[i];
+                double result = func(value, v);
+                ((double*)A->data)[i] = result;
+            }
+            break;
+        case NDA_REAL32:
+            OMP_PRAGMA(omp parallel for)
+            for (size_t i = 0; i < size; ++i) {
+                float value = ((float*)A->data)[i];
+                float result = func(value, v);
+                ((float*)A->data)[i] = result;
+            }
+            break;
+        case NDA_COMPLEX64:
+            // TODO: Implement complex math functions
+            assert(0 && "Complex math functions not yet implemented");
+            return A;
+        case NDA_COMPLEX32:
+            // TODO: Implement complex math functions
+            assert(0 && "Complex math functions not yet implemented");
+            return A;
+        default:
+            assert(0 && "Unsupported data type for mathematical operations");
+            return A;
     }
     return A;
 }
@@ -41,4 +92,3 @@ NDArray ndarray_atan(const NDArray A) { return ndarray_mapfnc(A, atan); }
 NDArray ndarray_pow(const NDArray A, double exponent) {
     return ndarray_mapfnc_par(A, pow, exponent);
 }
-
