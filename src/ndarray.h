@@ -1882,5 +1882,267 @@ int ndarray_save(const NDArray arr, const char *filename);
  */
 NDArray ndarray_new_load(const char *filename);
 
+/**
+ * Phase 4: Convenience statistical functions with type awareness
+ * These provide a simpler interface for common statistical operations.
+ */
+
+/**
+ * Computes the sum of all elements in an ndarray.
+ * 
+ * @param A The input ndarray.
+ * @return The sum of all elements as a double.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(2, 3));
+ * // Fill with values...
+ * double sum = ndarray_sum(arr);
+ * printf("Sum: %f\n", sum);
+ * ndarray_free(arr);
+ * ```
+ */
+double ndarray_sum(const NDArray A);
+
+/**
+ * Computes the mean (average) of all elements in an ndarray.
+ * 
+ * @param A The input ndarray.
+ * @return The mean of all elements as a double.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(2, 3));
+ * // Fill with values...
+ * double mean = ndarray_mean(arr);
+ * printf("Mean: %f\n", mean);
+ * ndarray_free(arr);
+ * ```
+ */
+double ndarray_mean(const NDArray A);
+
+/**
+ * Computes the variance of all elements in an ndarray.
+ * 
+ * @param A The input ndarray.
+ * @return The variance of all elements as a double.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(2, 3));
+ * // Fill with values...
+ * double var = ndarray_var(arr);
+ * printf("Variance: %f\n", var);
+ * ndarray_free(arr);
+ * ```
+ */
+double ndarray_var(const NDArray A);
+
+/**
+ * Computes the standard deviation of all elements in an ndarray.
+ * 
+ * @param A The input ndarray.
+ * @return The standard deviation of all elements as a double.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(2, 3));
+ * // Fill with values...
+ * double std = ndarray_std(arr);
+ * printf("Standard deviation: %f\n", std);
+ * ndarray_free(arr);
+ * ```
+ */
+double ndarray_std(const NDArray A);
+
+/**
+ * Finds the minimum value in an ndarray.
+ * 
+ * @param A The input ndarray.
+ * @return The minimum value as a double.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(2, 3));
+ * // Fill with values...
+ * double min = ndarray_min(arr);
+ * printf("Minimum: %f\n", min);
+ * ndarray_free(arr);
+ * ```
+ */
+double ndarray_min(const NDArray A);
+
+/**
+ * Finds the maximum value in an ndarray.
+ * 
+ * @param A The input ndarray.
+ * @return The maximum value as a double.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(2, 3));
+ * // Fill with values...
+ * double max = ndarray_max(arr);
+ * printf("Maximum: %f\n", max);
+ * ndarray_free(arr);
+ * ```
+ */
+double ndarray_max(const NDArray A);
+
+/**
+ * Finds the index of the minimum value in an ndarray.
+ * Returns the flattened index (row-major order) of the minimum element.
+ * 
+ * @param A The input ndarray.
+ * @return The flattened index of the minimum element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(2, 3));
+ * // Fill with values...
+ * size_t idx = ndarray_argmin(arr);
+ * printf("Minimum at index: %zu\n", idx);
+ * ndarray_free(arr);
+ * ```
+ */
+size_t ndarray_argmin(const NDArray A);
+
+/**
+ * Finds the index of the maximum value in an ndarray.
+ * Returns the flattened index (row-major order) of the maximum element.
+ * 
+ * @param A The input ndarray.
+ * @return The flattened index of the maximum element.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(2, 3));
+ * // Fill with values...
+ * size_t idx = ndarray_argmax(arr);
+ * printf("Maximum at index: %zu\n", idx);
+ * ndarray_free(arr);
+ * ```
+ */
+size_t ndarray_argmax(const NDArray A);
+
+/**
+ * Stacks arrays along a new axis.
+ * 
+ * Creates a new array with one additional dimension by stacking the input arrays.
+ * All input arrays must have the same shape.
+ * 
+ * @param axis The axis along which to stack (0 to ndim, where ndim is the ndim of input arrays).
+ * @param arr_list NULL-terminated list of ndarrays to stack.
+ * @return New ndarray with an additional dimension.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray A = ndarray_new(NDA_DIMS(3, 4));
+ * NDArray B = ndarray_new(NDA_DIMS(3, 4));
+ * 
+ * // Stack along new axis 0: [3,4] + [3,4] -> [2, 3, 4]
+ * NDArray stacked = ndarray_new_stack(0, NDA_LIST(A, B));
+ * ndarray_free_all(NDA_LIST(A, B, stacked));
+ * ```
+ */
+NDArray ndarray_new_stack(int axis, NDArray* arr_list);
+
+/**
+ * Splits an array along a specified axis into multiple sub-arrays.
+ * 
+ * Returns an array of NDArray pointers (NULL-terminated) where each sub-array
+ * contains a slice along the specified axis.
+ * 
+ * @param A The input ndarray to split.
+ * @param axis Axis along which to split (0 to ndim-1).
+ * @param indices Number of equal parts to split into.
+ * @param result_count Output parameter for number of resulting arrays.
+ * @return NULL-terminated array of ndarray pointers (must be freed by caller).
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(6, 4));
+ * // Fill with values...
+ * size_t count;
+ * NDArray* parts = ndarray_split(arr, 0, 3, &count);  // Split into 3 parts: [2,4], [2,4], [2,4]
+ * 
+ * // Use parts[0], parts[1], parts[2]...
+ * 
+ * // Clean up
+ * for (size_t i = 0; i < count; ++i) {
+ *     ndarray_free(parts[i]);
+ * }
+ * free(parts);
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray* ndarray_split(const NDArray A, int axis, int parts, size_t* result_count);
+
+/**
+ * Creates a slice of an array along specified ranges for each dimension.
+ * 
+ * Returns a new array containing the specified range of elements.
+ * Each dimension can be sliced with [start, end) semantics.
+ * 
+ * @param A The input ndarray to slice.
+ * @param start_indices Array of start indices for each dimension (length = ndim).
+ * @param end_indices Array of end indices for each dimension (length = ndim).
+ * @return New ndarray containing the slice, or NULL if invalid parameters.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(4, 6, 3));
+ * // Fill with values...
+ * 
+ * // Get slice: rows 1-3, cols 2-5, depth 0-2
+ * size_t start[] = {1, 2, 0};
+ * size_t end[] = {4, 5, 3};  // End is exclusive
+ * NDArray slice = ndarray_slice_range(arr, start, end);  // Shape: [3, 3, 3]
+ * 
+ * ndarray_free(arr);
+ * ndarray_free(slice);
+ * ```
+ */
+NDArray ndarray_slice_range(const NDArray A, const size_t* start_indices, const size_t* end_indices);
+
+/**
+ * Transposes an array with specified axes permutation.
+ * 
+ * Creates a new ndarray with axes permuted according to the specified permutation.
+ * If axes is NULL, performs a complete transpose (reverses all axes).
+ * 
+ * @param A The input ndarray to transpose.
+ * @param axes Array of axis indices for permutation (length = ndim), or NULL for complete transpose.
+ * @return New ndarray with permuted axes, or NULL if invalid parameters.
+ * 
+ * Example:
+ * 
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(2, 3, 4));
+ * // Fill with values...
+ * 
+ * // Complete transpose: [2,3,4] -> [4,3,2]
+ * NDArray T1 = ndarray_transpose_axes(arr, NULL);
+ * 
+ * // Custom permutation: [2,3,4] -> [3,2,4] (swap first two axes)
+ * size_t axes[] = {1, 0, 2};
+ * NDArray T2 = ndarray_transpose_axes(arr, axes);
+ * 
+ * ndarray_free_all(NDA_LIST(arr, T1, T2));
+ * ```
+ */
+NDArray ndarray_transpose_axes(const NDArray A, const int* axes);
+
 #endif // _NDARRAY_H
 

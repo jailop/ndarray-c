@@ -14,6 +14,7 @@
 #include <math.h>
 #include <assert.h>
 #include <complex.h>
+#include <stdbool.h>
 
 #ifndef _WIN32
     #include <sys/ioctl.h>
