@@ -13,7 +13,7 @@ LIBDIR = $(PREFIX)/lib
 
 CFLAGS = -O3 -Wall -g -std=c99 -pedantic -march=native -fopenmp
 CFLAGS_SHARED = $(CFLAGS) -fPIC
-LDFLAGS = -lm -fopenmp -lopenblas
+LDFLAGS = -lm -fopenmp -lopenblas -lgsl
 
 SRCDIR = src
 TESTDIR = tests

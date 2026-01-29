@@ -71,3 +71,8 @@
   atan, and pow
 - new example added: Geometric Brownian Motion Paths, to simulate stock
   price evalotion.
+
+0.5.0 - 2026-01-28:
+
+- Zero-copy intergration with GSL (GNU Scientific Library) for vectors
+  and matrices

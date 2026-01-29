@@ -12,6 +12,7 @@ const c_source_files = &[_][]const u8{
     "src/ndarray_comparison.c",
     "src/ndarray_random.c",
     "src/ndarray_math.c",
+    "src/ndarray_gsl.c",
 };
 
 const c_flags = &[_][]const u8{
@@ -40,6 +41,7 @@ fn configureCompileStep(step: anytype, b: *std.Build, homebrew_prefix: ?[]const 
     addHomebrewPaths(step, b, homebrew_prefix);
     step.linkSystemLibrary("omp");
     step.linkSystemLibrary("openblas");
+    step.linkSystemLibrary("gsl");
 }
 
 fn createModuleWithPaths(b: *std.Build, comptime opts: type, options: opts, homebrew_prefix: ?[]const u8) *std.Build.Module {

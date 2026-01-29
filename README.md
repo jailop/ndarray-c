@@ -5,11 +5,13 @@ A ndarray library for C, with Zig bindings.
 - Multi-dimensional arrays (ndim >= 2)
 - OpenMP parallelization
 - BLAS-optimized operations
+- Zero-copy integration with GSL for vectors and matrices
 
 Dependencies:
 
 - OpenMP
 - OpenBLAS
+- GSL (optional)
 
 Documentation:
 
@@ -37,14 +39,16 @@ This library has also bidings for Nim:
 - Only `double` type is supported for array content.
 - This library only implements basic operations to work with
   multi-dimensional arrays. The motivimation is to have a tool to
-  implement algorithms that required multi-dimensional arrays.
-- Zig bindings are limited to a maximum of 64 dimensions. That
-  parameter can be adjusted. That is because a pre-allocated buffer by
-  thread is used to convert dimension types from Zig to C.
+  implement algorithms that required multi-dimensional arrays. For
+  vectors ([1,D} or [D,1]) and matrices, the library provides zero-copy
+  integration with GSL, enabling the use of GSL functions directly over
+  those arrays.
+- Zig bindings are limited to a maximum of 64 dimensions. That parameter
+  can be adjusted. That is because a pre-allocated buffer by thread is
+  used to convert dimension types from Zig to C.
 
 ## Disclaimers
 
-- This is a project for learning.
 - At this moment the API can change at any moment.
 - At this moment, the library is not intended for production use.
 - Feedback is welcomed
