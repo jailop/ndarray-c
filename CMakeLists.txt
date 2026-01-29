@@ -31,6 +31,7 @@ option(BUILD_STATIC_LIBS "Build static libraries" ON)
 option(BUILD_EXAMPLES "Build example programs" ON)
 option(BUILD_TESTS "Build C test suite (requires CUnit)" ON)
 option(BUILD_BENCHMARKS "Build benchmark programs" ON)
+option(BUILD_GSL_INTEGRATION "Build with GSL linear algebra integration (optional)" ON)
 
 # Compiler-specific flags
 if(MSVC)
@@ -93,37 +94,76 @@ else()
 endif()
 
 # BLAS/OpenBLAS Configuration
-# First try to use vcpkg or system-provided packages
-find_package(OpenBLAS QUIET)
-if(OpenBLAS_FOUND)
-    message(STATUS "Found OpenBLAS via vcpkg or system")
-    set(BLAS_LIBRARIES OpenBLAS::OpenBLAS)
+# Try standard BLAS package first to avoid OpenBLAS CMake target issues
+find_package(BLAS QUIET)
+if(BLAS_FOUND)
+    message(STATUS "Found BLAS libraries: ${BLAS_LIBRARIES}")
 else()
-    # Try standard BLAS package
-    find_package(BLAS QUIET)
-    if(BLAS_FOUND)
-        message(STATUS "Found BLAS libraries: ${BLAS_LIBRARIES}")
+    # Platform-specific fallback for Homebrew on macOS or manual detection
+    if(APPLE)
+        execute_process(
+            COMMAND brew --prefix openblas
+            OUTPUT_VARIABLE HOMEBREW_OPENBLAS_PREFIX
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+        )
+        if(HOMEBREW_OPENBLAS_PREFIX)
+            set(BLAS_LIBRARIES "${HOMEBREW_OPENBLAS_PREFIX}/lib/libopenblas.dylib")
+            set(OPENBLAS_INCLUDE_DIR "${HOMEBREW_OPENBLAS_PREFIX}/include")
+            message(STATUS "Using Homebrew OpenBLAS: ${HOMEBREW_OPENBLAS_PREFIX}")
+        endif()
+    endif()
+    
+    if(NOT BLAS_LIBRARIES)
+        message(FATAL_ERROR "BLAS library not found. On Windows, install via vcpkg. On macOS: brew install openblas. On Linux: install libopenblas-dev.")
+    endif()
+endif()
+
+# GSL Configuration (optional, controlled by BUILD_GSL_INTEGRATION)
+if(BUILD_GSL_INTEGRATION)
+    find_package(GSL QUIET)
+    if(GSL_FOUND)
+        message(STATUS "Found GSL: ${GSL_INCLUDE_DIRS}")
+        set(GSL_FOUND_VAR TRUE)
     else()
-        # Platform-specific fallback for Homebrew on macOS
+        # Try to find GSL via Homebrew on macOS
         if(APPLE)
             execute_process(
-                COMMAND brew --prefix openblas
-                OUTPUT_VARIABLE HOMEBREW_OPENBLAS_PREFIX
+                COMMAND brew --prefix gsl
+                OUTPUT_VARIABLE HOMEBREW_GSL_PREFIX
                 OUTPUT_STRIP_TRAILING_WHITESPACE
                 ERROR_QUIET
             )
-            if(HOMEBREW_OPENBLAS_PREFIX)
-                set(BLAS_LIBRARIES "${HOMEBREW_OPENBLAS_PREFIX}/lib/libopenblas.dylib")
-                set(OPENBLAS_INCLUDE_DIR "${HOMEBREW_OPENBLAS_PREFIX}/include")
-                message(STATUS "Using Homebrew OpenBLAS: ${HOMEBREW_OPENBLAS_PREFIX}")
+            if(HOMEBREW_GSL_PREFIX)
+                set(GSL_INCLUDE_DIRS "${HOMEBREW_GSL_PREFIX}/include")
+                set(GSL_LIBRARIES "${HOMEBREW_GSL_PREFIX}/lib/libgsl.dylib;${HOMEBREW_GSL_PREFIX}/lib/libgslcblas.dylib")
+                message(STATUS "Using Homebrew GSL: ${HOMEBREW_GSL_PREFIX}")
+                set(GSL_FOUND_VAR TRUE)
+            else()
+                message(STATUS "GSL not found - building without GSL integration. On macOS: brew install gsl")
+                set(GSL_FOUND_VAR FALSE)
+            endif()
+        else()
+            # Try system GSL on Linux
+            find_path(GSL_INCLUDE_DIR gsl/gsl_vector.h)
+            find_library(GSL_LIBRARY gsl)
+            find_library(GSLCBLAS_LIBRARY gslcblas)
+            if(GSL_INCLUDE_DIR AND GSL_LIBRARY AND GSLCBLAS_LIBRARY)
+                set(GSL_INCLUDE_DIRS "${GSL_INCLUDE_DIR}")
+                set(GSL_LIBRARIES "${GSL_LIBRARY};${GSLCBLAS_LIBRARY}")
+                message(STATUS "Found GSL via system libraries")
+                set(GSL_FOUND_VAR TRUE)
+            else()
+                message(STATUS "GSL not found - building without GSL integration. On Linux: sudo apt-get install libgsl-dev")
+                set(GSL_FOUND_VAR FALSE)
             endif()
         endif()
-        
-        if(NOT BLAS_LIBRARIES)
-            message(FATAL_ERROR "BLAS library not found. On Windows, install via vcpkg. On macOS: brew install openblas. On Linux: install libopenblas-dev.")
-        endif()
     endif()
+else()
+    message(STATUS "GSL integration disabled (BUILD_GSL_INTEGRATION=OFF)")
+    set(GSL_FOUND_VAR FALSE)
 endif()
+
 
 # OpenBLAS include directory detection
 if(NOT OPENBLAS_INCLUDE_DIR AND NOT OpenBLAS_FOUND)
@@ -174,6 +214,11 @@ set(NDARRAY_SOURCES
     src/ndarray_math.c
 )
 
+# Add GSL integration only if enabled and found
+if(GSL_FOUND_VAR)
+    list(APPEND NDARRAY_SOURCES src/ndarray_gsl.c)
+endif()
+
 set(NDARRAY_TESTS
     tests/test_aggregation.c
     tests/test_arithmetic.c
@@ -217,6 +262,10 @@ if(OpenBLAS_FOUND AND TARGET OpenBLAS::OpenBLAS)
         target_include_directories(ndarray_obj PRIVATE ${OPENBLAS_INCLUDE_DIRS})
     endif()
 endif()
+# Add GSL include directories if found
+if(GSL_FOUND_VAR)
+    target_include_directories(ndarray_obj PRIVATE ${GSL_INCLUDE_DIRS})
+endif()
 if(NOT MSVC)
     target_compile_options(ndarray_obj PRIVATE ${OpenMP_C_FLAGS})
 endif()
@@ -236,6 +285,11 @@ if(BUILD_STATIC_LIBS)
     
     # Link libraries
     target_link_libraries(ndarray_static PUBLIC ${BLAS_LIBRARIES})
+    
+    # Link GSL libraries if found
+    if(GSL_FOUND_VAR)
+        target_link_libraries(ndarray_static PUBLIC ${GSL_LIBRARIES})
+    endif()
     
     # Link math library on Unix-like systems
     if(UNIX AND NOT APPLE)
@@ -260,8 +314,18 @@ if(BUILD_SHARED_LIBS)
         $<INSTALL_INTERFACE:include>
     )
     
+    # Add GSL include directories if found
+    if(GSL_FOUND_VAR)
+        target_include_directories(ndarray_shared PUBLIC ${GSL_INCLUDE_DIRS})
+    endif()
+    
     # Link libraries
     target_link_libraries(ndarray_shared PUBLIC ${BLAS_LIBRARIES})
+    
+    # Link GSL libraries if found
+    if(GSL_FOUND_VAR)
+        target_link_libraries(ndarray_shared PUBLIC ${GSL_LIBRARIES})
+    endif()
     
     # Link math library on Unix-like systems
     if(UNIX AND NOT APPLE)
@@ -280,6 +344,17 @@ if(BUILD_EXAMPLES)
         target_link_libraries(example PRIVATE ndarray_static)
     else()
         target_link_libraries(example PRIVATE ndarray_shared)
+    endif()
+    
+    # Build GSL integration demo only if GSL is available and integration is enabled
+    if(GSL_FOUND_VAR)
+        add_executable(gsl_integration examples/gsl_integration.c)
+        target_include_directories(gsl_integration PRIVATE ${GSL_INCLUDE_DIRS})
+        if(TARGET ndarray_static)
+            target_link_libraries(gsl_integration PRIVATE ndarray_static ${GSL_LIBRARIES})
+        else()
+            target_link_libraries(gsl_integration PRIVATE ndarray_shared ${GSL_LIBRARIES})
+        endif()
     endif()
 endif()
 
@@ -397,12 +472,6 @@ endif()
 install(FILES src/ndarray.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-
-if(BUILD_EXAMPLES)
-    install(TARGETS example
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
-endif()
 
 install(EXPORT ndarrayTargets
     FILE ndarrayTargets.cmake

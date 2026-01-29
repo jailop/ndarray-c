@@ -330,4 +330,11 @@ void ndarray_reshape(const NDArray arr, const size_t* new_dims) {
             arr->dims[i] = new_dims[i];
         }
     }
+    
+    // Recalculate tda for GSL compatibility (tda = second dimension for 2D arrays)
+    if (new_ndim >= 2) {
+        arr->tda = arr->dims[1];
+    } else {
+        arr->tda = 1;
+    }
 }
