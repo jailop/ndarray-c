@@ -25,13 +25,22 @@ NDArray ndarray_new(const size_t* dims) {
         t->dims[i] = dims[i];
     }
     t->data = (double*) malloc(sizeof(double) * size);
+    
+    /* Initialize GSL-compatibility fields */
+    t->stride = 1;                          /* unit stride for contiguous access */
+    t->tda = (ndim >= 2) ? dims[1] : 1;    /* trailing dimension: row width for 2D */
+    t->owner = 1;                           /* this ndarray owns its memory */
+    
     return t;
 }
 
 void ndarray_free(NDArray t) {
     if (t == NULL) return;
-    if (t->dims != NULL) free(t->dims);
-    if (t->data != NULL) free(t->data);
+    if (t->owner) {
+        /* Only free memory if this ndarray owns it */
+        if (t->dims != NULL) free(t->dims);
+        if (t->data != NULL) free(t->data);
+    }
     free(t);
 }
 
@@ -75,6 +84,12 @@ NDArray ndarray_new_copy(const NDArray t) {
     }
     copy->data = (double*) malloc(sizeof(double) * size);
     cblas_dcopy(size, t->data, 1, copy->data, 1);
+    
+    /* Copy GSL-compatibility fields */
+    copy->stride = t->stride;
+    copy->tda = t->tda;
+    copy->owner = 1;  /* copy owns its own memory */
+    
     return copy;
 }
 

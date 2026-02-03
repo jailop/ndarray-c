@@ -26,11 +26,17 @@
  * - data: pointer to the array elements stored in row-major order
  * - dims: array of dimension sizes
  * - ndim: number of dimensions (must be >= 2)
+ * - stride: element stride for linear access (GSL compatibility)
+ * - tda: trailing dimension (physical row width for 2D matrices)
+ * - owner: ownership flag (1 if this struct owns the data block)
  */
 typedef struct {
     double *data;
     size_t *dims;
     size_t ndim;
+    size_t stride;    /* stride for 1D/vector access (default: 1) */
+    size_t tda;       /* trailing dimension for 2D matrices (default: dims[1] or 1) */
+    int owner;        /* ownership flag: 1 if owns data, 0 if borrowed */
 } NDArray_;
 
 /**
@@ -1726,5 +1732,276 @@ int ndarray_save(const NDArray arr, const char *filename);
  */
 NDArray ndarray_new_load(const char *filename);
 
-#endif // _NDARRAY_H
+/**
+ * Get the stride value for linear access (in elements, not bytes).
+ * Default is 1 for contiguous data.
+ * 
+ * @param arr NDArray
+ * @return Stride in elements
+ */
+size_t ndarray_get_stride(const NDArray arr);
 
+/**
+ * Set the stride value (advanced usage).
+ * 
+ * @param arr NDArray to modify
+ * @param stride New stride in elements (must be > 0)
+ * @return Handler for chaining
+ */
+NDArray ndarray_set_stride(NDArray arr, size_t stride);
+
+/**
+ * Get the trailing dimension (tda) - physical row width in memory.
+ * For 2D matrices, this is the number of elements between row starts.
+ * 
+ * @param arr NDArray
+ * @return tda value
+ */
+size_t ndarray_get_tda(const NDArray arr);
+
+/**
+ * Set the trailing dimension (advanced usage).
+ * 
+ * @param arr NDArray to modify
+ * @param tda New trailing dimension (must be > 0)
+ * @return Handler for chaining
+ */
+NDArray ndarray_set_tda(NDArray arr, size_t tda);
+
+/**
+ * Get the ownership flag.
+ * Returns 1 if NDArray owns its data, 0 if data is borrowed.
+ * 
+ * @param arr NDArray
+ * @return 1 if owner, 0 if borrowed
+ */
+int ndarray_get_owner(const NDArray arr);
+
+/**
+ * Set the ownership flag (advanced usage).
+ * Set to 0 when wrapping external data that should not be freed.
+ * 
+ * @param arr NDArray to modify
+ * @param owner 1 to own data, 0 if borrowed
+ * @return Handler for chaining
+ */
+NDArray ndarray_set_owner(NDArray arr, int owner);
+
+/* Prevent GSL from including its own CBLAS definitions which conflict with OpenBLAS.
+ * We define the necessary types that GSL's gsl_cblas.h would provide, then skip its inclusion. */
+#define __GSL_CBLAS_H__
+
+/* Define types that GSL's gsl_cblas.h would provide */
+#ifndef CBLAS_INDEX
+#define CBLAS_INDEX size_t
+#endif
+
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
+
+/**
+ * Create a gsl_vector view from a 1D slice of NDArray (read-write).
+ * 
+ * For 2D arrays where one dimension equals 1 (e.g., [n,1] or [1,n]), extracts
+ * that single row/column as a vector. For higher-dimensional arrays, extracts
+ * a slice perpendicular to the specified axis.
+ * 
+ * The returned view does NOT own the data and does NOT make a copy.
+ * It points directly to NDArray's memory. Modifications through the vector
+ * view directly modify the NDArray.
+ * 
+ * @param arr NDArray source
+ * @param axis Axis perpendicular to extraction (0=rows, 1=cols for 2D)
+ * @param index Index along the specified axis
+ * @return A gsl_vector_view with data pointing to arr->data (no copy)
+ * 
+ * Example:
+ * ```c
+ * NDArray mat = ndarray_new(NDA_DIMS(4, 5));
+ * // ... fill matrix ...
+ * gsl_vector_view v = ndarray_to_gsl_vector(mat, 0, 2);  // Row 2
+ * double norm = gsl_blas_dnrm2(&v.vector);
+ * ```
+ */
+gsl_vector_view ndarray_to_gsl_vector(NDArray arr, int axis, size_t index);
+
+/**
+ * Create a const gsl_vector view from NDArray (read-only).
+ * 
+ * Same as ndarray_to_gsl_vector() but for const arrays and prevents modification.
+ * 
+ * @param arr Const NDArray source
+ * @param axis Axis perpendicular to extraction
+ * @param index Index along the specified axis
+ * @return A gsl_vector_const_view (read-only)
+ */
+gsl_vector_const_view ndarray_to_gsl_vector_const(const NDArray arr, int axis, size_t index);
+
+/**
+ * Create a gsl_matrix view from a 2D NDArray (read-write).
+ * 
+ * Direct memory mapping: NDArray's row-major layout aligns with GSL's row-major format.
+ * The returned view respects NDArray's stride and tda fields for proper element access.
+ * 
+ * The view does NOT own the data and does NOT make a copy. It points directly to
+ * NDArray's memory.
+ * 
+ * @param arr NDArray (must be 2D, i.e., ndim == 2)
+ * @return A gsl_matrix_view with:
+ *   - size1 = arr->dims[0] (number of rows)
+ *   - size2 = arr->dims[1] (number of columns)
+ *   - tda = arr->tda (physical row width in memory, including padding)
+ *   - data = arr->data (same memory as NDArray)
+ * 
+ * Example:
+ * ```c
+ * NDArray A = ndarray_new(NDA_DIMS(3, 3));
+ * // ... fill A ...
+ * gsl_matrix_view m = ndarray_to_gsl_matrix(A);
+ * gsl_permutation* p = gsl_permutation_alloc(3);
+ * int signum;
+ * gsl_linalg_LU_decomp(&m.matrix, p, &signum);  // A is modified in-place
+ * gsl_permutation_free(p);
+ * ```
+ */
+gsl_matrix_view ndarray_to_gsl_matrix(NDArray arr);
+
+/**
+ * Create a const gsl_matrix view from NDArray (read-only).
+ * 
+ * Same as ndarray_to_gsl_matrix() but for const arrays and prevents modification.
+ * 
+ * @param arr Const NDArray (must be 2D)
+ * @return A gsl_matrix_const_view (read-only)
+ */
+gsl_matrix_const_view ndarray_to_gsl_matrix_const(const NDArray arr);
+
+/**
+ * Create a gsl_vector view of a specific row from a 2D NDArray.
+ * 
+ * Extracts the row as a contiguous vector with stride=1 (natural row layout).
+ * 
+ * @param arr 2D NDArray
+ * @param row_idx Row index (0 to dims[0]-1)
+ * @return Vector view of the row (stride=1, no copy)
+ * 
+ * Example:
+ * ```c
+ * NDArray mat = ndarray_new(NDA_DIMS(4, 5));
+ * gsl_vector_view row2 = ndarray_to_gsl_row(mat, 2);
+ * gsl_vector_scale(&row2.vector, 2.0);  // Scale row 2 by 2
+ * ```
+ */
+gsl_vector_view ndarray_to_gsl_row(NDArray arr, size_t row_idx);
+
+/**
+ * Create a const gsl_vector view of a specific row from a 2D NDArray (read-only).
+ * 
+ * @param arr Const 2D NDArray
+ * @param row_idx Row index
+ * @return Vector view of the row (read-only)
+ */
+gsl_vector_const_view ndarray_to_gsl_row_const(const NDArray arr, size_t row_idx);
+
+/**
+ * Create a gsl_vector view of a specific column from a 2D NDArray.
+ * 
+ * Extracts the column as a strided vector with stride=tda (column-major access).
+ * 
+ * @param arr 2D NDArray
+ * @param col_idx Column index (0 to dims[1]-1)
+ * @return Vector view of the column (stride=tda, no copy)
+ * 
+ * Example:
+ * ```c
+ * NDArray mat = ndarray_new(NDA_DIMS(4, 5));
+ * gsl_vector_view col3 = ndarray_to_gsl_column(mat, 3);
+ * double sum = gsl_vector_sum(&col3.vector);  // Sum column 3
+ * ```
+ */
+gsl_vector_view ndarray_to_gsl_column(NDArray arr, size_t col_idx);
+
+/**
+ * Create a const gsl_vector view of a specific column from a 2D NDArray (read-only).
+ * 
+ * @param arr Const 2D NDArray
+ * @param col_idx Column index
+ * @return Vector view of the column (read-only)
+ */
+gsl_vector_const_view ndarray_to_gsl_column_const(const NDArray arr, size_t col_idx);
+
+/**
+ * Get the stride value for linear access (in elements, not bytes).
+ * 
+ * Returns the number of elements between consecutive accessed elements in the
+ * underlying data array.
+ * 
+ * @param arr NDArray
+ * @return Stride in elements (default: 1 for contiguous)
+ */
+size_t ndarray_get_stride(const NDArray arr);
+
+/**
+ * Set the stride value (advanced usage).
+ * 
+ * WARNING: Only use this if you understand GSL stride semantics. Improper stride
+ * values can cause undefined behavior or memory access errors.
+ * 
+ * Stride affects how linear access is computed: element i is at data[i * stride].
+ * 
+ * @param arr NDArray to modify
+ * @param stride New stride in elements (must be > 0)
+ * @return Handler for chaining
+ */
+NDArray ndarray_set_stride(NDArray arr, size_t stride);
+
+/**
+ * Get the trailing dimension (tda) - physical row width in memory for 2D matrices.
+ * 
+ * For a 2D matrix, tda is the number of elements between the start of one row
+ * and the start of the next row in physical memory. This can be larger than
+ * dims[1] to accommodate padding.
+ * 
+ * @param arr NDArray
+ * @return tda value (for 2D: row pitch; for 1D: 1)
+ */
+size_t ndarray_get_tda(const NDArray arr);
+
+/**
+ * Set the trailing dimension (advanced usage).
+ * 
+ * WARNING: Only use this for creating views of padded matrices or submatrices.
+ * Setting incorrect tda values will cause undefined behavior.
+ * 
+ * For 2D matrices, tda must be >= dims[1]. For other dimensions, tda is typically 1.
+ * 
+ * @param arr NDArray to modify
+ * @param tda New trailing dimension (must be > 0)
+ * @return Handler for chaining
+ */
+NDArray ndarray_set_tda(NDArray arr, size_t tda);
+
+/**
+ * Get the ownership flag.
+ * 
+ * Returns 1 if the NDArray owns its data block (will be freed by ndarray_free),
+ * or 0 if the data is borrowed from another source (will NOT be freed).
+ * 
+ * @param arr NDArray
+ * @return 1 if owner, 0 if borrowed
+ */
+int ndarray_get_owner(const NDArray arr);
+
+/**
+ * Set the ownership flag (advanced usage).
+ * 
+ * WARNING: Only use this when creating NDArray structures from external data sources.
+ * Setting owner=0 tells ndarray_free() not to deallocate the memory.
+ * 
+ * @param arr NDArray to modify
+ * @param owner 1 to own data, 0 if borrowed
+ * @return Handler for chaining
+ */
+NDArray ndarray_set_owner(NDArray arr, int owner);
+
+#endif // _NDARRAY_H
