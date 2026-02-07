@@ -47,6 +47,11 @@ This library has also bidings for Nim:
   can be adjusted. That is because a pre-allocated buffer by thread is
   used to convert dimension types from Zig to C.
 
+
+## Contributing
+
+Check the [ROADMAP](ROADMAP.md) for planned features and ideas.
+
 ## Disclaimers
 
 - At this moment the API can change at any moment.
