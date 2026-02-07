@@ -76,3 +76,5 @@
 
 - Zero-copy intergration with GSL (GNU Scientific Library) for vectors
   and matrices
+- The nim bindings have been integrated into this repository to be
+  directly supported.

@@ -1,4 +1,4 @@
-version       = "0.4.2"
+version       = "0.5.0"
 author        = "Jaime Lopez"
 description   = "Nim bindings for ndarray-c library"
 license       = "BSD-3-Clause"
