@@ -10,186 +10,131 @@
 #include <math.h>
 #include "ndarray_internal.h"
 
+#if defined(_GNU_SOURCE) && !defined(_WIN32)
+struct drand48_data rng_state;
+#ifdef _OPENMP
+// srand48_r(time(NULL) ^ (omp_get_thread_num() << 16), &rng_state);
+#else
+// srand48_r(time(NULL), &rng_state);
+#endif
+#endif
+
+static double next_rand() {
+        double u;
+#if defined(_GNU_SOURCE) && !defined(_WIN32)
+        drand48_r(&rng_state, &u);
+#else
+        u = ((double)rand() / RAND_MAX);
+#endif
+        return u;
+}
 
 /**
  * Generate a Poisson random number using Knuth's algorithm
  */
-#if defined(_GNU_SOURCE) && !defined(_WIN32)
-static inline double knuth_poisson(struct drand48_data *rng_state,
-        double lambda) {
+static inline double knuth_poisson(double lambda) {
     double L = exp(-lambda);
     int k = 0;
     double p = 1.0;
     do {
         k++;
-        double u;
-        drand48_r(rng_state, &u);
-        p *= u;
+        p *= next_rand();
     } while (p > L);
     return k - 1;
 }
-#else
-static inline double knuth_poisson_simple(double lambda) {
-    double L = exp(-lambda);
-    int k = 0;
-    double p = 1.0;
-    do {
-        k++;
-        double u = ((double)rand() / RAND_MAX);
-        p *= u;
-    } while (p > L);
-    return k - 1;
-}
-#endif
 
 /**
  * Generate a Gaussian random number using Box-Muller transform
  */
-#if defined(_GNU_SOURCE) && !defined(_WIN32)
-static inline double box_muller_gaussian(struct drand48_data *rng_state,
-        double mean, double std) {
-    double u1, u2;
-    drand48_r(rng_state, &u1);
-    drand48_r(rng_state, &u2);
+static inline double box_muller_gaussian(double mean, double std) {
+    double u1 = next_rand();
+    double u2 = next_rand();
     if (u1 < 1e-10) u1 = 1e-10;
     double z = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2);
     return mean + std * z;
 }
-#else
-// Portable version using rand() (not thread-safe but works on all platforms)
-static inline double box_muller_gaussian_simple(double mean, double std) {
-    double u1 = ((double)rand() / RAND_MAX);
-    double u2 = ((double)rand() / RAND_MAX);
-    if (u1 < 1e-10) u1 = 1e-10;
-    double z = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2);
-    return mean + std * z;
-}
+
+NDArray ndarray_fill_randnorm(const NDArray A, double mean, double stddev) {
+        assert(A != NULL && "ndarray cannot be NULL");
+#ifdef _OPENMP
+        size_t size = ndarray_size(A);
+        if (size >= OMP_THRESHOLD) {
+                OMP_PRAGMA(omp parallel)
+                {
+                        OMP_PRAGMA(omp for)
 #endif
-
-
+                        for_range(size_t, i, 0, ndarray_size(A))
+                                A->data[i] = box_muller_gaussian(mean, stddev);
+#ifdef _OPENMP
+                }
+        } else {
+                for_range(size_t, i, 0, ndarray_size(A))
+                        A->data[i] = box_muller_gaussian(mean, stddev);
+        } 
+#endif
+    return (NDArray)A;
+}
 
 NDArray ndarray_new_randnorm(const size_t *dims, double mean, double stddev) {
     NDArray t = ndarray_new(dims);
-    size_t size = ndarray_size(t);
-    
-#if defined(_GNU_SOURCE) && !defined(_WIN32)
+    return ndarray_fill_randnorm(t, mean, stddev);
+}
+
+NDArray ndarray_fill_randunif(const NDArray A, double low, double high) {
+    assert(A != NULL && "ndarray cannot be NULL");
+    size_t size = ndarray_size(A);
+    double range = high - low;
+#ifdef _OPENMP
     if (size >= OMP_THRESHOLD) {
         OMP_PRAGMA(omp parallel)
         {
-#ifdef _OPENMP
-            struct drand48_data rng_state;
-            srand48_r(time(NULL) ^ (omp_get_thread_num() << 16), &rng_state);
             OMP_PRAGMA(omp for)
-            for (size_t i = 0; i < size; ++i) {
-                t->data[i] = box_muller_gaussian(&rng_state, mean, stddev);
-            }
-#else
-            struct drand48_data rng_state;
-            srand48_r(time(NULL), &rng_state);
-            for (size_t i = 0; i < size; ++i) {
-                t->data[i] = box_muller_gaussian(&rng_state, mean, stddev);
-            }
 #endif
+            for (size_t i = 0; i < size; ++i) {
+                double u = next_rand();
+                A->data[i] = low + range * u;
+            }
+#ifdef _OPENMP
         }
     } else {
-        struct drand48_data rng_state;
-        srand48_r(time(NULL), &rng_state);
-        for (size_t i = 0; i < size; ++i) {
-            t->data[i] = box_muller_gaussian(&rng_state, mean, stddev);
-        }
-    }
-#else
-    // Portable version - OpenMP disabled for random number generation on non-GNU systems
-    srand((unsigned int)time(NULL));
-    for (size_t i = 0; i < size; ++i) {
-        t->data[i] = box_muller_gaussian_simple(mean, stddev);
+            for (size_t i = 0; i < size; ++i) {
+                double u = next_rand();
+                A->data[i] = low + range * u;
+            }
     }
 #endif
-    return t;
+    return (NDArray)A;
 }
 
 NDArray ndarray_new_randunif(const size_t *dims, double low, double high) {
     NDArray t = ndarray_new(dims);
-    size_t size = ndarray_size(t);
-    double range = high - low;
-    
-#if defined(_GNU_SOURCE) && !defined(_WIN32)
+    return ndarray_fill_randunif(t, low, high);
+}
+
+NDArray ndarray_fill_randpoisson(const NDArray A, double lambda) {
+    assert(A != NULL && "ndarray cannot be NULL");
+    size_t size = ndarray_size(A);
+#ifdef _OPENMP
     if (size >= OMP_THRESHOLD) {
         OMP_PRAGMA(omp parallel)
         {
-#ifdef _OPENMP
-            struct drand48_data rng_state;
-            srand48_r(time(NULL) ^ (omp_get_thread_num() << 16), &rng_state);
             OMP_PRAGMA(omp for)
-            for (size_t i = 0; i < size; ++i) {
-                double u;
-                drand48_r(&rng_state, &u);
-                t->data[i] = low + range * u;
-            }
-#else
-            struct drand48_data rng_state;
-            srand48_r(time(NULL), &rng_state);
-            for (size_t i = 0; i < size; ++i) {
-                double u;
-                drand48_r(&rng_state, &u);
-                t->data[i] = low + range * u;
-            }
 #endif
+            for (size_t i = 0; i < size; ++i) {
+                A->data[i] = knuth_poisson(lambda);
+            }
+#ifdef _OPENMP
         }
     } else {
-        struct drand48_data rng_state;
-        srand48_r(time(NULL), &rng_state);
         for (size_t i = 0; i < size; ++i) {
-            double u;
-            drand48_r(&rng_state, &u);
-            t->data[i] = low + range * u;
+            A->data[i] = knuth_poisson(lambda);
         }
     }
-#else
-    // Portable version - OpenMP disabled for random number generation on non-GNU systems
-    srand((unsigned int)time(NULL));
-    for (size_t i = 0; i < size; ++i) {
-        t->data[i] = low + range * ((double)rand() / RAND_MAX);
-    }
 #endif
-    
-    return t;
+    return (NDArray)A;
 }
 
 NDArray ndarray_new_randpoisson(const size_t *dims, double lambda) {
     NDArray t = ndarray_new(dims);
-    size_t size = ndarray_size(t);
-#if defined(_GNU_SOURCE) && !defined(_WIN32)
-    if (size >= OMP_THRESHOLD) {
-        OMP_PRAGMA(omp parallel)
-        {
-#ifdef _OPENMP
-            struct drand48_data rng_state;
-            srand48_r(time(NULL) ^ (omp_get_thread_num() << 16), &rng_state);
-            OMP_PRAGMA(omp for)
-            for (size_t i = 0; i < size; ++i) {
-                t->data[i] = knuth_poisson(&rng_state, lambda);
-            }
-#else
-            struct drand48_data rng_state;
-            srand48_r(time(NULL), &rng_state);
-            for (size_t i = 0; i < size; ++i) {
-                t->data[i] = knuth_poisson(&rng_state, lambda);
-            }
-#endif
-        }
-    } else {
-        struct drand48_data rng_state;
-        srand48_r(time(NULL), &rng_state);
-        for (size_t i = 0; i < size; ++i) {
-            t->data[i] = knuth_poisson(&rng_state, lambda);
-        }
-    }
-#else
-    srand((unsigned int)time(NULL));
-    for (size_t i = 0; i < size; ++i) {
-        t->data[i] = knuth_poisson_simple(lambda);
-    }
-#endif
-    return t;
+    return ndarray_fill_randpoisson(t, lambda);
 }
