@@ -78,3 +78,7 @@
   and matrices
 - The nim bindings have been integrated into this repository to be
   directly supported.
+
+2026-08-06:
+
+- Makefile removed in favor of using cmake
