@@ -82,3 +82,4 @@
 2026-08-06:
 
 - Makefile removed in favor of using cmake
+- Start implementing error management system: error codes

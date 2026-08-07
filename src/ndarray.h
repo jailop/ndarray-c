@@ -4,48 +4,43 @@
 #include <stddef.h>
 
 /**
- * All ndarrays in this library must have ndim >= 2.
- * 1D arrays are not supported - use 2D arrays with one dimension set to 1.
+ * All ndarrays in this library must have ndim >= 2.  1D arrays are not
+ * supported - use 2D arrays with one of its dimensions set to 1.
  */
 
-/**
- * Error codes for ndarray operations.
- */
-#define NDA_SUCCESS           0   /**< Operation completed successfully */
+#define NDA_SUCCESS            0  /**< Operation completed successfully */
 #define NDA_ERROR_NULL        -1  /**< NULL pointer argument */
 #define NDA_ERROR_AXIS        -2  /**< Axis out of range */
 #define NDA_ERROR_INDEX       -3  /**< Index out of bounds */
 #define NDA_ERROR_SIZE        -4  /**< Size mismatch */
+#define NDA_ERROR_NDIM        -5  /**< ndim < 2 or ndim mismatch */
+#define NDA_ERROR_ALLOC       -6  /**< memory allocation failed */
+#define NDA_ERROR_IO          -7  /**< file i/o error */
+#define NDA_ERROR_FORMAT      -8  /**< invalid file format */
+#define NDA_ERROR_DOMAIN      -9  /**< math domain error */
+#define NDA_ERROR_SHAPE       -10 /**< shape mismatch between operands */
+#define NDA_ERROR_PARAM       -11 /**< invalid parameter value */
+#define NDA_ERROR_INTERN      -99 /**< internal library error */
 
 /**
  * An structure to represent and operate over
  * multi-dimensional arrays of doubles.
- * 
- * This structure contains:
- *
- * - data: pointer to the array elements stored in row-major order
- * - dims: array of dimension sizes
- * - ndim: number of dimensions (must be >= 2)
- * - stride: element stride for linear access (GSL compatibility)
- * - tda: trailing dimension (physical row width for 2D matrices)
- * - owner: ownership flag (1 if this struct owns the data block)
  */
 typedef struct {
-    double *data;
-    size_t *dims;
-    size_t ndim;
-    size_t stride;    /* stride for 1D/vector access (default: 1) */
-    size_t tda;       /* trailing dimension for 2D matrices (default: dims[1] or 1) */
-    int owner;        /* ownership flag: 1 if owns data, 0 if borrowed */
+    double *data;     // elements stored in row-major order
+    size_t *dims;     // array of dimension sizes
+    size_t ndim;      // number of dimensions
+    size_t stride;    // stride for 1D/vector access (default: 1)
+    size_t tda;       // trailing dimension for 2D matrices (default: dims[1] or 1)
+    int owner;        // ownership flag: 1 if owns data, 0 if borrowed
 } NDArray_;
 
 /**
  * A handle to a ndarray structure.
  * 
- * It is expected that users will interact with ndarrays
- * through this handle rather than directly manipulating
- * the underlying structure. All ndarray functions accept
- * and return this handle type.
+ * It is expected that users will interact with ndarrays through this
+ * handle rather than directly manipulating the underlying structure.
+ * All ndarray functions accept and return this handle type.
  * 
  * Example:
  * 
