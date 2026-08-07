@@ -83,3 +83,9 @@
 
 - Makefile removed in favor of using cmake
 - Start implementing error management system: error codes
+
+2026-08-07:
+
+- fill functions in random module. For loops it is not needed to create
+  new arrays inside, but only to fill an existing array on each step.
+- for_range macro included

@@ -227,3 +227,122 @@ double ndarray_scalar_aggr(const NDArray A, int aggr_type) {
             return 0.0;
     }
 }
+
+double ndarray_scalar_covariance(const NDArray A, const NDArray B) {
+    assert(A != NULL && B != NULL && "ndarrays cannot be NULL");
+    assert(A->ndim >= 2 && B->ndim >= 2 && "ndarrays must have at least 2 dimensions");
+    size_t size_a = ndarray_size(A);
+    size_t size_b = ndarray_size(B);
+    assert(size_a == size_b && "ndarrays must have the same size");
+    assert(size_a >= 2 && "ndarrays must have at least 2 elements");
+    double mean_a = 0.0, mean_b = 0.0;
+    OMP_PRAGMA(omp parallel for reduction(+:mean_a) reduction(+:mean_b))
+    for (size_t i = 0; i < size_a; ++i) {
+        mean_a += A->data[i];
+        mean_b += B->data[i];
+    }
+    mean_a /= size_a;
+    mean_b /= size_b;
+    double cov = 0.0;
+    OMP_PRAGMA(omp parallel for reduction(+:cov))
+    for (size_t i = 0; i < size_a; ++i) {
+        cov += (A->data[i] - mean_a) * (B->data[i] - mean_b);
+    }
+    return cov / (size_a - 1);
+}
+
+double ndarray_scalar_correlation(const NDArray A, const NDArray B) {
+    assert(A != NULL && B != NULL && "ndarrays cannot be NULL");
+    assert(A->ndim >= 2 && B->ndim >= 2 && "ndarrays must have at least 2 dimensions");
+    size_t size_a = ndarray_size(A);
+    size_t size_b = ndarray_size(B);
+    assert(size_a == size_b && "ndarrays must have the same size");
+    assert(size_a >= 2 && "ndarrays must have at least 2 elements");
+    double mean_a = 0.0, mean_b = 0.0;
+    OMP_PRAGMA(omp parallel for reduction(+:mean_a) reduction(+:mean_b))
+    for (size_t i = 0; i < size_a; ++i) {
+        mean_a += A->data[i];
+        mean_b += B->data[i];
+    }
+    mean_a /= size_a;
+    mean_b /= size_b;
+    double cov = 0.0, var_a = 0.0, var_b = 0.0;
+    OMP_PRAGMA(omp parallel for reduction(+:cov) reduction(+:var_a) reduction(+:var_b))
+    for (size_t i = 0; i < size_a; ++i) {
+        double da = A->data[i] - mean_a;
+        double db = B->data[i] - mean_b;
+        cov += da * db;
+        var_a += da * da;
+        var_b += db * db;
+    }
+    double denom = sqrt(var_a * var_b);
+    return (denom == 0.0) ? 0.0 : cov / denom;
+}
+
+NDArray ndarray_new_covariance(const NDArray A) {
+    assert(A != NULL && "ndarray cannot be NULL");
+    assert(A->ndim >= 2 && "ndarray must have at least 2 dimensions");
+    size_t n = A->dims[0];
+    size_t p = A->dims[1];
+    assert(n >= 2 && "need at least 2 observations");
+    NDArray result = ndarray_new_zeros(NDA_DIMS(p, p));
+    size_t stride = compute_stride(A, 0);
+    OMP_PRAGMA(omp parallel for collapse(2))
+    for (size_t j = 0; j < p; ++j) {
+        for (size_t k = j; k < p; ++k) {
+            double mean_j = 0.0, mean_k = 0.0;
+            for (size_t i = 0; i < n; ++i) {
+                mean_j += A->data[i * stride + j];
+                mean_k += A->data[i * stride + k];
+            }
+            mean_j /= n;
+            mean_k /= n;
+
+            double cov = 0.0;
+            for (size_t i = 0; i < n; ++i) {
+                cov += (A->data[i * stride + j] - mean_j) *
+                       (A->data[i * stride + k] - mean_k);
+            }
+            cov /= (n - 1);
+            result->data[j * p + k] = cov;
+            result->data[k * p + j] = cov;
+        }
+    }
+    return result;
+}
+
+NDArray ndarray_new_correlation(const NDArray A) {
+    assert(A != NULL && "ndarray cannot be NULL");
+    assert(A->ndim >= 2 && "ndarray must have at least 2 dimensions");
+    size_t n = A->dims[0];
+    size_t p = A->dims[1];
+    assert(n >= 2 && "need at least 2 observations");
+    NDArray result = ndarray_new_zeros(NDA_DIMS(p, p));
+    size_t stride = compute_stride(A, 0);
+    OMP_PRAGMA(omp parallel for collapse(2))
+    for (size_t j = 0; j < p; ++j) {
+        for (size_t k = j; k < p; ++k) {
+            double mean_j = 0.0, mean_k = 0.0;
+            for (size_t i = 0; i < n; ++i) {
+                mean_j += A->data[i * stride + j];
+                mean_k += A->data[i * stride + k];
+            }
+            mean_j /= n;
+            mean_k /= n;
+
+            double cov = 0.0, var_j = 0.0, var_k = 0.0;
+            for (size_t i = 0; i < n; ++i) {
+                double dj = A->data[i * stride + j] - mean_j;
+                double dk = A->data[i * stride + k] - mean_k;
+                cov += dj * dk;
+                var_j += dj * dj;
+                var_k += dk * dk;
+            }
+            double denom = sqrt(var_j * var_k);
+            double corr = (denom == 0.0) ? 0.0 : cov / denom;
+            result->data[j * p + k] = corr;
+            result->data[k * p + j] = corr;
+        }
+    }
+    return result;
+}

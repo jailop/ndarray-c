@@ -78,6 +78,39 @@ NDArray ndarray_axpby(const NDArray A, double alpha, const NDArray B,
     return A;
 }
 
+double ndarray_scalar_dot(const NDArray A, const NDArray B) {
+    assert(A != NULL && B != NULL && "ndarrays cannot be NULL");
+    assert(A->ndim >= 2 && B->ndim >= 2
+            && "ndarrays must have at least 2 dimensions");
+    
+    // Check that A is vector-like (one dimension must be 1)
+    bool a_is_vector = false;
+    for (size_t i = 0; i < A->ndim; ++i) {
+        if (A->dims[i] == 1) {
+            a_is_vector = true;
+            break;
+        }
+    }
+    assert(a_is_vector && "A must be vector-like: at least one dimension must be 1");
+    
+    // Check that B is vector-like (one dimension must be 1)
+    bool b_is_vector = false;
+    for (size_t i = 0; i < B->ndim; ++i) {
+        if (B->dims[i] == 1) {
+            b_is_vector = true;
+            break;
+        }
+    }
+    assert(b_is_vector && "B must be vector-like: at least one dimension must be 1");
+    
+    size_t size_a = ndarray_size(A);
+    size_t size_b = ndarray_size(B);
+    assert(size_a == size_b && "ndarrays must have the same number of elements");
+    
+    // Use CBLAS ddot for optimized dot product
+    return cblas_ddot(size_a, A->data, 1, B->data, 1);
+}
+
 NDArray ndarray_scale_shift(const NDArray A, double alpha, double beta) {
     assert(A != NULL && "ndarray cannot be NULL");
     assert(A->ndim >= 2 && "ndarray must have at least 2 dimensions");

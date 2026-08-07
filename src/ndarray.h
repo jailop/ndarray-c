@@ -3,24 +3,40 @@
 
 #include <stddef.h>
 
+/* 
+ * Prevent GSL from including its own CBLAS definitions which conflict
+ * with OpenBLAS. We define the necessary types that GSL's gsl_cblas.h
+ * would provide, then skip its inclusion.
+ */
+#define __GSL_CBLAS_H__
+
+/* Define types that GSL's gsl_cblas.h would provide */
+#ifndef CBLAS_INDEX
+#define CBLAS_INDEX size_t
+#endif
+
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
+
+
 /**
  * All ndarrays in this library must have ndim >= 2.  1D arrays are not
  * supported - use 2D arrays with one of its dimensions set to 1.
  */
 
-#define NDA_SUCCESS            0  /**< Operation completed successfully */
-#define NDA_ERROR_NULL        -1  /**< NULL pointer argument */
-#define NDA_ERROR_AXIS        -2  /**< Axis out of range */
-#define NDA_ERROR_INDEX       -3  /**< Index out of bounds */
-#define NDA_ERROR_SIZE        -4  /**< Size mismatch */
-#define NDA_ERROR_NDIM        -5  /**< ndim < 2 or ndim mismatch */
-#define NDA_ERROR_ALLOC       -6  /**< memory allocation failed */
-#define NDA_ERROR_IO          -7  /**< file i/o error */
-#define NDA_ERROR_FORMAT      -8  /**< invalid file format */
-#define NDA_ERROR_DOMAIN      -9  /**< math domain error */
-#define NDA_ERROR_SHAPE       -10 /**< shape mismatch between operands */
-#define NDA_ERROR_PARAM       -11 /**< invalid parameter value */
-#define NDA_ERROR_INTERN      -99 /**< internal library error */
+#define NDA_SUCCESS           0  /**< Operation completed successfully */
+#define NDA_ERROR_NULL        1  /**< NULL pointer argument */
+#define NDA_ERROR_AXIS        2  /**< Axis out of range */
+#define NDA_ERROR_INDEX       3  /**< Index out of bounds */
+#define NDA_ERROR_SIZE        4  /**< Size mismatch */
+#define NDA_ERROR_NDIM        5  /**< ndim < 2 or ndim mismatch */
+#define NDA_ERROR_ALLOC       6  /**< memory allocation failed */
+#define NDA_ERROR_IO          7  /**< file i/o error */
+#define NDA_ERROR_FORMAT      8  /**< invalid file format */
+#define NDA_ERROR_DOMAIN      9  /**< math domain error */
+#define NDA_ERROR_SHAPE       10 /**< shape mismatch between operands */
+#define NDA_ERROR_PARAM       11 /**< invalid parameter value */
+#define NDA_ERROR_INTERN      99 /**< internal library error */
 
 /**
  * An structure to represent and operate over
@@ -603,6 +619,77 @@ NDArray ndarray_new_randunif(const size_t *dims, double low, double high);
 NDArray ndarray_new_randpoisson(const size_t *dims, double lambda);
 
 /**
+ * Fills an ndarray with random values from a normal distribution.
+ *
+ * Reuses the same internal RNG, avoiding repeated allocation.
+ * More efficient than ndarray_new_randnorm() when called in a loop.
+ *
+ * @param A The ndarray to fill (modified in place).
+ * @param mean The mean of the normal distribution.
+ * @param stddev The standard deviation of the normal distribution.
+ * @return A handle to the same ndarray A with the result.
+ *
+ * Example:
+ *
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(3, 4));
+ * for (int i = 0; i < 100; i++) {
+ *     ndarray_fill_randnorm(arr, 0.0, 1.0);  // Reuses internal RNG
+ *     // ... use arr ...
+ * }
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray ndarray_fill_randnorm(const NDArray A, double mean, double stddev);
+
+/**
+ * Fills an ndarray with random values from a uniform distribution.
+ *
+ * Reuses the same internal RNG, avoiding repeated allocation.
+ * More efficient than ndarray_new_randunif() when called in a loop.
+ *
+ * @param A The ndarray to fill (modified in place).
+ * @param low The lower bound of the uniform distribution (inclusive).
+ * @param high The upper bound of the uniform distribution (exclusive).
+ * @return A handle to the same ndarray A with the result.
+ *
+ * Example:
+ *
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(3, 4));
+ * for (int i = 0; i < 100; i++) {
+ *     ndarray_fill_randunif(arr, 0.0, 1.0);  // Reuses internal RNG
+ *     // ... use arr ...
+ * }
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray ndarray_fill_randunif(const NDArray A, double low, double high);
+
+/**
+ * Fills an ndarray with random values from a Poisson distribution.
+ *
+ * Reuses the same internal RNG, avoiding repeated allocation.
+ * More efficient than ndarray_new_randpoisson() when called in a loop.
+ *
+ * @param A The ndarray to fill (modified in place).
+ * @param lambda The expected number of events (rate parameter, must be > 0).
+ * @return A handle to the same ndarray A with the result.
+ *
+ * Example:
+ *
+ * ```c
+ * NDArray arr = ndarray_new(NDA_DIMS(3, 4));
+ * for (int i = 0; i < 100; i++) {
+ *     ndarray_fill_randpoisson(arr, 5.0);  // Reuses internal RNG
+ *     // ... use arr ...
+ * }
+ * ndarray_free(arr);
+ * ```
+ */
+NDArray ndarray_fill_randpoisson(const NDArray A, double lambda);
+
+/**
  * Adds two ndarrays element-wise.
  * 
  * The result is stored in the first ndarray (A).
@@ -1018,6 +1105,33 @@ NDArray ndarray_pow(const NDArray A, double exponent);
  */
 NDArray ndarray_axpby(const NDArray A, double alpha, const NDArray B,
         double beta);
+
+/**
+ * Dot product: result = A . B
+ *
+ * Computes the dot product of two vector-like arrays using optimized BLAS ddot.
+ * Both arrays must be vector-like (at least one dimension must be 1) and have
+ * the same total number of elements.
+ *
+ * Vector-like arrays include: (n, 1), (1, n), (n, 1, 1), (1, 1, n), etc.
+ * For matrix multiplication, use ndarray_new_matmul() instead.
+ *
+ * @param A The first ndarray (must be vector-like: at least one dimension = 1).
+ * @param B The second ndarray (must be vector-like: at least one dimension = 1).
+ * @return The dot product of A and B as a scalar.
+ *
+ * Example:
+ *
+ * ```c
+ * NDArray A = ndarray_new(NDA_DIMS(3, 1));  // column vector
+ * NDArray B = ndarray_new(NDA_DIMS(1, 3));  // row vector
+ * // ... fill A and B ...
+ * double dot = ndarray_scalar_dot(A, B);
+ * printf("Dot product: %f\n", dot);
+ * ndarray_free_all(NDA_LIST(A, B));
+ * ```
+ */
+double ndarray_scalar_dot(const NDArray A, const NDArray B);
 
 /**
  * Scale and shift: A = alpha*A + beta
@@ -1683,6 +1797,102 @@ NDArray ndarray_new_aggr(const NDArray A, int axis, int aggr_type);
 double ndarray_scalar_aggr(const NDArray A, int aggr_type);
 
 /**
+ * Creates a new covariance matrix from a 2D ndarray.
+ *
+ * For an input array of shape [n, p] (n observations, p variables),
+ * computes the p x p covariance matrix where element (i, j) is the
+ * sample covariance between variables i and j.
+ *
+ * Uses Bessel's correction (divides by n-1) for unbiased estimation.
+ *
+ * @param A The input ndarray of shape [n, p] where n >= 2.
+ * @return A new ndarray of shape [p, p] containing the covariance matrix.
+ *
+ * Example:
+ *
+ * ```c
+ * NDArray data = ndarray_new(NDA_DIMS(100, 3));
+ * // ... fill with data ...
+ * NDArray cov = ndarray_new_covariance(data);
+ * // cov is 3x3 covariance matrix
+ * ndarray_free_all(NDA_LIST(data, cov));
+ * ```
+ */
+NDArray ndarray_new_covariance(const NDArray A);
+
+/**
+ * Creates a new correlation matrix from a 2D ndarray.
+ *
+ * For an input array of shape [n, p] (n observations, p variables),
+ * computes the p x p correlation matrix where element (i, j) is the
+ * Pearson correlation coefficient between variables i and j.
+ *
+ * Values range from -1 to 1, where 1 indicates perfect positive
+ * correlation, -1 indicates perfect negative correlation, and 0
+ * indicates no linear correlation.
+ *
+ * @param A The input ndarray of shape [n, p] where n >= 2.
+ * @return A new ndarray of shape [p, p] containing the correlation matrix.
+ *
+ * Example:
+ *
+ * ```c
+ * NDArray data = ndarray_new(NDA_DIMS(100, 3));
+ * // ... fill with data ...
+ * NDArray corr = ndarray_new_correlation(data);
+ * // corr is 3x3 correlation matrix
+ * ndarray_free_all(NDA_LIST(data, corr));
+ * ```
+ */
+NDArray ndarray_new_correlation(const NDArray A);
+
+/**
+ * Computes the sample covariance between two ndarrays.
+ *
+ * Both arrays must have the same number of elements. Computes the
+ * sample covariance using Bessel's correction (divides by n-1).
+ *
+ * @param A First input ndarray.
+ * @param B Second input ndarray (must have same size as A).
+ * @return The sample covariance between A and B.
+ *
+ * Example:
+ *
+ * ```c
+ * NDArray x = ndarray_new(NDA_DIMS(100, 1));
+ * NDArray y = ndarray_new(NDA_DIMS(100, 1));
+ * // ... fill x and y ...
+ * double cov = ndarray_scalar_covariance(x, y);
+ * printf("Covariance: %f\n", cov);
+ * ndarray_free_all(NDA_LIST(x, y));
+ * ```
+ */
+double ndarray_scalar_covariance(const NDArray A, const NDArray B);
+
+/**
+ * Computes the Pearson correlation coefficient between two ndarrays.
+ *
+ * Both arrays must have the same number of elements. The result
+ * ranges from -1 to 1.
+ *
+ * @param A First input ndarray.
+ * @param B Second input ndarray (must have same size as A).
+ * @return The Pearson correlation coefficient between A and B.
+ *
+ * Example:
+ *
+ * ```c
+ * NDArray x = ndarray_new(NDA_DIMS(100, 1));
+ * NDArray y = ndarray_new(NDA_DIMS(100, 1));
+ * // ... fill x and y ...
+ * double corr = ndarray_scalar_correlation(x, y);
+ * printf("Correlation: %f\n", corr);
+ * ndarray_free_all(NDA_LIST(x, y));
+ * ```
+ */
+double ndarray_scalar_correlation(const NDArray A, const NDArray B);
+
+/**
  * Saves an ndarray to a binary file.
  * 
  * Creates a binary file with a custom format including magic number,
@@ -1781,18 +1991,6 @@ int ndarray_get_owner(const NDArray arr);
  * @return Handler for chaining
  */
 NDArray ndarray_set_owner(NDArray arr, int owner);
-
-/* Prevent GSL from including its own CBLAS definitions which conflict with OpenBLAS.
- * We define the necessary types that GSL's gsl_cblas.h would provide, then skip its inclusion. */
-#define __GSL_CBLAS_H__
-
-/* Define types that GSL's gsl_cblas.h would provide */
-#ifndef CBLAS_INDEX
-#define CBLAS_INDEX size_t
-#endif
-
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
 
 /**
  * Create a gsl_vector view from a 1D slice of NDArray (read-write).

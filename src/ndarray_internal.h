@@ -13,6 +13,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <stdbool.h>
 
 #ifndef _WIN32
     #include <sys/ioctl.h>
@@ -66,6 +67,8 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+#define for_range(T, i, start, end) for (T (i) = (start); (i) < (end); (i)++)
 
 size_t ndarray_size(NDArray t);
 size_t compute_stride(NDArray A, int axis);
